@@ -4,7 +4,7 @@ Kumulos provides tools to build and host backend storage for apps, send push not
 
 ## Get Started with Gradle
 
-Add the following line to your app's target in your app's `build.gradle`:
+Add the following line to your app module's `build.gradle`:
 
 ```gradle
 android {
@@ -12,6 +12,8 @@ android {
 
         ...
 
+        // Add the sender ID to use push notifications with GCM
+        // Leave blank if you don't want to configure push
         manifestPlaceholders = [
                 kumulos_gcm_sender_id: ''
         ]
@@ -19,6 +21,7 @@ android {
 
     ...
 
+    // Exclude duplicate files from the build
     packagingOptions {
         exclude 'META-INF/NOTICE'
         exclude 'META-INF/ASL2.0'
@@ -29,12 +32,13 @@ android {
 dependencies {
     ...
 
+    // Kumulos debug & release libraries
     debugImplementation 'com.kumulos.android:kumulos-android-debug:4.0.1'
     releaseImplementation 'com.kumulos.android:kumulos-android-release:4.0.1'
 }
 ```
 
-Running a gradle sync will install the libraries and required dependencies from JCenter.
+Running a gradle sync will install the SDK from JCenter.
 
 After installation, you can now initialize the SDK in your Application class:
 
