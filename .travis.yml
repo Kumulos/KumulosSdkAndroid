@@ -8,9 +8,9 @@ android:
     - extra-google-m2repository
     - extra-android-m2repository
     - addon-google_apis-google-26
-  script:
-    - ./gradlew kumulos:assemble
-    - ./gradlew kumulos:bintrayUpload
+script:
+  - ./gradlew kumulos:assemble
+  - ./gradlew kumulos:bintrayUpload
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
