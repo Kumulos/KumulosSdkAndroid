@@ -1,15 +1,18 @@
 package com.kumulos.android;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
  * Represents the configuration for the Kumulos client
  */
-public final class KumulosConfig {
+public final class KumulosConfig implements Parcelable {
 
     @DrawableRes
     static final int DEFAULT_NOTIFICATION_ICON_ID = R.drawable.kumulos_ic_stat_notifications;
@@ -27,6 +30,40 @@ public final class KumulosConfig {
 
     // Private constructor to discourage not using the Builder.
     private KumulosConfig() {}
+
+    private KumulosConfig(Parcel in) {
+        apiKey = in.readString();
+        secretKey = in.readString();
+        notificationSmallIconId = in.readInt();
+        crashReportingEnabled = in.readByte() != 0;
+        sessionIdleTimeoutSeconds = in.readInt();
+
+        String runtimeInfoStr = in.readString();
+        String sdkInfoStr = in.readString();
+
+        try {
+            if (null != runtimeInfoStr) {
+                runtimeInfo = new JSONObject(runtimeInfoStr);
+            }
+            if (null != sdkInfoStr) {
+                sdkInfo = new JSONObject(sdkInfoStr);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static final Creator<KumulosConfig> CREATOR = new Creator<KumulosConfig>() {
+        @Override
+        public KumulosConfig createFromParcel(Parcel in) {
+            return new KumulosConfig(in);
+        }
+
+        @Override
+        public KumulosConfig[] newArray(int size) {
+            return new KumulosConfig[size];
+        }
+    };
 
     private void setApiKey(String apiKey) {
         this.apiKey = apiKey;
@@ -82,6 +119,33 @@ public final class KumulosConfig {
 
     public JSONObject getSdkInfo() {
         return this.sdkInfo;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(apiKey);
+        dest.writeString(secretKey);
+        dest.writeInt(notificationSmallIconId);
+        dest.writeByte((byte) (crashReportingEnabled ? 1 : 0));
+        dest.writeInt(sessionIdleTimeoutSeconds);
+        if (null != runtimeInfo) {
+            dest.writeString(runtimeInfo.toString());
+        }
+        else {
+            dest.writeString(null);
+        }
+
+        if (null != sdkInfo) {
+            dest.writeString(sdkInfo.toString());
+        }
+        else {
+            dest.writeString(null);
+        }
     }
 
     /**
