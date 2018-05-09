@@ -372,6 +372,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
             final Bundle bundle = new Bundle();
             bundle.putLong(AnalyticsBackgroundEventService.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis());
+            bundle.putParcelable(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, Kumulos.getConfig());
 
             Kumulos.executorService.submit(new Runnable() {
                 @Override
