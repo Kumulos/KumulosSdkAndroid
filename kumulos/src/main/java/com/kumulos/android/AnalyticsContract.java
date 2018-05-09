@@ -370,15 +370,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
             }
 
 
+            final KumulosConfig config = Kumulos.getConfig();
             final Bundle bundle = new Bundle();
+
             bundle.putLong(AnalyticsBackgroundEventService.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis());
-            bundle.putParcelable(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, Kumulos.getConfig());
+            bundle.putParcelable(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, config);
 
             Kumulos.executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    KumulosConfig config = Kumulos.getConfig();
-
                     Task task = new OneoffTask.Builder()
                             .setExecutionWindow(config.getSessionIdleTimeoutSeconds(), config.getSessionIdleTimeoutSeconds() + 10)
                             .setService(AnalyticsBackgroundEventService.class)

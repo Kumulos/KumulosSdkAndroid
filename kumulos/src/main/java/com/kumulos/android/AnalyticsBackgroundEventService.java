@@ -10,11 +10,12 @@ public class AnalyticsBackgroundEventService extends GcmTaskService {
 
     static final String TAG = AnalyticsBackgroundEventService.class.getName();
     static final String EXTRAS_KEY_TIMESTAMP = "ts";
-    static final String EXTRAS_KEY_CONFIG= "config";
+    static final String EXTRAS_KEY_CONFIG = "config";
 
     @Override
     public int onRunTask(TaskParams taskParams) {
         Bundle extras = taskParams.getExtras();
+        extras.setClassLoader(getClassLoader());
 
         if (!Kumulos.isInitialized()) {
             KumulosConfig config = extras.getParcelable(EXTRAS_KEY_CONFIG);

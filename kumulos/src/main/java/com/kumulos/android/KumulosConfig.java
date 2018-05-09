@@ -133,6 +133,7 @@ public final class KumulosConfig implements Parcelable {
         dest.writeInt(notificationSmallIconId);
         dest.writeByte((byte) (crashReportingEnabled ? 1 : 0));
         dest.writeInt(sessionIdleTimeoutSeconds);
+
         if (null != runtimeInfo) {
             dest.writeString(runtimeInfo.toString());
         }
