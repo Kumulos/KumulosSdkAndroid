@@ -117,10 +117,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 return;
             }
 
+            KumulosConfig config = Kumulos.getConfig();
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(AnalyticsUploadService.KEY_CONFIG, config);
+
             OneoffTask.Builder uploadTaskBuilder = new OneoffTask.Builder()
                     .setService(AnalyticsUploadService.class)
                     .setTag(AnalyticsUploadService.TAG)
                     .setUpdateCurrent(true)
+                    .setExtras(bundle)
                     .setRequiredNetwork(OneoffTask.NETWORK_STATE_CONNECTED);
 
             if (BuildConfig.DEBUG) {
@@ -365,14 +370,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
             }
 
 
+            final KumulosConfig config = Kumulos.getConfig();
             final Bundle bundle = new Bundle();
+
             bundle.putLong(AnalyticsBackgroundEventService.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis());
+            bundle.putParcelable(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, config);
 
             Kumulos.executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    KumulosConfig config = Kumulos.getConfig();
-
                     Task task = new OneoffTask.Builder()
                             .setExecutionWindow(config.getSessionIdleTimeoutSeconds(), config.getSessionIdleTimeoutSeconds() + 10)
                             .setService(AnalyticsBackgroundEventService.class)

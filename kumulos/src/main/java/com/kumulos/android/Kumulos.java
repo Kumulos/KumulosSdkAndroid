@@ -48,10 +48,9 @@ public final class Kumulos {
     private static final String API_BASE_URL = "https://api.kumulos.com/b2.2/";
     private static final String CRASH_BASE_URL = "https://crash.kumulos.com";
     /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
-    /** package */ static final String STATS_BASE_URL = "https://stats.kumulos.com";
     /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
-    private static boolean initialised;
+    private static boolean initialized;
 
     private static String installId;
 
@@ -93,7 +92,7 @@ public final class Kumulos {
      * @param config
      */
     public static synchronized void initialize(final Application application, KumulosConfig config) {
-        if (initialised) {
+        if (initialized) {
             log("Kumulos is already initialized, aborting...");
             return;
         }
@@ -108,7 +107,7 @@ public final class Kumulos {
         httpClient = new OkHttpClient();
         executorService = Executors.newSingleThreadExecutor();
 
-        initialised = true;
+        initialized = true;
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
@@ -589,7 +588,7 @@ public final class Kumulos {
     }
 
     /** package */ static OkHttpClient getHttpClient() throws UninitializedException {
-        if (!initialised) {
+        if (!initialized) {
             throw new UninitializedException();
         }
 
@@ -597,9 +596,13 @@ public final class Kumulos {
     }
 
     /** package */ static String getInstallId() throws UninitializedException {
-        if (!initialised) {
+        if (!initialized) {
             throw new UninitializedException();
         }
         return installId;
+    }
+
+    /** package */ static boolean isInitialized() {
+        return initialized;
     }
 }
