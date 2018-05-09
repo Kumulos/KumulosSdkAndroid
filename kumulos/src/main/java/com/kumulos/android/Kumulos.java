@@ -370,6 +370,19 @@ public final class Kumulos {
     }
 
     /**
+     * Tracks a custom analytics event with Kumulos.
+     *
+     * After being recorded locally, all stored events will be flushed to the server.
+     *
+     * @param context
+     * @param eventType Identifier for the event category
+     * @param properties Additional information about the event
+     */
+    public static void trackEventImmediately(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties) {
+        trackEvent(context, eventType, properties, true);
+    }
+
+    /**
      * Associates a user identifier with the current Kumulos installation record.
      * @param context
      * @param userIdentifier
