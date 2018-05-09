@@ -117,10 +117,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 return;
             }
 
+            KumulosConfig config = Kumulos.getConfig();
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(AnalyticsUploadService.KEY_CONFIG, config);
+
             OneoffTask.Builder uploadTaskBuilder = new OneoffTask.Builder()
                     .setService(AnalyticsUploadService.class)
                     .setTag(AnalyticsUploadService.TAG)
                     .setUpdateCurrent(true)
+                    .setExtras(bundle)
                     .setRequiredNetwork(OneoffTask.NETWORK_STATE_CONNECTED);
 
             if (BuildConfig.DEBUG) {
