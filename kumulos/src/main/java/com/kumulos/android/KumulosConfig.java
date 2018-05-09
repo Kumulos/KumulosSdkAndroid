@@ -4,6 +4,8 @@ import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import org.json.JSONObject;
+
 /**
  * Represents the configuration for the Kumulos client
  */
@@ -19,6 +21,9 @@ public final class KumulosConfig {
     private int notificationSmallIconId;
     private boolean crashReportingEnabled;
     private int sessionIdleTimeoutSeconds;
+
+    private JSONObject runtimeInfo;
+    private JSONObject sdkInfo;
 
     // Private constructor to discourage not using the Builder.
     private KumulosConfig() {}
@@ -43,6 +48,14 @@ public final class KumulosConfig {
         this.sessionIdleTimeoutSeconds = timeoutSeconds;
     }
 
+    private void setRuntimeInfo(JSONObject info) {
+        this.runtimeInfo = info;
+    }
+
+    private void setSdkInfo(JSONObject info) {
+        this.sdkInfo = info;
+    }
+
     public String getApiKey() {
         return apiKey;
     }
@@ -63,6 +76,14 @@ public final class KumulosConfig {
         return sessionIdleTimeoutSeconds;
     }
 
+    public JSONObject getRuntimeInfo() {
+        return this.runtimeInfo;
+    }
+
+    public JSONObject getSdkInfo() {
+        return this.sdkInfo;
+    }
+
     /**
      * Config builder for the Kumulos client
      */
@@ -74,6 +95,9 @@ public final class KumulosConfig {
         private int notificationSmallIconDrawableId = KumulosConfig.DEFAULT_NOTIFICATION_ICON_ID;
         private boolean enableCrashReporting = false;
         private int sessionIdleTimeoutSeconds = KumulosConfig.DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS;
+
+        private JSONObject runtimeInfo;
+        private JSONObject sdkInfo;
 
         public Builder(@NonNull String apiKey, @NonNull String secretKey) {
             this.apiKey = apiKey;
@@ -114,6 +138,16 @@ public final class KumulosConfig {
             return this;
         }
 
+        public Builder setRuntimeInfo(JSONObject info) {
+            this.runtimeInfo = info;
+            return this;
+        }
+
+        public Builder setSdkInfo(JSONObject info) {
+            this.sdkInfo = info;
+            return this;
+        }
+
         public KumulosConfig build() {
             if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(secretKey)) {
                 throw new IllegalStateException("You need to provide apiKey and secretKey before you can build KumulosConfig.");
@@ -125,6 +159,8 @@ public final class KumulosConfig {
             newConfig.setNotificationSmallIconId(notificationSmallIconDrawableId);
             newConfig.setCrashReportingEnabled(enableCrashReporting);
             newConfig.setSessionIdleTimeoutSeconds(sessionIdleTimeoutSeconds);
+            newConfig.setRuntimeInfo(this.runtimeInfo);
+            newConfig.setSdkInfo(this.sdkInfo);
 
             return newConfig;
         }

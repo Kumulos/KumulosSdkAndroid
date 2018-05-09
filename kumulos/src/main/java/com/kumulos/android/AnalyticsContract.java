@@ -207,6 +207,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 return;
             }
 
+            KumulosConfig config = Kumulos.getConfig();
             final JSONObject finalObj;
             try {
                 JSONObject app = new JSONObject()
@@ -214,13 +215,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
                         .put("target", BuildConfig.DEBUG ? 1 : 2)
                         .put("bundle", packageInfo.packageName);
 
-                JSONObject sdk = new JSONObject()
-                        .put("id", SDK_TYPE)
-                        .put("version", Kumulos.VERSION);
+                JSONObject sdk = config.getSdkInfo();
+                if (null == sdk) {
+                    sdk = new JSONObject()
+                            .put("id", SDK_TYPE)
+                            .put("version", Kumulos.VERSION);
+                }
 
-                JSONObject runtime = new JSONObject()
-                        .put("id", RUNTIME_TYPE)
-                        .put("version", Build.VERSION.RELEASE);
+                JSONObject runtime = config.getRuntimeInfo();
+                if (null == runtime) {
+                    runtime = new JSONObject()
+                            .put("id", RUNTIME_TYPE)
+                            .put("version", Build.VERSION.RELEASE);
+                }
 
                 JSONObject os = new JSONObject()
                         .put("id", OS_TYPE)
