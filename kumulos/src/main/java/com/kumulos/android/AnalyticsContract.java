@@ -119,7 +119,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
             KumulosConfig config = Kumulos.getConfig();
             Bundle bundle = new Bundle();
-            bundle.putParcelable(AnalyticsUploadService.KEY_CONFIG, config);
+            bundle.putBundle(AnalyticsUploadService.KEY_CONFIG, config.toBundle());
 
             OneoffTask.Builder uploadTaskBuilder = new OneoffTask.Builder()
                     .setService(AnalyticsUploadService.class)
@@ -374,7 +374,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
             final Bundle bundle = new Bundle();
 
             bundle.putLong(AnalyticsBackgroundEventService.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis());
-            bundle.putParcelable(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, config);
+            bundle.putBundle(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, config.toBundle());
 
             Kumulos.executorService.submit(new Runnable() {
                 @Override
