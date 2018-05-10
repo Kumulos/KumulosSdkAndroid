@@ -15,9 +15,9 @@ public class AnalyticsUploadService extends GcmTaskService {
     public int onRunTask(TaskParams taskParams) {
         if (!Kumulos.isInitialized()) {
             Bundle bundle = taskParams.getExtras();
-            bundle.setClassLoader(getClassLoader());
+            Bundle configBundle = bundle.getBundle(KEY_CONFIG);
 
-            KumulosConfig config = bundle.getParcelable(KEY_CONFIG);
+            KumulosConfig config = KumulosConfig.fromBundle(configBundle);
             Kumulos.initialize(this.getApplication(), config);
         }
 

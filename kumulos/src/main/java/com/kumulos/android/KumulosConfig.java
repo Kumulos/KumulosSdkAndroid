@@ -1,7 +1,6 @@
 package com.kumulos.android;
 
-import android.os.Parcel;
-import android.os.Parcelable;
+import android.os.Bundle;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
@@ -12,11 +11,18 @@ import org.json.JSONObject;
 /**
  * Represents the configuration for the Kumulos client
  */
-public final class KumulosConfig implements Parcelable {
+public final class KumulosConfig {
 
     @DrawableRes
     static final int DEFAULT_NOTIFICATION_ICON_ID = R.drawable.kumulos_ic_stat_notifications;
     static final int DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS = 40;
+    private static final String KEY_API_KEY = "apiKey";
+    private static final String KEY_SECRET_KEY = "secretKey";
+    private static final String KEY_NOTIFICATION_SMALL_ICON_ID = "smallNotificationIconId";
+    private static final String KEY_CRASH_REPORTING_ENABLED = "crashEnabled";
+    private static final String KEY_SESSION_IDLE_TIMEOUT = "sessionTimeout";
+    private static final String KEY_RUNTIME_INFO = "runtimeInfo";
+    private static final String KEY_SDK_INFO = "sdkInfo";
 
     private String apiKey;
     private String secretKey;
@@ -30,40 +36,6 @@ public final class KumulosConfig implements Parcelable {
 
     // Private constructor to discourage not using the Builder.
     private KumulosConfig() {}
-
-    private KumulosConfig(Parcel in) {
-        apiKey = in.readString();
-        secretKey = in.readString();
-        notificationSmallIconId = in.readInt();
-        crashReportingEnabled = in.readByte() != 0;
-        sessionIdleTimeoutSeconds = in.readInt();
-
-        String runtimeInfoStr = in.readString();
-        String sdkInfoStr = in.readString();
-
-        try {
-            if (null != runtimeInfoStr) {
-                runtimeInfo = new JSONObject(runtimeInfoStr);
-            }
-            if (null != sdkInfoStr) {
-                sdkInfo = new JSONObject(sdkInfoStr);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static final Creator<KumulosConfig> CREATOR = new Creator<KumulosConfig>() {
-        @Override
-        public KumulosConfig createFromParcel(Parcel in) {
-            return new KumulosConfig(in);
-        }
-
-        @Override
-        public KumulosConfig[] newArray(int size) {
-            return new KumulosConfig[size];
-        }
-    };
 
     private void setApiKey(String apiKey) {
         this.apiKey = apiKey;
@@ -121,32 +93,44 @@ public final class KumulosConfig implements Parcelable {
         return this.sdkInfo;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(apiKey);
-        dest.writeString(secretKey);
-        dest.writeInt(notificationSmallIconId);
-        dest.writeByte((byte) (crashReportingEnabled ? 1 : 0));
-        dest.writeInt(sessionIdleTimeoutSeconds);
+    /** package */ Bundle toBundle() {
+        Bundle bundle = new Bundle();
+        bundle.putString(KEY_API_KEY, apiKey);
+        bundle.putString(KEY_SECRET_KEY, secretKey);
+        bundle.putInt(KEY_NOTIFICATION_SMALL_ICON_ID, notificationSmallIconId);
+        bundle.putBoolean(KEY_CRASH_REPORTING_ENABLED, crashReportingEnabled);
+        bundle.putInt(KEY_SESSION_IDLE_TIMEOUT, sessionIdleTimeoutSeconds);
 
         if (null != runtimeInfo) {
-            dest.writeString(runtimeInfo.toString());
-        }
-        else {
-            dest.writeString(null);
+            bundle.putString(KEY_RUNTIME_INFO, runtimeInfo.toString());
         }
 
         if (null != sdkInfo) {
-            dest.writeString(sdkInfo.toString());
+            bundle.putString(KEY_SDK_INFO, sdkInfo.toString());
         }
-        else {
-            dest.writeString(null);
+
+        return bundle;
+    }
+
+    /** package */ static KumulosConfig fromBundle(Bundle bundle) {
+        KumulosConfig config = new KumulosConfig();
+        config.apiKey = bundle.getString(KEY_API_KEY);
+        config.secretKey = bundle.getString(KEY_SECRET_KEY);
+        config.notificationSmallIconId = bundle.getInt(KEY_NOTIFICATION_SMALL_ICON_ID, DEFAULT_NOTIFICATION_ICON_ID);
+        config.crashReportingEnabled = bundle.getBoolean(KEY_CRASH_REPORTING_ENABLED);
+        config.sessionIdleTimeoutSeconds = bundle.getInt(KEY_SESSION_IDLE_TIMEOUT, DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS);
+
+        String runtimeInfoStr = bundle.getString(KEY_RUNTIME_INFO, null);
+        String sdkInfoStr = bundle.getString(KEY_SDK_INFO, null);
+
+        try {
+            config.runtimeInfo = (null == runtimeInfoStr) ? null : new JSONObject(runtimeInfoStr);
+            config.sdkInfo = (null == sdkInfoStr) ? null : new JSONObject(sdkInfoStr);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
+
+        return config;
     }
 
     /**

@@ -15,10 +15,11 @@ public class AnalyticsBackgroundEventService extends GcmTaskService {
     @Override
     public int onRunTask(TaskParams taskParams) {
         Bundle extras = taskParams.getExtras();
-        extras.setClassLoader(getClassLoader());
 
         if (!Kumulos.isInitialized()) {
-            KumulosConfig config = extras.getParcelable(EXTRAS_KEY_CONFIG);
+            Bundle configBundle = extras.getBundle(EXTRAS_KEY_CONFIG);
+
+            KumulosConfig config = KumulosConfig.fromBundle(configBundle);
             Kumulos.initialize(this.getApplication(), config);
         }
 
