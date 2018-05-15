@@ -3,11 +3,11 @@ if: tag IS present
 android:
   components:
     - build-tools-27.0.0
-    - android-26
+    - android-27
     - extra-google-google_play_services
     - extra-google-m2repository
     - extra-android-m2repository
-    - addon-google_apis-google-26
+    - addon-google_apis-google-27
 script:
   - ./gradlew kumulos:assemble
   - ./gradlew kumulos:bintrayUpload
