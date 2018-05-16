@@ -280,7 +280,7 @@ public final class Kumulos {
     //-- Location APIs
 
     /**
-     * Updaates the location of the current installation in Kumulos
+     * Updates the location of the current installation in Kumulos
      * Accurate locaiton information is used for geofencing
      * @param context
      * @param location
