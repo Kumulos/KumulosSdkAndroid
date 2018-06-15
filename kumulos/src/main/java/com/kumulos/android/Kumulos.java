@@ -403,6 +403,30 @@ public final class Kumulos {
         trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
     }
 
+    /**
+     * Associates a user identifier with the current Kumulos installation record, additionally setting the attributes for the user.
+     * @param context
+     * @param userIdentifier
+     * @param attributes
+     */
+    public static void associateUserWithInstall(Context context, @NonNull final String userIdentifier, @NonNull final JSONObject attributes) {
+        if (TextUtils.isEmpty(userIdentifier)) {
+            throw new IllegalArgumentException("Kumulos.associatgeUserWithInstall requires a non-empty user identifier");
+        }
+
+        JSONObject props = new JSONObject();
+
+        try {
+            props.put("id", userIdentifier);
+            props.put("attributes", attributes)
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+    }
+
     //==============================================================================================
     //-- Push APIs
 
