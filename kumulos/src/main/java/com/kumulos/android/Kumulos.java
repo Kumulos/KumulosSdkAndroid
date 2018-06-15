@@ -418,7 +418,7 @@ public final class Kumulos {
 
         try {
             props.put("id", userIdentifier);
-            props.put("attributes", attributes)
+            props.put("attributes", attributes);
         } catch (JSONException e) {
             e.printStackTrace();
             return;
