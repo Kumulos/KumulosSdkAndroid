@@ -1,10 +1,12 @@
 package com.kumulos.android;
 
+import android.app.Application;
 import android.os.Bundle;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
+import org.acra.config.CoreConfigurationBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -33,6 +35,8 @@ public final class KumulosConfig {
 
     private JSONObject runtimeInfo;
     private JSONObject sdkInfo;
+
+    private CoreConfigurationBuilder acraConfigBuilder;
 
     // Private constructor to discourage not using the Builder.
     private KumulosConfig() {}
@@ -91,6 +95,14 @@ public final class KumulosConfig {
 
     public JSONObject getSdkInfo() {
         return this.sdkInfo;
+    }
+
+    public CoreConfigurationBuilder getAcraConfigBuilder(Application application) {
+        if (null == this.acraConfigBuilder) {
+            this.acraConfigBuilder = new CoreConfigurationBuilder(application);
+        }
+
+        return this.acraConfigBuilder;
     }
 
     /** package */ Bundle toBundle() {

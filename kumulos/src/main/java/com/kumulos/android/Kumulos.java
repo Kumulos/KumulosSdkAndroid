@@ -117,7 +117,7 @@ public final class Kumulos {
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
-            CoreConfigurationBuilder acraConfig = new CoreConfigurationBuilder(application);
+            CoreConfigurationBuilder acraConfig = config.getAcraConfigBuilder(application);
             acraConfig
                     .setReportFormat(StringFormat.JSON)
                     .getPluginConfigurationBuilder(HttpSenderConfigurationBuilder.class)
