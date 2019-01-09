@@ -32,8 +32,8 @@ android {
 
 dependencies {
     // Kumulos debug & release libraries
-    debugImplementation 'com.kumulos.android:kumulos-android-debug:4.1.0'
-    releaseImplementation 'com.kumulos.android:kumulos-android-release:4.1.0'
+    debugImplementation 'com.kumulos.android:kumulos-android-debug:4.1.1'
+    releaseImplementation 'com.kumulos.android:kumulos-android-release:4.1.1'
 }
 ```
 
