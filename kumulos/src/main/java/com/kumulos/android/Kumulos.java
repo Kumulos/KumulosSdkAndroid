@@ -438,8 +438,8 @@ public final class Kumulos {
      * @param context
      */
     public static void pushRegister(Context context) {
-        Intent regIntent = new Intent(context, GcmRegistrationIntentService.class);
-        regIntent.setAction(GcmRegistrationIntentService.ACTION_REGISTER);
+        Intent regIntent = new Intent(context, PushRegistrationIntentService.class);
+        regIntent.setAction(PushRegistrationIntentService.ACTION_REGISTER);
 
         try {
             context.startService(regIntent);
@@ -455,8 +455,8 @@ public final class Kumulos {
      * @param context
      */
     public static void pushUnregister(Context context) {
-        Intent regIntent = new Intent(context, GcmRegistrationIntentService.class);
-        regIntent.setAction(GcmRegistrationIntentService.ACTION_UNREGISTER);
+        Intent regIntent = new Intent(context, PushRegistrationIntentService.class);
+        regIntent.setAction(PushRegistrationIntentService.ACTION_UNREGISTER);
 
         try {
             context.startService(regIntent);

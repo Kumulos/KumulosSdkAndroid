@@ -39,7 +39,7 @@
             </intent-filter>
         </service>
 
-        <service android:name=".GcmRegistrationIntentService" android:exported="false" />
+        <service android:name=".PushRegistrationIntentService" android:exported="false" />
 
         <service android:name=".AnalyticsUploadService"
             android:exported="true"
