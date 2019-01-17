@@ -42,26 +42,22 @@ public class PushRegistrationIntentService extends IntentService {
             }
             break;
             case ACTION_UNREGISTER: {
-                // TODO what is the authorized entity
-                try {
-                    FirebaseInstanceId.getInstance().deleteToken("...??", FirebaseMessaging.INSTANCE_ID_SCOPE);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-//                String defaultSenderId = getDefaultSenderId();
-//                InstanceID instanceID = InstanceID.getInstance(this);
-//
-//                try {
-//                    instanceID.deleteToken(defaultSenderId, GoogleCloudMessaging.INSTANCE_ID_SCOPE);
-//                    Kumulos.pushTokenDelete(new Kumulos.Callback() {
-//                        @Override
-//                        public void onSuccess() {
-//                            // Noop
-//                        }
-//                    });
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
+                Task<InstanceIdResult> result = FirebaseInstanceId.getInstance().getInstanceId();
+
+                result.addOnSuccessListener(Kumulos.executorService, instanceIdResult -> {
+                    try {
+                        FirebaseInstanceId.getInstance().deleteToken(instanceIdResult.getToken(),
+                                FirebaseMessaging.INSTANCE_ID_SCOPE);
+                        Kumulos.pushTokenDelete(new Kumulos.Callback() {
+                            @Override
+                            public void onSuccess() {
+                                // noop
+                            }
+                        });
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
             }
             break;
         }
