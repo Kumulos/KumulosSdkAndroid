@@ -38,10 +38,6 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging:17.3.4'
 }
 
-android.testVariants.all {
-    it.mergedFlavor.manifestPlaceholders = [ kumulos_gcm_sender_id: ""]
-}
-
 publishing {
     publications {
         Debug(MavenPublication) {
