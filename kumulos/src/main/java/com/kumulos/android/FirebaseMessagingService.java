@@ -2,26 +2,36 @@ package com.kumulos.android;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Bundle;
+
+import com.google.firebase.messaging.RemoteMessage;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class GcmListenerService extends com.google.android.gms.gcm.GcmListenerService {
+import java.util.Map;
 
-    private static final String TAG = GcmListenerService.class.getName();
+public class FirebaseMessagingService extends com.google.firebase.messaging.FirebaseMessagingService {
+
+
+    private static final String TAG = FirebaseMessagingService.class.getName();
 
     @Override
-    public void onMessageReceived(String s, Bundle bundle) {
-        super.onMessageReceived(s, bundle);
+    public void onNewToken(String token) {
+        Kumulos.log(TAG, "Got a push token: " + token);
+        Kumulos.pushTokenStore(this, token);
+    }
 
+    @Override
+    public void onMessageReceived(RemoteMessage remoteMessage) {
         Kumulos.log(TAG, "Received a push message");
 
-        String customStr = bundle.getString("custom");
+        Map<String, String> bundle = remoteMessage.getData();
 
-        if (null == customStr) {
+        if (!bundle.containsKey("custom")) {
             return;
         }
+
+        String customStr = bundle.get("custom");
 
         // Extract bundle
         String id;
@@ -39,15 +49,15 @@ public class GcmListenerService extends com.google.android.gms.gcm.GcmListenerSe
             return;
         }
 
-        String bgn = bundle.getString("bgn");
+        String bgn = bundle.get("bgn");
         boolean isBackground = (null != bgn && bgn.equals("1"));
 
         PushMessage pushMessage = new PushMessage(
                 id,
-                bundle.getString("title"),
-                bundle.getString("alert"),
+                bundle.get("title"),
+                bundle.get("alert"),
                 data,
-                bundle.getLong("google.sent_time", 0L),
+                remoteMessage.getSentTime(),
                 uri,
                 isBackground
         );
@@ -58,5 +68,4 @@ public class GcmListenerService extends com.google.android.gms.gcm.GcmListenerSe
 
         this.sendBroadcast(intent);
     }
-
 }

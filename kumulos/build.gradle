@@ -5,12 +5,12 @@ apply plugin: 'com.jfrog.bintray'
 def releaseVersion = System.getenv("TRAVIS_TAG") as String ?: "0.0.0"
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.0'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode System.getenv("TRAVIS_BUILD_NUMBER") as Integer ?: 0
         versionName releaseVersion
 
@@ -34,11 +34,8 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.10.0'
     implementation "ch.acra:acra-http:5.2.1"
     implementation 'org.codehaus.jackson:jackson-mapper-asl:1.8.5'
-    implementation 'com.google.android.gms:play-services-gcm:15.0.1'
-}
-
-android.testVariants.all {
-    it.mergedFlavor.manifestPlaceholders = [ kumulos_gcm_sender_id: ""]
+    implementation 'com.google.android.gms:play-services-gcm:16.0.0'
+    implementation 'com.google.firebase:firebase-messaging:17.3.4'
 }
 
 publishing {
