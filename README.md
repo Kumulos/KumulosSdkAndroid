@@ -8,15 +8,6 @@ Add the following line to your app module's `build.gradle`:
 
 ```gradle
 android {
-    defaultConfig {
-
-        // Add the sender ID to use push notifications with GCM
-        // Leave blank if you don't want to configure push
-        manifestPlaceholders = [
-                kumulos_gcm_sender_id: ''
-        ]
-    }
-
     // Exclude duplicate files from the build
     packagingOptions {
         exclude 'META-INF/NOTICE'
@@ -32,8 +23,8 @@ android {
 
 dependencies {
     // Kumulos debug & release libraries
-    debugImplementation 'com.kumulos.android:kumulos-android-debug:4.1.1'
-    releaseImplementation 'com.kumulos.android:kumulos-android-release:4.1.1'
+    debugImplementation 'com.kumulos.android:kumulos-android-debug:5.0.0'
+    releaseImplementation 'com.kumulos.android:kumulos-android-release:5.0.0'
 }
 ```
 
