@@ -4,6 +4,7 @@ package com.kumulos.android;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Debug;
 import android.os.Looper;
@@ -50,6 +51,7 @@ public final class Kumulos {
     /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
     /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
+    private static final String K_PREFS_FILE = "kumulos_prefs";
     private static boolean initialized;
 
     private static String installId;
@@ -61,6 +63,7 @@ public final class Kumulos {
     private static OkHttpClient httpClient;
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
+    private static final Object userIdLocker = new Object();
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -387,20 +390,7 @@ public final class Kumulos {
      * @param userIdentifier
      */
     public static void associateUserWithInstall(Context context, @NonNull final String userIdentifier) {
-        if (TextUtils.isEmpty(userIdentifier)) {
-            throw new IllegalArgumentException("Kumulos.associatgeUserWithInstall requires a non-empty user identifier");
-        }
-
-        JSONObject props = new JSONObject();
-
-        try {
-            props.put("id", userIdentifier);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+        associateUserWithInstallImpl(context, userIdentifier, null);
     }
 
     /**
@@ -410,6 +400,10 @@ public final class Kumulos {
      * @param attributes
      */
     public static void associateUserWithInstall(Context context, @NonNull final String userIdentifier, @NonNull final JSONObject attributes) {
+        associateUserWithInstallImpl(context, userIdentifier, attributes);
+    }
+
+    private static void associateUserWithInstallImpl(Context context, @NonNull final String userIdentifier, @Nullable final JSONObject attributes) {
         if (TextUtils.isEmpty(userIdentifier)) {
             throw new IllegalArgumentException("Kumulos.associatgeUserWithInstall requires a non-empty user identifier");
         }
@@ -418,13 +412,22 @@ public final class Kumulos {
 
         try {
             props.put("id", userIdentifier);
-            props.put("attributes", attributes);
+            if (null != attributes) {
+                props.put("attributes", attributes);
+            }
         } catch (JSONException e) {
             e.printStackTrace();
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+
+        synchronized (userIdLocker) {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(SharedPrefs.KEY_USER_IDENTIFIER, userIdentifier);
+            editor.apply();
+            trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+        }
     }
 
     //==============================================================================================
