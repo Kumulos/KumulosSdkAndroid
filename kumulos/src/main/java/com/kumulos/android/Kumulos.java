@@ -403,6 +403,22 @@ public final class Kumulos {
         associateUserWithInstallImpl(context, userIdentifier, attributes);
     }
 
+    /**
+     * Returns the identifier for the user currently associated with the Kumulos installation record
+     *
+     * @see Kumulos#associateUserWithInstall(Context, String)
+     * @see Installation#id(Context)
+     *
+     * @param context
+     * @return The current user identifier (if available), otherwise the Kumulos installation ID
+     */
+    public static String getCurrentUserIdentifier(@NonNull Context context) {
+        synchronized (userIdLocker) {
+            SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+            return preferences.getString(SharedPrefs.KEY_USER_IDENTIFIER, Installation.id(context));
+        }
+    }
+
     private static void associateUserWithInstallImpl(Context context, @NonNull final String userIdentifier, @Nullable final JSONObject attributes) {
         if (TextUtils.isEmpty(userIdentifier)) {
             throw new IllegalArgumentException("Kumulos.associatgeUserWithInstall requires a non-empty user identifier");
