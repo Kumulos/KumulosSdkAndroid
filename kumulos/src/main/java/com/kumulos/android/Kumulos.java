@@ -431,7 +431,7 @@ public final class Kumulos {
     //-- Push APIs
 
     /**
-     * Used to register the device installation with GCM to receive push notifications
+     * Used to register the device installation with FCM to receive push notifications
      * <p/>
      * Will store a flag when successful so repeated calls won't make noise on the network
      *
