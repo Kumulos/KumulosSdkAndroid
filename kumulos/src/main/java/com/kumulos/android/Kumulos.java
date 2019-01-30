@@ -442,8 +442,9 @@ public final class Kumulos {
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString(SharedPrefs.KEY_USER_IDENTIFIER, userIdentifier);
             editor.apply();
-            trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
         }
+
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
     }
 
     //==============================================================================================
