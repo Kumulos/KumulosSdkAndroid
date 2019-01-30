@@ -167,7 +167,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param context
      * @param pushMessage
      * @return
-     * @see Kumulos#pushTrackOpen(String) for correctly tracking conversions if you customize the content intent
+     * @see Kumulos#pushTrackOpen(Context,String) for correctly tracking conversions if you customize the content intent
      */
     protected Notification buildNotification(Context context, PushMessage pushMessage) {
         Intent openIntent = new Intent(ACTION_PUSH_OPENED);
