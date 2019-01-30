@@ -421,7 +421,7 @@ public final class Kumulos {
 
     private static void associateUserWithInstallImpl(Context context, @NonNull final String userIdentifier, @Nullable final JSONObject attributes) {
         if (TextUtils.isEmpty(userIdentifier)) {
-            throw new IllegalArgumentException("Kumulos.associatgeUserWithInstall requires a non-empty user identifier");
+            throw new IllegalArgumentException("Kumulos.associateUserWithInstall requires a non-empty user identifier");
         }
 
         JSONObject props = new JSONObject();
