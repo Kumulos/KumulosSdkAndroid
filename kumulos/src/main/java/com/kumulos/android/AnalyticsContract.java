@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
     static final String EVENT_TYPE_BACKGROUND = "k.bg";
     static final String EVENT_TYPE_CALL_HOME = "k.stats.installTracked";
     static final String EVENT_TYPE_ASSOCIATE_USER = "k.stats.userAssociated";
+    static final String EVENT_TYPE_CLEAR_USER_ASSOCIATION = "k.stats.userAssociationCleared";
     static final String EVENT_TYPE_PUSH_DEVICE_REGISTERED = "k.push.deviceRegistered";
     static final String EVENT_TYPE_PUSH_OPENED = "k.push.opened";
     static final String EVENT_TYPE_ENTERED_BEACON_PROXIMITY = "k.engage.beaconEnteredProximity";
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
         static final String COL_HAPPENED_AT_MILLIS = "happened_at";
         static final String COL_EVENT_TYPE = "type";
         static final String COL_PROPERTIES = "properties";
+        static final String COL_USER_IDENTIFIER = "user_identifier";
     }
 
     /**
@@ -84,6 +86,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
             values.put(AnalyticsEvent.COL_EVENT_TYPE, this.eventType);
             values.put(AnalyticsEvent.COL_UUID, uuidStr);
             values.put(AnalyticsEvent.COL_HAPPENED_AT_MILLIS, this.happenedAt);
+            values.put(AnalyticsEvent.COL_USER_IDENTIFIER, Kumulos.getCurrentUserIdentifier(mContext));
 
             String propsStr = (null == this.properties) ? null : properties.toString();
             values.put(AnalyticsEvent.COL_PROPERTIES, propsStr);

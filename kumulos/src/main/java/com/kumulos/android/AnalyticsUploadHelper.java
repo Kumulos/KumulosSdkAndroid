@@ -107,7 +107,8 @@ class AnalyticsUploadHelper {
                 AnalyticsContract.AnalyticsEvent.COL_HAPPENED_AT_MILLIS,
                 AnalyticsContract.AnalyticsEvent.COL_UUID,
                 AnalyticsContract.AnalyticsEvent.COL_EVENT_TYPE,
-                AnalyticsContract.AnalyticsEvent.COL_PROPERTIES
+                AnalyticsContract.AnalyticsEvent.COL_PROPERTIES,
+                AnalyticsContract.AnalyticsEvent.COL_USER_IDENTIFIER
         };
 
         String sortBy = AnalyticsContract.AnalyticsEvent.COL_ID + " ASC";
@@ -137,10 +138,21 @@ class AnalyticsUploadHelper {
                 event.put("uuid", cursor.getString(cursor.getColumnIndex(AnalyticsContract.AnalyticsEvent.COL_UUID)));
                 event.put("timestamp", cursor.getLong(cursor.getColumnIndex(AnalyticsContract.AnalyticsEvent.COL_HAPPENED_AT_MILLIS)));
 
-                if (!cursor.isNull(cursor.getColumnIndex(AnalyticsContract.AnalyticsEvent.COL_PROPERTIES))) {
-                    String eventPropsStr = cursor.getString(cursor.getColumnIndex(AnalyticsContract.AnalyticsEvent.COL_PROPERTIES));
+                int propsIdx = cursor.getColumnIndex(AnalyticsContract.AnalyticsEvent.COL_PROPERTIES);
+                if (!cursor.isNull(propsIdx)) {
+                    String eventPropsStr = cursor.getString(propsIdx);
                     event.put("data", new JSONObject(eventPropsStr));
                 }
+
+                String userId = null;
+                int userIdIdx = cursor.getColumnIndex(
+                        AnalyticsContract.AnalyticsEvent.COL_USER_IDENTIFIER);
+
+                if (!cursor.isNull(userIdIdx)) {
+                    userId = cursor.getString(userIdIdx);
+                }
+
+                event.put("userId", userId);
 
                 events.add(event);
 
