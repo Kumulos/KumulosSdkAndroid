@@ -404,6 +404,37 @@ public final class Kumulos {
     }
 
     /**
+     * Clears any existing association between this install record and a user identifier
+     * @see Kumulos#associateUserWithInstall(Context, String)
+     * @see Kumulos#getCurrentUserIdentifier(Context)
+     * @param context
+     */
+    public static void clearUserAssociation(@NonNull Context context) {
+        String currentUserId = null;
+        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+
+        synchronized (userIdLocker) {
+            currentUserId = prefs.getString(SharedPrefs.KEY_USER_IDENTIFIER, null);
+        }
+
+        JSONObject props = new JSONObject();
+        try {
+            props.put("oldUserIdentifier", currentUserId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_CLEAR_USER_ASSOCIATION, props);
+
+        synchronized (userIdLocker) {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.remove(SharedPrefs.KEY_USER_IDENTIFIER);
+            editor.apply();
+        }
+    }
+
+    /**
      * Returns the identifier for the user currently associated with the Kumulos installation record
      *
      * @see Kumulos#associateUserWithInstall(Context, String)
