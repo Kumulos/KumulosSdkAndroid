@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
     static final String EVENT_TYPE_BACKGROUND = "k.bg";
     static final String EVENT_TYPE_CALL_HOME = "k.stats.installTracked";
     static final String EVENT_TYPE_ASSOCIATE_USER = "k.stats.userAssociated";
-    static final String EVENT_TYPE_UNASSOCIATE_USER = "k.stats.userAssociationCleared";
+    static final String EVENT_TYPE_CLEAR_USER_ASSOCIATION = "k.stats.userAssociationCleared";
     static final String EVENT_TYPE_PUSH_DEVICE_REGISTERED = "k.push.deviceRegistered";
     static final String EVENT_TYPE_PUSH_OPENED = "k.push.opened";
     static final String EVENT_TYPE_ENTERED_BEACON_PROXIMITY = "k.engage.beaconEnteredProximity";

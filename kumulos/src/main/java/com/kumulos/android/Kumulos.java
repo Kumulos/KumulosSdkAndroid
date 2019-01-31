@@ -425,7 +425,7 @@ public final class Kumulos {
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_UNASSOCIATE_USER, props);
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_CLEAR_USER_ASSOCIATION, props);
 
         synchronized (userIdLocker) {
             SharedPreferences.Editor editor = prefs.edit();
