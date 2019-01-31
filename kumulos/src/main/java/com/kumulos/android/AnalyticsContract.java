@@ -85,6 +85,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
             values.put(AnalyticsEvent.COL_EVENT_TYPE, this.eventType);
             values.put(AnalyticsEvent.COL_UUID, uuidStr);
             values.put(AnalyticsEvent.COL_HAPPENED_AT_MILLIS, this.happenedAt);
+            values.put(AnalyticsEvent.COL_USER_IDENTIFIER, Kumulos.getCurrentUserIdentifier(mContext));
 
             String propsStr = (null == this.properties) ? null : properties.toString();
             values.put(AnalyticsEvent.COL_PROPERTIES, propsStr);
