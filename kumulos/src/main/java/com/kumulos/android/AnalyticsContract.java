@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
         static final String COL_HAPPENED_AT_MILLIS = "happened_at";
         static final String COL_EVENT_TYPE = "type";
         static final String COL_PROPERTIES = "properties";
+        static final String COL_USER_IDENTIFIER = "user_identifier";
     }
 
     /**

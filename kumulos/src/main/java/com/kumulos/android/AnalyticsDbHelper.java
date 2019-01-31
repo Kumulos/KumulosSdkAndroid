@@ -10,7 +10,7 @@ import com.kumulos.android.AnalyticsContract.AnalyticsEvent;
 /** package */ class AnalyticsDbHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "k_analytics.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
 
     private static final String SQL_CREATE_EVENTS
             = "CREATE TABLE " + AnalyticsEvent.TABLE_NAME + "("
@@ -37,6 +37,12 @@ import com.kumulos.android.AnalyticsContract.AnalyticsEvent;
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Noop, no version changes yet...
+        // See: https://stackoverflow.com/a/26916986
+        switch (oldVersion) {
+            case 1:
+                db.execSQL(String.format("ALTER TABLE %s ADD COLUMN %s TEXT DEFAULT NULL",
+                        AnalyticsEvent.TABLE_NAME, AnalyticsEvent.COL_USER_IDENTIFIER));
+                // nobreak: fallthrough for future version upgrades
+        }
     }
 }
