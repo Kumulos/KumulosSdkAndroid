@@ -28,6 +28,7 @@ import com.kumulos.android.AnalyticsContract.AnalyticsEvent;
     public void onCreate(SQLiteDatabase db) {
         try {
             db.execSQL(SQL_CREATE_EVENTS);
+            onUpgrade(db, 1, DB_VERSION);
         }
         catch (SQLException e) {
             Kumulos.log("Failed to create analytics events table");
