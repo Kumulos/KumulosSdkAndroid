@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * FirebaseMessageHandler provides helpers for handling FirebaseMessagingService events
  *
- * This can allow interoperating Kumulos push wiht your own FCM service
+ * This can allow interoperating Kumulos push with your own FCM service
  */
 public class FirebaseMessageHandler {
 
