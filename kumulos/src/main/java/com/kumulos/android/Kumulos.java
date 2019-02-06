@@ -537,6 +537,26 @@ public final class Kumulos {
         trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_OPENED, props);
     }
 
+    /**
+     * Registers the push token with Kumulos to allow sending push notifications to this install
+     * @param context
+     * @param token
+     */
+    public static void pushTokenStore(Context context, final String token) {
+
+        JSONObject props = new JSONObject();
+
+        try {
+            props.put("token", token);
+            props.put("type", PushTokenType.ANDROID.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, true);
+    }
+
     /** package */ static void pushTokenDelete(Callback resultHandler) {
         String url = PUSH_BASE_URL + "/v1/app-installs/" + installId + "/push-token";
 
@@ -559,21 +579,6 @@ public final class Kumulos {
         } catch (IOException e) {
             resultHandler.onFailure(e);
         }
-    }
-
-    /** package */ static void pushTokenStore(Context context, final String token) {
-
-        JSONObject props = new JSONObject();
-
-        try {
-            props.put("token", token);
-            props.put("type", PushTokenType.ANDROID.toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, true);
     }
 
     //==============================================================================================
