@@ -5,12 +5,6 @@
 
     <application>
 
-        <service android:name=".FirebaseMessagingService">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
-
         <service android:name=".PushRegistrationIntentService" android:exported="false" />
 
         <service android:name=".AnalyticsUploadService"
