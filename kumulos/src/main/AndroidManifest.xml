@@ -4,9 +4,6 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application>
-
-        <service android:name=".PushRegistrationIntentService" android:exported="false" />
-
         <service android:name=".AnalyticsUploadService"
             android:exported="true"
             android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
