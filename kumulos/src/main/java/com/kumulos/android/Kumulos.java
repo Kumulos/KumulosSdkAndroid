@@ -493,9 +493,11 @@ public final class Kumulos {
 
     /**
      * Used to unregister the current installation from receiving push notifications
+     *
+     * @param context
      */
-    public static void pushUnregister() {
-        PushRegistration.UnregisterTask task = new PushRegistration.UnregisterTask();
+    public static void pushUnregister(Context context) {
+        PushRegistration.UnregisterTask task = new PushRegistration.UnregisterTask(context);
         executorService.submit(task);
     }
 
@@ -537,30 +539,6 @@ public final class Kumulos {
         }
 
         trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, true);
-    }
-
-    /** package */ static void pushTokenDelete(Callback resultHandler) {
-        String url = PUSH_BASE_URL + "/v1/app-installs/" + installId + "/push-token";
-
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader(KEY_AUTH_HEADER, authHeader)
-                .delete()
-                .build();
-
-        try {
-            Response response = httpClient.newCall(request).execute();
-            if (response.isSuccessful()) {
-                resultHandler.onSuccess();
-            }
-            else {
-                resultHandler.onFailure(new Exception(response.message()));
-            }
-
-            response.close();
-        } catch (IOException e) {
-            resultHandler.onFailure(e);
-        }
     }
 
     //==============================================================================================

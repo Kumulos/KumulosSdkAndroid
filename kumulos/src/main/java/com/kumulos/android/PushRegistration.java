@@ -40,20 +40,30 @@ final class PushRegistration {
 
     static class UnregisterTask implements Runnable {
 
+        private static final String TAG = UnregisterTask.class.getName();
+
+        private final WeakReference<Context> mContextRef;
+
+        UnregisterTask(Context context) {
+            mContextRef = new WeakReference<>(context);
+        }
+
         @Override
         public void run() {
+            final Context context = mContextRef.get();
+
+            if (null == context) {
+                Kumulos.log(TAG, "Context null in unregistration task, aborting");
+                return;
+            }
+
             Task<InstanceIdResult> result = FirebaseInstanceId.getInstance().getInstanceId();
 
             result.addOnSuccessListener(Kumulos.executorService, instanceIdResult -> {
                 try {
                     FirebaseInstanceId.getInstance().deleteToken(instanceIdResult.getToken(),
                             FirebaseMessaging.INSTANCE_ID_SCOPE);
-                    Kumulos.pushTokenDelete(new Kumulos.Callback() {
-                        @Override
-                        public void onSuccess() {
-                            // noop
-                        }
-                    });
+                    Kumulos.trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_UNSUBSCRIBED, null);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
