@@ -483,38 +483,20 @@ public final class Kumulos {
 
     /**
      * Used to register the device installation with FCM to receive push notifications
-     * <p/>
-     * Will store a flag when successful so repeated calls won't make noise on the network
      *
      * @param context
      */
     public static void pushRegister(Context context) {
-        Intent regIntent = new Intent(context, PushRegistrationIntentService.class);
-        regIntent.setAction(PushRegistrationIntentService.ACTION_REGISTER);
-
-        try {
-            context.startService(regIntent);
-        }
-        catch (IllegalStateException e) {
-            // Noop - API26+ doesn't allow starting a service in the background
-        }
+        PushRegistration.RegisterTask task = new PushRegistration.RegisterTask(context);
+        executorService.submit(task);
     }
 
     /**
      * Used to unregister the current installation from receiving push notifications
-     *
-     * @param context
      */
-    public static void pushUnregister(Context context) {
-        Intent regIntent = new Intent(context, PushRegistrationIntentService.class);
-        regIntent.setAction(PushRegistrationIntentService.ACTION_UNREGISTER);
-
-        try {
-            context.startService(regIntent);
-        }
-        catch (IllegalStateException e) {
-            // Noop - API26+ doesn't allow starting a service in the background
-        }
+    public static void pushUnregister() {
+        PushRegistration.UnregisterTask task = new PushRegistration.UnregisterTask();
+        executorService.submit(task);
     }
 
     /**
