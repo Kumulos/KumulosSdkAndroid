@@ -302,7 +302,7 @@ public final class Kumulos {
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_LOCATION_UPDATED, props, true);
+        trackEventWithTimestamp(context, AnalyticsContract.EVENT_TYPE_LOCATION_UPDATED, props, location.getTime(), true);
     }
 
     /**
@@ -349,12 +349,12 @@ public final class Kumulos {
     //==============================================================================================
     //-- Analytics APIs
 
-    /** package */ static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties, boolean immediateFlush) {
+    /** package */ static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties, final long timestamp, boolean immediateFlush) {
         if (TextUtils.isEmpty(eventType)) {
             throw new IllegalArgumentException("Kumulos.trackEvent expects a non-empty event type");
         }
 
-        Runnable trackingTask = new AnalyticsContract.TrackEventRunnable(context, eventType, System.currentTimeMillis(), properties, immediateFlush);
+        Runnable trackingTask = new AnalyticsContract.TrackEventRunnable(context, eventType, timestamp, properties, immediateFlush);
         executorService.submit(trackingTask);
     }
 
@@ -368,10 +368,10 @@ public final class Kumulos {
      * @param properties Additional information about the event
      */
     public static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties) {
-        trackEvent(context, eventType, properties, false);
+        trackEvent(context, eventType, properties, System.currentTimeMillis(), false);
     }
 
-    /**
+     /**
      * Tracks a custom analytics event with Kumulos.
      *
      * After being recorded locally, all stored events will be flushed to the server.
@@ -381,7 +381,21 @@ public final class Kumulos {
      * @param properties Additional information about the event
      */
     public static void trackEventImmediately(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties) {
-        trackEvent(context, eventType, properties, true);
+        trackEvent(context, eventType, properties, System.currentTimeMillis(), true);
+    }
+
+        /**
+     * Tracks a custom analytics event with Kumulos.
+     *
+     * After being recorded locally, all stored events will be flushed to the server.
+     *
+     * @param context
+     * @param eventType Identifier for the event category
+     * @param properties Additional information about the event
+     * @param timestamp the timestamp at which the event happened
+     */
+    public static void trackEventWithTimestamp(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties, final long timestamp) {
+        trackEvent(context, eventType, properties, timestamp, true);
     }
 
     /**
