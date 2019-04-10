@@ -327,7 +327,7 @@ public final class Kumulos {
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_ENTERED_BEACON_PROXIMITY, properties, true);
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_ENTERED_BEACON_PROXIMITY, properties, System.currentTimeMillis(), true);
     }
 
     //==============================================================================================
@@ -538,7 +538,7 @@ public final class Kumulos {
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, true);
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, System.currentTimeMillis(), true);
     }
 
     //==============================================================================================
