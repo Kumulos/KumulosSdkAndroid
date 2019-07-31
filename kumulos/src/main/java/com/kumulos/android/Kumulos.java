@@ -1,11 +1,12 @@
 
 package com.kumulos.android;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.os.Bundle;
 import android.os.Debug;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -13,6 +14,17 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+
+import com.kumulos.android.AnalyticsContract;
+import com.kumulos.android.inapp.InAppContract;
+import com.kumulos.android.inapp.InAppMessage;
+import com.kumulos.android.inapp.MessagePresenter;
+import com.kumulos.android.inapp.inapp;
+import com.kumulos.android.KumulosConfig;
+import com.kumulos.android.PushRegistration;
+import com.kumulos.android.PushTokenType;
+import com.kumulos.android.ResponseHandler;
+import com.kumulos.android.SharedPrefs;
 
 import org.acra.ACRA;
 import org.acra.config.CoreConfigurationBuilder;
@@ -26,10 +38,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import okhttp3.Call;
 import okhttp3.FormBody;
@@ -64,6 +80,12 @@ public final class Kumulos {
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
+
+    //TODO: add to Kumulos
+    private static WeakReference<Activity> currentActivity = null;
+    /** package */ static WeakReference<Activity> getCurrentActivity() {
+        return currentActivity;
+    }
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -113,6 +135,55 @@ public final class Kumulos {
         initialized = true;
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
+
+        //TODO: move to another class
+        application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+
+            private int numStarted = 0;
+
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+                currentActivity = new WeakReference<Activity>(activity);
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+                if (currentActivity != null && currentActivity.get().hashCode() == activity.hashCode()) {
+                    currentActivity = null;
+                }
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity) {
+                if (numStarted == 0) {
+                    Log.d("vlad", "app goes fg!!!");
+
+                    Callable task = new InAppContract.ReadInAppMessagesCallable(activity);
+                    final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
+
+                    Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
+                    MessagePresenter.getInstance().presentMessages(future);//TODO: can multiple threads call this simultaneously?
+                }
+                numStarted++;
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity) {
+                numStarted--;
+                if (numStarted == 0) {
+                    Log.d("vlad", "app goes bg!!!");
+                }
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity) {}
+
+            @Override
+            public void onActivityPaused(Activity activity) {}
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+        });
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
