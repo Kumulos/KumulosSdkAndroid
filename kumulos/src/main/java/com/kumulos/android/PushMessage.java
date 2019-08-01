@@ -22,16 +22,16 @@ public final class PushMessage implements Parcelable {
     private JSONObject data;
     private long timeSent;
     private Uri url;
-    private boolean isBackgroundPush;
+    private boolean runBackgroundHandler;
 
-    /** package */ PushMessage(String id, @Nullable String title, @Nullable String message, @Nullable JSONObject data, long timeSent, @Nullable Uri url, boolean isBackgroundPush) {
+    /** package */ PushMessage(String id, @Nullable String title, @Nullable String message, @Nullable JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler) {
         this.id = id;
         this.title = title;
         this.message = message;
         this.data = data;
         this.timeSent = timeSent;
         this.url = url;
-        this.isBackgroundPush = isBackgroundPush;
+        this.runBackgroundHandler = runBackgroundHandler;
     }
 
     private PushMessage(Parcel in) {
@@ -39,7 +39,7 @@ public final class PushMessage implements Parcelable {
         title = in.readString();
         message = in.readString();
         timeSent = in.readLong();
-        isBackgroundPush = (in.readInt() == 1);
+        runBackgroundHandler = (in.readInt() == 1);
 
         String dataString = in.readString();
         if (null != dataString) {
@@ -82,7 +82,7 @@ public final class PushMessage implements Parcelable {
         dest.writeString(title);
         dest.writeString(message);
         dest.writeLong(timeSent);
-        dest.writeInt(isBackgroundPush ? 1 : 0);
+        dest.writeInt(runBackgroundHandler ? 1 : 0);
         dest.writeString(dataString);
         dest.writeString(urlString);
     }
@@ -116,8 +116,8 @@ public final class PushMessage implements Parcelable {
         return url;
     }
 
-    public boolean isBackgroundPush() {
-        return isBackgroundPush;
+    public boolean runBackgroundHandler() {
+        return runBackgroundHandler;
     }
 
 }

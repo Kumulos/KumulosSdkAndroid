@@ -12,6 +12,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.util.Log;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
 
@@ -51,7 +52,33 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     protected void onPushReceived(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push received");
 
-        if (pushMessage.isBackgroundPush()) {
+        if (pushMessage.runBackgroundHandler()) {
+            this.runBackgroundHandler(context, pushMessage);
+        }
+
+        if (!pushMessage.hasTitleAndMessage()) {
+            // Always show Notification if has title + message
+            return;
+        }
+
+        Notification notification = buildNotification(context, pushMessage);
+
+        if (null == notification) {
+            return;
+        }
+
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (null == notificationManager) {
+            return;
+        }
+
+        // TODO fix this in 2038 when we run out of time
+        notificationManager.notify((int) pushMessage.getTimeSent(), notification);
+    }
+
+    private void runBackgroundHandler(Context context, PushMessage pushMessage){
             Intent serviceIntent = getBackgroundPushServiceIntent(context, pushMessage);
 
             if (null == serviceIntent) {
@@ -74,29 +101,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             if (null != cls) {
                 context.startService(serviceIntent);
             }
-
-            return;
-        }
-        else if (!pushMessage.hasTitleAndMessage()) {
-            // Non-background pushes should always have a title & message otherwise we can't show a notification
-            return;
-        }
-
-        Notification notification = buildNotification(context, pushMessage);
-
-        if (null == notification) {
-            return;
-        }
-
-        NotificationManager notificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (null == notificationManager) {
-            return;
-        }
-
-        // TODO fix this in 2038 when we run out of time
-        notificationManager.notify((int) pushMessage.getTimeSent(), notification);
     }
 
     /**
@@ -115,6 +119,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         } catch (Kumulos.UninitializedException e) {
             Kumulos.log(TAG, "Failed to track the push opening -- Kumulos is not initialised.");
         }
+
+        //IN-APP
+
+       // Log.d("vlad", pushMessage.getData().toString());
 
         Intent launchIntent = getPushOpenActivityIntent(context, pushMessage);
 

@@ -40,8 +40,8 @@ android {
             dimension "environment"
             versionNameSuffix "-staging"
 
-            buildConfigField("String", "K_API_KEY", "\"71d8a326-6960-4c43-b46e-ff86ea258c26\"")//app_10307
-            buildConfigField("String", "K_SECRET_KEY", "\"FUrAc3/5O25t3F8qjmpXGQXvtqb5LGLPsvC+\"")
+            buildConfigField("String", "K_API_KEY", "\"3b54a1ff-89a2-44ee-934e-ce325ead3f16\"")//app_10489
+            buildConfigField("String", "K_SECRET_KEY", "\"skOG/MfVuOufDbZUbE+MTw9kf1m8sesqgAdl\"")
         }
     }
 

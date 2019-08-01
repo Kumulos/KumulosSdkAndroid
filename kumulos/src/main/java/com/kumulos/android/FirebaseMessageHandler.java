@@ -54,7 +54,7 @@ public class FirebaseMessageHandler {
         }
 
         String bgn = bundle.get("bgn");
-        boolean isBackground = (null != bgn && bgn.equals("1"));
+        boolean runBackgroundHandler = (null != bgn && bgn.equals("1"));
 
         PushMessage pushMessage = new PushMessage(
                 id,
@@ -63,7 +63,7 @@ public class FirebaseMessageHandler {
                 data,
                 remoteMessage.getSentTime(),
                 uri,
-                isBackground
+                runBackgroundHandler
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);
