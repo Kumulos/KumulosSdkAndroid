@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.content.Context;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -35,9 +36,9 @@ class InAppRequestService {
         }
     }
 
-    void readInAppMessages(final com.kumulos.android.Kumulos.ResultCallback<List<InAppMessage>> callback, Date lastSyncTime) {
+    void readInAppMessages(Context c, final Kumulos.ResultCallback<List<InAppMessage>> callback, Date lastSyncTime) {
         OkHttpClient httpClient;
-        String userIdentifier = "A67487";//TODO: use proper
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
         try {
             httpClient = Kumulos.getHttpClient();

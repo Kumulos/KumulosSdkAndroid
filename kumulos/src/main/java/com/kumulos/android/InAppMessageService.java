@@ -59,7 +59,7 @@ public class InAppMessageService extends GcmTaskService {
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
 
         //lastSyncTime = null;//to remove time filtering
-        reqServ.readInAppMessages(mReadCallback, lastSyncTime);
+        reqServ.readInAppMessages(this, mReadCallback, lastSyncTime);
 
         return GcmNetworkManager.RESULT_SUCCESS;
     }
