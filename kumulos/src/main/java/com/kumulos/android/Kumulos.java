@@ -15,17 +15,6 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
-import com.kumulos.android.AnalyticsContract;
-import com.kumulos.android.inapp.InAppContract;
-import com.kumulos.android.inapp.InAppMessage;
-import com.kumulos.android.inapp.MessagePresenter;
-import com.kumulos.android.inapp.inapp;
-import com.kumulos.android.KumulosConfig;
-import com.kumulos.android.PushRegistration;
-import com.kumulos.android.PushTokenType;
-import com.kumulos.android.ResponseHandler;
-import com.kumulos.android.SharedPrefs;
-
 import org.acra.ACRA;
 import org.acra.config.CoreConfigurationBuilder;
 import org.acra.config.HttpSenderConfigurationBuilder;
@@ -81,11 +70,7 @@ public final class Kumulos {
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
 
-    //TODO: add to Kumulos
-    private static WeakReference<Activity> currentActivity = null;
-    /** package */ static WeakReference<Activity> getCurrentActivity() {
-        return currentActivity;
-    }
+
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -136,54 +121,10 @@ public final class Kumulos {
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
-        //TODO: move to another class
-        application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-
-            private int numStarted = 0;
-
-            @Override
-            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-                currentActivity = new WeakReference<Activity>(activity);
-            }
-
-            @Override
-            public void onActivityDestroyed(Activity activity) {
-                if (currentActivity != null && currentActivity.get().hashCode() == activity.hashCode()) {
-                    currentActivity = null;
-                }
-            }
-
-            @Override
-            public void onActivityStarted(Activity activity) {
-                if (numStarted == 0) {
-                    Log.d("vlad", "app goes fg!!!");
-
-                    Callable task = new InAppContract.ReadInAppMessagesCallable(activity);
-                    final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
-
-                    Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
-                    MessagePresenter.getInstance().presentMessages(future);//TODO: can multiple threads call this simultaneously?
-                }
-                numStarted++;
-            }
-
-            @Override
-            public void onActivityStopped(Activity activity) {
-                numStarted--;
-                if (numStarted == 0) {
-                    Log.d("vlad", "app goes bg!!!");
-                }
-            }
-
-            @Override
-            public void onActivityResumed(Activity activity) {}
-
-            @Override
-            public void onActivityPaused(Activity activity) {}
-
-            @Override
-            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
-        });
+        //IN APP
+        application.registerActivityLifecycleCallbacks(new InAppActivityLifecycleWatcher());
+        InAppMessageService ims = new InAppMessageService();
+        ims.startPeriodicFetches();
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);

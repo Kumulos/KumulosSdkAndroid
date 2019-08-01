@@ -1,5 +1,4 @@
-package com.kumulos.android.inapp;
-
+package com.kumulos.android;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -9,22 +8,18 @@ import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.GcmTaskService;
 import com.google.android.gms.gcm.PeriodicTask;
 import com.google.android.gms.gcm.TaskParams;
-import com.kumulos.android.Kumulos;
 
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import okhttp3.MediaType;
+class InAppMessageService extends GcmTaskService {
 
-public class InAppMessageService extends GcmTaskService {
-
-    private static final MediaType MEDIA_TYPE_JSON = MediaType.parse("application/json; charset=utf-8");
     private InAppRequestService reqServ = new InAppRequestService();
 
     //https://stackoverflow.com/questions/31396499/gcm-network-manager-periodic-task-not-firing (check options)
-    public void startPeriodicFetches(){
+    void startPeriodicFetches(){
         long periodSecs = 30L; // the task should be executed every 30 seconds
         long flexSecs = 15L; // the task can run as early as -15 seconds from the scheduled time
 
@@ -75,7 +70,7 @@ public class InAppMessageService extends GcmTaskService {
         editor.apply();
     }
 
-    private Kumulos.ResultCallback mReadCallback = new Kumulos.ResultCallback<List<InAppMessage>>() {
+    private Kumulos.ResultCallback<List<InAppMessage>> mReadCallback = new Kumulos.ResultCallback<List<InAppMessage>>() {
         @Override
         public void onSuccess(List<InAppMessage> inAppMessages) {
 
@@ -85,11 +80,11 @@ public class InAppMessageService extends GcmTaskService {
 
             InAppMessageService.this.storeLastSyncTime(inAppMessages);
 
-            Callable task = new InAppContract.SaveInAppMessagesCallable(InAppMessageService.this, inAppMessages);
+            Callable<List<InAppMessage>> task = new InAppContract.SaveInAppMessagesCallable(InAppMessageService.this, inAppMessages);
             final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
 
             Log.d("vlad", "thread: "+Thread.currentThread().getName());
-            MessagePresenter.getInstance().presentMessages(future);//TODO: can multiple threads call this simultaneously?
+            InAppMessagePresenter.getInstance().presentMessages(future);//TODO: can multiple threads call this simultaneously?
 
         }
 

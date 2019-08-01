@@ -1,14 +1,13 @@
-package com.kumulos.android.inapp;
+package com.kumulos.android;
 
 import android.content.Context;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.kumulos.android.Kumulos;
-import com.kumulos.android.inapp.InAppContract.InAppMessageTable;
+import com.kumulos.android.InAppContract.InAppMessageTable;
 
-/** package */ public class InAppDbHelper extends SQLiteOpenHelper {
+class InAppDbHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "k_in_app.db";
     private static final int DB_VERSION = 1;
 

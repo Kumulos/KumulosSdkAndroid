@@ -1,4 +1,4 @@
-package com.kumulos.android.inapp;
+package com.kumulos.android;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -17,8 +17,6 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 
-import com.kumulos.android.Kumulos;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,11 +27,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import com.kumulos.android.R;
+class InAppMessagePresenter {
 
-public class MessagePresenter {
-
-    private static final String TAG = MessagePresenter.class.getName();
+    private static final String TAG = InAppMessagePresenter.class.getName();
     private Handler mHandler = new Handler(Looper.getMainLooper());
     private List<InAppMessage> messageQueue = new ArrayList<>();
     private WebView wv = null;
@@ -41,17 +37,17 @@ public class MessagePresenter {
     private ProgressBar spinner = null;
     private WeakReference<Activity> currentActivityRef;
 
-    private static MessagePresenter messagePresenter;
+    private static InAppMessagePresenter messagePresenter;
 
     //TODO: thread safety
-    public static MessagePresenter getInstance() {
+    static InAppMessagePresenter getInstance() {
         if (messagePresenter == null) {
-            messagePresenter = new MessagePresenter();
+            messagePresenter = new InAppMessagePresenter();
         }
         return messagePresenter;
     }
 
-    public void presentMessages(Future<List<InAppMessage>> future){
+    void presentMessages(Future<List<InAppMessage>> future){
 
 
 
@@ -67,7 +63,7 @@ public class MessagePresenter {
             return;
         }
 
-        currentActivityRef = Kumulos.getCurrentActivity();
+        currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
 
         if (currentActivityRef != null){
             messageQueue.addAll(itemsToPresent);
@@ -78,7 +74,7 @@ public class MessagePresenter {
 
     }
 
-    public void clientPresentMessage(){//java bridge thread
+    void clientPresentMessage(){//java bridge thread
         Log.d("vlad","clientPresentMessage");
         if (messageQueue.isEmpty()){
             this.closeDialog();
@@ -93,7 +89,7 @@ public class MessagePresenter {
 
 
 
-    public void trackMessageOpened(){//java bridge thread
+    void trackMessageOpened(){//java bridge thread
         Log.d("vlad","trackMessageOpened");
 
         this.setSpinnerVisibility(View.GONE);
@@ -123,7 +119,7 @@ public class MessagePresenter {
 //        }
     }
 
-    public void messageClosed(){//java bridge thread
+    void messageClosed(){//java bridge thread
         if (dialog == null || wv == null){
             return;
         }
@@ -204,7 +200,7 @@ public class MessagePresenter {
                             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
                                 Log.d("vlad", "back button pressed");
 
-                                MessagePresenter.this.sendToClient("CLOSE_MESSAGE", null);
+                                InAppMessagePresenter.this.sendToClient("CLOSE_MESSAGE", null);
                             }
                             return true;
                         }
@@ -218,7 +214,7 @@ public class MessagePresenter {
                     wv.getSettings().setCacheMode(android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK);
                     wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     wv.getSettings().setJavaScriptEnabled(true);
-                    wv.addJavascriptInterface(new JavaScriptInterface(currentActivity, MessagePresenter.this), "Android");
+                    wv.addJavascriptInterface(new InAppJavaScriptInterface(currentActivity, InAppMessagePresenter.this), "Android");
 
                     wv.setWebViewClient(new WebViewClient() {
 

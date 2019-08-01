@@ -1,4 +1,4 @@
-package com.kumulos.android.inapp;
+package com.kumulos.android;
 
 import android.support.annotation.Nullable;
 
@@ -11,10 +11,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/** package */ public class InAppMessage {
-
-
-
+class InAppMessage {
     private String presentedWhen;
     private int inAppId;
     @Nullable
@@ -27,13 +24,9 @@ import java.util.TimeZone;
     private Date openedAt = null;
     private Date updatedAt;
 
+    InAppMessage(){}
 
-
-    public InAppMessage(){
-
-    }
-
-    public InAppMessage(JSONObject obj) throws JSONException, ParseException {
+    InAppMessage(JSONObject obj) throws JSONException, ParseException {
         this.inAppId = obj.getInt("id");
         this.presentedWhen = obj.getString("presentedWhen");
 
@@ -52,50 +45,49 @@ import java.util.TimeZone;
         }
     }
 
-
-    public int getInAppId() {
+    int getInAppId() {
         return inAppId;
     }
 
-    public String getPresentedWhen() {
+    String getPresentedWhen() {
         return presentedWhen;
     }
 
     @Nullable
-    public JSONObject getBadgeConfig() {
+    JSONObject getBadgeConfig() {
         return badgeConfig;
     }
 
     @Nullable
-    public JSONObject getData() {
+    JSONObject getData() {
         return data;
     }
 
-    public JSONObject getContent() {
+    JSONObject getContent() {
         return content;
     }
 
-    public Date getOpenedAt() {
+    Date getOpenedAt() {
         return openedAt;
     }
 
-    public Date getUpdatedAt() {
+    Date getUpdatedAt() {
         return updatedAt;
     }
 
-    public JSONObject getInbox() {
+    JSONObject getInbox() {
         return inbox;
     }
 
-    public void setInAppId(int id){
+    void setInAppId(int id){
        this.inAppId = id;
     }
 
-    public void setContent(JSONObject content){
+    void setContent(JSONObject content){
        this.content = content;
     }
 
-    public void setOpenedAt(Date openedAt){
+    void setOpenedAt(Date openedAt){
        this.openedAt = openedAt;
     }
 }

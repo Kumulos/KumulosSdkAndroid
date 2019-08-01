@@ -1,8 +1,6 @@
-package com.kumulos.android.inapp;
+package com.kumulos.android;
 
 import android.util.Log;
-
-import com.kumulos.android.Kumulos;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,9 +20,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-
-
-public class InAppRequestService {
+class InAppRequestService {
 
     private static class UserNotFoundException extends Exception {
         UserNotFoundException() {
@@ -39,9 +35,9 @@ public class InAppRequestService {
         }
     }
 
-    public void readInAppMessages(final com.kumulos.android.Kumulos.ResultCallback<List<InAppMessage>> callback, Date lastSyncTime) {
+    void readInAppMessages(final com.kumulos.android.Kumulos.ResultCallback<List<InAppMessage>> callback, Date lastSyncTime) {
         OkHttpClient httpClient;
-        String userIdentifier = "A67487";//app_10307 on staging. message_id 17. ????
+        String userIdentifier = "A67487";//TODO: use proper
 
         try {
             httpClient = Kumulos.getHttpClient();

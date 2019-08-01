@@ -1,4 +1,4 @@
-package com.kumulos.android.inapp;
+package com.kumulos.android;
 import android.content.Context;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
@@ -6,13 +6,13 @@ import android.webkit.JavascriptInterface;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class JavaScriptInterface {
+class InAppJavaScriptInterface {
 
-    private MessagePresenter mMessagePresenter;
+    private InAppMessagePresenter mMessagePresenter;
 
-    private static final String TAG = JavaScriptInterface.class.getName();
+    private static final String TAG = InAppJavaScriptInterface.class.getName();
 
-    JavaScriptInterface(Context c, MessagePresenter messagePresenter) {
+    InAppJavaScriptInterface(Context c, InAppMessagePresenter messagePresenter) {
         mMessagePresenter = messagePresenter;
     }
 

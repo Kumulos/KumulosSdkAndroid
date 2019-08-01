@@ -1,4 +1,4 @@
-package com.kumulos.android.inapp;
+package com.kumulos.android;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,8 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
-
-import com.kumulos.android.Kumulos;
 
 import org.json.JSONObject;
 
@@ -20,11 +18,11 @@ import java.util.concurrent.Callable;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 
-/** package */ public class InAppContract {
+class InAppContract {
 
     private InAppContract() {}
 
-    /** package */ static class InAppMessageTable {
+    static class InAppMessageTable {
         static final String TABLE_NAME = "in_app_messages";
         static final String COL_ID = "inAppId";
         static final String COL_OPENED_AT = "openedAt";
@@ -38,7 +36,7 @@ import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
         static final String COL_CONTENT_JSON = "contentJson";
     }
 
-    static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
     static class TrackMessageOpenedRunnable implements Runnable {
         private static final String TAG = TrackMessageOpenedRunnable.class.getName();
@@ -201,9 +199,8 @@ import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
             catch(Exception e){
                 Kumulos.log(TAG, e.getMessage());
             }
-            finally{
-                return itemsToPresent;
-            }
+
+            return itemsToPresent;
 
 
         }
