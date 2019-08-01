@@ -17,5 +17,6 @@ public class MyApp extends Application {
         );
 
         Kumulos.initialize(this, config.build());
+        Kumulos.pushRegister(this);
     }
 }

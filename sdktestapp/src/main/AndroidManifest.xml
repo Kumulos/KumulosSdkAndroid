@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:name=".MyApp">
+
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,6 +31,24 @@
                 <action android:name="com.google.android.gms.gcm.ACTION_TASK_READY" />
             </intent-filter>
         </service>
+
+
+        <!-- Kumulos FCM handler -->
+        <service android:name="com.kumulos.android.FirebaseMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Kumulos Push receiver -->
+        <receiver android:name="com.kumulos.android.PushBroadcastReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.kumulos.push.RECEIVED" />
+                <action android:name="com.kumulos.push.OPENED" />
+            </intent-filter>
+        </receiver>
+
+
     </application>
 
 </manifest>
