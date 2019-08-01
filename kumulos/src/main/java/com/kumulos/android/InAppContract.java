@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
@@ -17,6 +18,7 @@ import java.util.Locale;
 import java.util.concurrent.Callable;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
+import android.util.Pair;
 
 class InAppContract {
 
@@ -99,10 +101,11 @@ class InAppContract {
 
                 //READ all messages not shown before
                 String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = InAppMessageTable.COL_OPENED_AT+ " IS NULL";
+                String selection = "("+InAppMessageTable.COL_PRESENTED_WHEN + " = ? OR "+InAppMessageTable.COL_PRESENTED_WHEN + " = ? ) AND "+ InAppMessageTable.COL_OPENED_AT+ " IS NULL";
+                String[] selectionArgs = { "immediately", "next-open" };
                 String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
-                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
+                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, sortOrder);
 
                 while(cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
@@ -128,7 +131,7 @@ class InAppContract {
         }
     }
 
-    static class SaveInAppMessagesCallable implements Callable<List<InAppMessage>> {
+    static class SaveInAppMessagesCallable implements Callable<Pair<List<InAppMessage>, List<Integer>>> {
 
         private static final String TAG = SaveInAppMessagesCallable.class.getName();
 
@@ -141,53 +144,21 @@ class InAppContract {
         }
 
         @Override
-        public List<InAppMessage> call() {
+        public Pair<List<InAppMessage>, List<Integer>> call() {
 
             SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
 
 
-
             List<InAppMessage> itemsToPresent = new ArrayList<>();
+            List<Integer> deliveredIds = new ArrayList<>();
             try {
                 List<ContentValues> rows = this.assembleRows();
 
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-                //INSERT/UPDATE
-                for(ContentValues row : rows){
-                    int id = (int) db.insertWithOnConflict(InAppMessageTable.TABLE_NAME, null, row, CONFLICT_IGNORE);
-                    if (id == -1) {
-                        db.update(InAppMessageTable.TABLE_NAME, row, InAppMessageTable.COL_ID+"=?", new String[] {""+row.getAsInteger(InAppMessageTable.COL_ID)});
-                    }
-                }
-
-                //DELETE
-                String deleteSql ="DELETE FROM " + InAppMessageTable.TABLE_NAME +
-                        " WHERE ("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NULL AND "+ InAppMessageTable.COL_OPENED_AT+" IS NOT NULL) " +
-                        " OR " +
-                        "("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NOT NULL " +
-                        " AND (datetime('now') NOT BETWEEN IFNULL("+ InAppMessageTable.COL_INBOX_FROM+", '1970-01-01') AND IFNULL("+ InAppMessageTable.COL_INBOX_TO+", '3970-01-01')))";
-
-                db.execSQL(deleteSql);
-
-                //READ for present immediately (openedAt from server may be not up to date, so, can only use from db)
-                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
-
-                String selection = InAppMessageTable.COL_PRESENTED_WHEN + " = ? AND "+ InAppMessageTable.COL_OPENED_AT+ " IS NULL";
-                String[] selectionArgs = { "immediately" };//next-open / immediately
-                String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
-
-                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, sortOrder);
-
-                while(cursor.moveToNext()) {
-                    int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
-                    String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
-                    InAppMessage m = new InAppMessage();
-                    m.setInAppId(inAppId);
-                    m.setContent(new JSONObject(content));
-                    itemsToPresent.add(m);
-                }
-                cursor.close();
+                deliveredIds = this.insertRows(db, rows);
+                this.deleteRows(db);
+                itemsToPresent = this.readRows(db);
 
                 dbHelper.close();
                 Kumulos.log(TAG, "Saved messages: "+mInAppMessages.size());
@@ -200,11 +171,71 @@ class InAppContract {
                 Kumulos.log(TAG, e.getMessage());
             }
 
-            return itemsToPresent;
+
+            return new Pair<>(itemsToPresent,deliveredIds);
+
 
 
         }
 
+        private List<Integer> insertRows(SQLiteDatabase db, List<ContentValues> rows){
+            List<Integer> deliveredIds = new ArrayList<>();
+
+            for(ContentValues row : rows){
+                int id = (int) db.insertWithOnConflict(InAppMessageTable.TABLE_NAME, null, row, CONFLICT_IGNORE);
+                if (id == -1) {
+                    db.update(InAppMessageTable.TABLE_NAME, row, InAppMessageTable.COL_ID+"=?", new String[] {""+row.getAsInteger(InAppMessageTable.COL_ID)});
+                }
+                //FIXME : tracks all messages, which were received and saved/updated. delivered_at when message was opened
+                deliveredIds.add(row.getAsInteger(InAppMessageTable.COL_ID));
+            }
+
+            return deliveredIds;
+        }
+
+        private void deleteRows(SQLiteDatabase db){
+            String deleteSql ="DELETE FROM " + InAppMessageTable.TABLE_NAME +
+                    " WHERE ("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NULL AND "+ InAppMessageTable.COL_OPENED_AT+" IS NOT NULL) " +
+                    " OR " +
+                    "("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NOT NULL " +
+                    " AND (datetime('now') NOT BETWEEN IFNULL("+ InAppMessageTable.COL_INBOX_FROM+", '1970-01-01') AND IFNULL("+ InAppMessageTable.COL_INBOX_TO+", '3970-01-01')))";
+
+            db.execSQL(deleteSql);
+        }
+
+        private List<InAppMessage> readRows(SQLiteDatabase db) {
+
+            List<InAppMessage> itemsToPresent = new ArrayList<>();
+
+            String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
+
+            String selection = InAppMessageTable.COL_PRESENTED_WHEN + " = ? AND "+ InAppMessageTable.COL_OPENED_AT+ " IS NULL";
+            String[] selectionArgs = { "immediately" };
+            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
+
+            Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, sortOrder);
+
+            while(cursor.moveToNext()) {
+                int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
+                String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
+                InAppMessage m = new InAppMessage();
+                m.setInAppId(inAppId);
+
+                try{
+                    m.setContent(new JSONObject(content));
+                }
+                catch(JSONException e) {
+                    Kumulos.log(TAG, e.getMessage());
+                    continue;
+                }
+
+                itemsToPresent.add(m);
+            }
+
+            cursor.close();
+
+            return itemsToPresent;
+        }
 
 
         private List<ContentValues> assembleRows(){

@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
@@ -9,17 +10,27 @@ import com.google.android.gms.gcm.GcmTaskService;
 import com.google.android.gms.gcm.PeriodicTask;
 import com.google.android.gms.gcm.TaskParams;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import android.util.Pair;
 
-class InAppMessageService extends GcmTaskService {
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class InAppMessageService extends GcmTaskService {
 
     private InAppRequestService reqServ = new InAppRequestService();
+    static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
+    static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
+    static final int MESSAGE_TYPE_IN_APP = 2;
+
 
     //https://stackoverflow.com/questions/31396499/gcm-network-manager-periodic-task-not-firing (check options)
-    void startPeriodicFetches(){
+    void startPeriodicFetches(final Application application){
         long periodSecs = 30L; // the task should be executed every 30 seconds
         long flexSecs = 15L; // the task can run as early as -15 seconds from the scheduled time
 
@@ -36,7 +47,7 @@ class InAppMessageService extends GcmTaskService {
                 .setUpdateCurrent(true)
                 .build();
 
-        GcmNetworkManager.getInstance(this).schedule(periodic);//Since this involves system IPC calls that can ocassionally be slow, it should be called on a background thread to avoid blocking the main (UI) thread.
+        GcmNetworkManager.getInstance(application).schedule(periodic);//Since this involves system IPC calls that can ocassionally be slow, it should be called on a background thread to avoid blocking the main (UI) thread.
     }
 
     @Override
@@ -47,7 +58,7 @@ class InAppMessageService extends GcmTaskService {
         long millis = preferences.getLong("last_sync_time", 0L);
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
 
-        lastSyncTime = null;//to remove time filtering
+        //lastSyncTime = null;//to remove time filtering
         reqServ.readInAppMessages(mReadCallback, lastSyncTime);
 
         return GcmNetworkManager.RESULT_SUCCESS;
@@ -80,12 +91,46 @@ class InAppMessageService extends GcmTaskService {
 
             InAppMessageService.this.storeLastSyncTime(inAppMessages);
 
-            Callable<List<InAppMessage>> task = new InAppContract.SaveInAppMessagesCallable(InAppMessageService.this, inAppMessages);
-            final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
 
+            Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(InAppMessageService.this, inAppMessages);
+            final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
+
+            List<InAppMessage> itemsToPresent;
+            List<Integer> deliveredIds;
+            try {
+                Pair<List<InAppMessage>, List<Integer>> p = future.get();
+                itemsToPresent = p.first;
+                deliveredIds = p.second;
+                Log.d("vlad", ""+itemsToPresent.size());
+            } catch (InterruptedException | ExecutionException ex) {
+                return;
+            }
+
+
+            this.trackDeliveredEvents(deliveredIds);
+
+
+            //here dont have all messages
             Log.d("vlad", "thread: "+Thread.currentThread().getName());
-            InAppMessagePresenter.getInstance().presentMessages(future);//TODO: can multiple threads call this simultaneously?
+            InAppMessagePresenter.getInstance().presentMessages(itemsToPresent);//TODO: can multiple threads call this simultaneously?
 
+        }
+
+        private void trackDeliveredEvents( List<Integer> deliveredIds ){
+
+            JSONObject params = new JSONObject();
+
+            for (Integer deliveredId: deliveredIds){
+                try {
+                    params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
+                    params.put("id", deliveredId);
+
+                    Kumulos.trackEvent(InAppMessageService.this, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
+                }
+                catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         @Override

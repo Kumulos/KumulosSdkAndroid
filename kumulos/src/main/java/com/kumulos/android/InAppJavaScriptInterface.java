@@ -33,10 +33,10 @@ class InAppJavaScriptInterface {
 
         switch(messageType){
             case "READY":
-                mMessagePresenter.clientPresentMessage();
+                mMessagePresenter.clientReady();
                 return;
             case "MESSAGE_OPENED":
-                mMessagePresenter.trackMessageOpened();
+                mMessagePresenter.messageOpened();
                 return;
             case "MESSAGE_CLOSED":
                 mMessagePresenter.messageClosed();

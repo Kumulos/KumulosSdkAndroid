@@ -124,7 +124,7 @@ public final class Kumulos {
         //IN APP
         application.registerActivityLifecycleCallbacks(new InAppActivityLifecycleWatcher());
         InAppMessageService ims = new InAppMessageService();
-        ims.startPeriodicFetches();
+        ims.startPeriodicFetches(application);
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);

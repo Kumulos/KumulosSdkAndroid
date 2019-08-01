@@ -4,10 +4,13 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCallbacks{
@@ -38,8 +41,15 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
             Callable<List<InAppMessage>> task = new InAppContract.ReadInAppMessagesCallable(activity);
             final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
 
+            List<InAppMessage> itemsToPresent;
+            try {
+                itemsToPresent = future.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                return;
+            }
+
             Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
-            InAppMessagePresenter.getInstance().presentMessages(future);//TODO: can multiple threads call this simultaneously?
+            InAppMessagePresenter.getInstance().presentMessages(itemsToPresent);//TODO: can multiple threads call this simultaneously?
         }
         numStarted++;
     }

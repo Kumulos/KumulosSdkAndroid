@@ -47,23 +47,13 @@ class InAppMessagePresenter {
         return messagePresenter;
     }
 
-    void presentMessages(Future<List<InAppMessage>> future){
-
-
-
-        List<InAppMessage> itemsToPresent = new ArrayList<>();
-        try {
-            itemsToPresent = future.get();
-            Log.d("vlad", ""+itemsToPresent.size());
-        } catch (InterruptedException | ExecutionException ex) {
-            return;
-        }
+    void presentMessages(List<InAppMessage> itemsToPresent){
 
         if (itemsToPresent.isEmpty()){
             return;
         }
 
-        currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
+        currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();//TODO: ensure weak ref used properly
 
         if (currentActivityRef != null){
             messageQueue.addAll(itemsToPresent);
@@ -74,8 +64,12 @@ class InAppMessagePresenter {
 
     }
 
-    void clientPresentMessage(){//java bridge thread
-        Log.d("vlad","clientPresentMessage");
+    void clientReady(){//java bridge thread
+        this.presentMessageToClient();
+    }
+
+    private void presentMessageToClient(){
+        Log.d("vlad","presentMessageToClient");
         if (messageQueue.isEmpty()){
             this.closeDialog();
             return;
@@ -87,36 +81,36 @@ class InAppMessagePresenter {
         this.sendToClient("PRESENT_MESSAGE", message.getContent());
     }
 
-
-
-    void trackMessageOpened(){//java bridge thread
-        Log.d("vlad","trackMessageOpened");
+    void messageOpened(){//java bridge thread
+        Log.d("vlad","messageOpened");
 
         this.setSpinnerVisibility(View.GONE);
 
         InAppMessage message = messageQueue.get(0);
-
         messageQueue.remove(0);
 
-        Date now = new Date();
-        message.setOpenedAt(now);
+        this.updateOpenedAt(message);
 
+        this.trackOpenedEvent(message.getInAppId());
+    }
+
+    private void updateOpenedAt(InAppMessage message){
+        message.setOpenedAt(new Date());
         Runnable task = new InAppContract.TrackMessageOpenedRunnable(currentActivityRef.get(), message);
         Kumulos.executorService.submit(task);
+    }
 
-        //TODO: track opened event
-//        JSONObject params = new JSONObject();
-//
-//        try {
-//            params.put("localNumber", AuthContext.getInstance().getLocalNumber());
-//
-//            String eventType = EventType.EVENT_ADDED.getRawValue();
-//
-//            com.kumulos.android.Kumulos.trackEvent(context, eventType, params);
-//        }
-//        catch (JSONException e) {
-//            e.printStackTrace();
-//        }
+    private void trackOpenedEvent(int id){
+        JSONObject params = new JSONObject();
+        try {
+            params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
+            params.put("id", id);
+
+            Kumulos.trackEvent(currentActivityRef.get(), InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     void messageClosed(){//java bridge thread
@@ -129,7 +123,7 @@ class InAppMessagePresenter {
             return;
         }
 
-        this.clientPresentMessage();
+        this.presentMessageToClient();
     }
 
     private void setSpinnerVisibility(int visibility){
