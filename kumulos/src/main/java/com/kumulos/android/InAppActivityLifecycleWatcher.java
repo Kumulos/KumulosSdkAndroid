@@ -38,15 +38,8 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
         if (numStarted == 0) {
             Log.d("vlad", "app goes fg!!!");
 
-            Callable<List<InAppMessage>> task = new InAppContract.ReadInAppMessagesCallable(activity);
-            final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
-
-            List<InAppMessage> itemsToPresent;
-            try {
-                itemsToPresent = future.get();
-            } catch (InterruptedException | ExecutionException ex) {
-                return;
-            }
+            InAppMessageService ims = new InAppMessageService(activity);
+            List<InAppMessage> itemsToPresent = ims.readMessages();
 
             Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
             InAppMessagePresenter.getInstance().presentMessages(itemsToPresent);//TODO: can multiple threads call this simultaneously?

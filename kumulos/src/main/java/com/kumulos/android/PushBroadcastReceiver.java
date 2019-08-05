@@ -121,8 +121,17 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         //IN-APP
+        Log.d("vlad", pushMessage.getData().toString());
+        //1) push tickle must have data (inAppId)
+        //2) sync when message is not present
 
-       // Log.d("vlad", pushMessage.getData().toString());
+
+        InAppMessageService ims = new InAppMessageService(context);
+        ims.handlePushOpen();
+
+        //3) show webview immediately, but with the spinner
+        //4) once sync finished, show all messages with the ONE being on top
+
 
         Intent launchIntent = getPushOpenActivityIntent(context, pushMessage);
 

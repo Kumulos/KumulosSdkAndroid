@@ -21,48 +21,59 @@ import android.util.Pair;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class InAppMessageService extends GcmTaskService {
+public class InAppMessageService {
 
     private InAppRequestService reqServ = new InAppRequestService();
     static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
-    static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
+    private static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
     static final int MESSAGE_TYPE_IN_APP = 2;
+    private Context mContext;
 
-
-    //https://stackoverflow.com/questions/31396499/gcm-network-manager-periodic-task-not-firing (check options)
-    void startPeriodicFetches(final Application application){
-        long periodSecs = 30L; // the task should be executed every 30 seconds
-        long flexSecs = 15L; // the task can run as early as -15 seconds from the scheduled time
-
-        String tag = "inapp-fetch";
-
-        PeriodicTask periodic = new PeriodicTask.Builder()
-                .setService(InAppMessageService.class)
-                .setPeriod(periodSecs)
-                .setFlex(flexSecs)
-                .setTag(tag)
-                .setPersisted(false)
-                .setRequiredNetwork(com.google.android.gms.gcm.Task.NETWORK_STATE_ANY)
-                .setRequiresCharging(false)
-                .setUpdateCurrent(true)
-                .build();
-
-        GcmNetworkManager.getInstance(application).schedule(periodic);//Since this involves system IPC calls that can ocassionally be slow, it should be called on a background thread to avoid blocking the main (UI) thread.
+    InAppMessageService(Context context){
+        mContext = context;
     }
 
-    @Override
-    public int onRunTask(TaskParams params) {//background thread
+    void fetch(){
         Log.d("vlad", "thread: "+Thread.currentThread().getName());
 
-        SharedPreferences preferences = this.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
+        SharedPreferences preferences = mContext.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
         long millis = preferences.getLong("last_sync_time", 0L);
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
 
         //lastSyncTime = null;//to remove time filtering
-        reqServ.readInAppMessages(this, mReadCallback, lastSyncTime);
 
-        return GcmNetworkManager.RESULT_SUCCESS;
+        //
+        reqServ.readInAppMessages(mContext, mReadCallback, lastSyncTime);
     }
+
+    void handlePushOpen(int inAppId){
+
+
+        List<InAppMessage> messages = this.readMessages();
+
+        //if in , present
+        //if not,
+
+    }
+
+    List<InAppMessage> readMessages(){
+
+        Callable<List<InAppMessage>> task = new InAppContract.ReadInAppMessagesCallable(mContext, );
+        final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
+
+        List<InAppMessage> itemsToPresent;
+        try {
+            itemsToPresent = future.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            return null;
+        }
+
+        return itemsToPresent;
+
+
+    }
+
+
 
     private void storeLastSyncTime(List<InAppMessage> inAppMessages){
 
@@ -75,7 +86,7 @@ public class InAppMessageService extends GcmTaskService {
             }
         }
 
-        SharedPreferences prefs = this.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = mContext.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putLong("last_sync_time", maxUpdatedAt.getTime());
         editor.apply();
@@ -92,7 +103,7 @@ public class InAppMessageService extends GcmTaskService {
             InAppMessageService.this.storeLastSyncTime(inAppMessages);
 
 
-            Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(InAppMessageService.this, inAppMessages);
+            Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(mContext, inAppMessages);
             final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
 
             List<InAppMessage> itemsToPresent;
@@ -106,12 +117,11 @@ public class InAppMessageService extends GcmTaskService {
                 return;
             }
 
-
             this.trackDeliveredEvents(deliveredIds);
 
-
-            //here dont have all messages
             Log.d("vlad", "thread: "+Thread.currentThread().getName());
+
+            //filter
             InAppMessagePresenter.getInstance().presentMessages(itemsToPresent);//TODO: can multiple threads call this simultaneously?
 
         }
@@ -125,7 +135,7 @@ public class InAppMessageService extends GcmTaskService {
                     params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
                     params.put("id", deliveredId);
 
-                    Kumulos.trackEvent(InAppMessageService.this, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
+                    Kumulos.trackEvent(mContext, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
                 }
                 catch (JSONException e) {
                     e.printStackTrace();
