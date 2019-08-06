@@ -6,6 +6,8 @@ import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.GcmTaskService;
 import com.google.android.gms.gcm.TaskParams;
 
+import okio.Timeout;
+
 public class AnalyticsUploadService extends GcmTaskService {
 
     static final String TAG = AnalyticsUploadService.class.getName();
@@ -22,7 +24,7 @@ public class AnalyticsUploadService extends GcmTaskService {
         }
 
         AnalyticsUploadHelper helper = new AnalyticsUploadHelper();
-        AnalyticsUploadHelper.Result result = helper.flushEvents(this);
+        AnalyticsUploadHelper.Result result = helper.flushEvents(this);//TODO: java.io.InterruptedIOException: thread interrupted 2019-08-06 15:11:04.404 7236-8324/com.example.sdktestapp W/System.err:     at okio.Timeout.throwIfReached(Timeout.java:145)
 
         if (result == AnalyticsUploadHelper.Result.FAILED_RETRY_LATER) {
             return GcmNetworkManager.RESULT_RESCHEDULE;

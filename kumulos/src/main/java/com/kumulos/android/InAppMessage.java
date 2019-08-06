@@ -90,4 +90,8 @@ class InAppMessage {
     void setOpenedAt(Date openedAt){
        this.openedAt = openedAt;
     }
+
+    void setPresentedWhen(String presentedWhen){
+        this.presentedWhen = presentedWhen;
+    }
 }

@@ -24,7 +24,7 @@
         </activity>
 
 
-        <service android:name="com.kumulos.android.InAppMessageService"
+        <service android:name="com.kumulos.android.InAppTaskService"
             android:exported="true"
             android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
             <intent-filter>

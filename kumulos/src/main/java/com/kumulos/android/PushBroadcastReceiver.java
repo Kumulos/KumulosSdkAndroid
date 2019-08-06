@@ -14,6 +14,9 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class PushBroadcastReceiver extends BroadcastReceiver {
 
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -22,6 +25,52 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
 
     private static final String DEFAULT_CHANNEL_ID = "general";
+
+    private void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
+
+        //TODO: if in-app not enabled, return
+
+        Integer tickleId = this.getTickleId(pushMessage);
+        if (tickleId == null){
+            return;
+        }
+
+        new InAppMessageService(context).fetch(tickleId);
+    }
+
+    private void maybeAddTickleIdExtra(PushMessage pushMessage, Intent launchIntent){
+
+        //TODO: if in-app not enabled, return
+
+        Integer tickleId = this.getTickleId(pushMessage);
+        if (tickleId == null){
+            return;
+        }
+
+        launchIntent.putExtra("k.tickleId", tickleId);
+    }
+
+    private Integer getTickleId(PushMessage pushMessage){
+        JSONObject deepLink = pushMessage.getData().optJSONObject("k.deeplink");
+
+        if (deepLink == null){
+            return null;
+        }
+
+        int linkType = deepLink.optInt("type", -1);
+
+        if (linkType != 1){//TODO: 1 -> inapp
+            return null;
+        }
+
+        try{
+            return deepLink.getJSONObject("data").getInt("id");
+        }
+        catch(JSONException e){
+            Kumulos.log(TAG, e.toString());
+            return null;
+        }
+    }
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -42,6 +91,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
+
+
+
+
     /**
      * Handles showing a notification in the notification drawer when a content push is received.
      *
@@ -51,6 +104,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      */
     protected void onPushReceived(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push received");
+
+        this.maybeTriggerInAppSync(context, pushMessage);
 
         if (pushMessage.runBackgroundHandler()) {
             this.runBackgroundHandler(context, pushMessage);
@@ -103,6 +158,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             }
     }
 
+
+
     /**
      * Handles launching the Activity specified by the {#getPushOpenActivityIntent} method when a push
      * notification is opened from the notifications drawer.
@@ -119,19 +176,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         } catch (Kumulos.UninitializedException e) {
             Kumulos.log(TAG, "Failed to track the push opening -- Kumulos is not initialised.");
         }
-
-        //IN-APP
-        Log.d("vlad", pushMessage.getData().toString());
-        //1) push tickle must have data (inAppId)
-        //2) sync when message is not present
-
-
-        InAppMessageService ims = new InAppMessageService(context);
-        ims.handlePushOpen();
-
-        //3) show webview immediately, but with the spinner
-        //4) once sync finished, show all messages with the ONE being on top
-
 
         Intent launchIntent = getPushOpenActivityIntent(context, pushMessage);
 
@@ -161,6 +205,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             launchIntent = new Intent(Intent.ACTION_VIEW, pushMessage.getUrl());
         }
 
+        this.maybeAddTickleIdExtra(pushMessage, launchIntent);
+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
             taskStackBuilder.addParentStack(component);
@@ -173,6 +220,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(launchIntent);
     }
+
+
 
     /**
      * Builds the notification shown in the notification drawer when a content push is received.

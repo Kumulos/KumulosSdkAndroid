@@ -2,6 +2,7 @@ package com.kumulos.android;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Pair;
@@ -19,7 +20,12 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
     static WeakReference<Activity> getCurrentActivity() {
         return currentActivity;
     }
-    private int numStarted = 0;
+    private static int numStarted = 0;
+
+
+    static boolean isBackground(){
+        return numStarted == 0;
+    }
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
@@ -28,23 +34,33 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
 
     @Override
     public void onActivityDestroyed(Activity activity) {
-        if (currentActivity != null && currentActivity.get().hashCode() == activity.hashCode()) {
+        if (currentActivity != null && currentActivity.get().hashCode() == activity.hashCode()) {Log.d("vlad", "current activity is null!!!");
             currentActivity = null;
         }
     }
 
     @Override
     public void onActivityStarted(Activity activity) {
+        Log.d("vlad", "activity started");
+
+        //TODO: if activity has tickleId, readMessages(tickleId)
         if (numStarted == 0) {
             Log.d("vlad", "app goes fg!!!");
 
             InAppMessageService ims = new InAppMessageService(activity);
-            List<InAppMessage> itemsToPresent = ims.readMessages();
+            ims.readMessages(this.getTickleId(activity));
 
             Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
-            InAppMessagePresenter.getInstance().presentMessages(itemsToPresent);//TODO: can multiple threads call this simultaneously?
+
         }
         numStarted++;
+    }
+
+    private Integer getTickleId(Activity activity){
+        Intent i = activity.getIntent();
+        int tickleIdExtra = i.getIntExtra("k.tickleId", -1);
+        Log.d("vlad", "tickleId extra: "+ tickleIdExtra);
+        return tickleIdExtra == -1 ? null : tickleIdExtra;
     }
 
     @Override

@@ -82,62 +82,7 @@ class InAppContract {
     }
 
 
-    static class ReadInAppMessagesForTickleCallable implements Callable<List<InAppMessage>> {
 
-        private static final String TAG = ReadInAppMessagesCallable.class.getName();
-
-        private Context mContext;
-        private int mMessageId;
-
-        ReadInAppMessagesForTickleCallable(Context context, int messageId) {
-            mContext = context.getApplicationContext();
-            mMessageId = messageId;
-        }
-
-        @Override
-        public List<InAppMessage> call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
-            List<InAppMessage> itemsToPresent = new ArrayList<>();
-            try {
-
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
-
-                //READ all messages not shown before
-                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = "("+InAppMessageTable.COL_PRESENTED_WHEN + " = ? OR "+InAppMessageTable.COL_PRESENTED_WHEN + " = ? OR ("+InAppMessageTable.COL_PRESENTED_WHEN+" = ? AND "+InAppMessageTable.COL_ID+" = ?)) AND "+ InAppMessageTable.COL_OPENED_AT+ " IS NULL";
-                String[] selectionArgs = { "immediately", "next-open", "never",  ""+mMessageId};
-
-
-
-
-                String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
-
-                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, sortOrder);
-
-                while(cursor.moveToNext()) {
-                    int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
-                    String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
-                    InAppMessage m = new InAppMessage();
-                    m.setInAppId(inAppId);
-                    m.setContent(new JSONObject(content));
-                    itemsToPresent.add(m);
-                }
-                cursor.close();
-
-                dbHelper.close();
-            }
-            catch (SQLiteException e) {
-                e.printStackTrace();
-            }
-            catch(Exception e){
-                Kumulos.log(TAG, e.getMessage());
-            }
-
-            return itemsToPresent;
-
-        }
-    }
 
 
     static class ReadInAppMessagesCallable implements Callable<List<InAppMessage>> {
@@ -160,19 +105,20 @@ class InAppContract {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 //READ all messages not shown before
-                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = "("+InAppMessageTable.COL_PRESENTED_WHEN + " = ? OR "+InAppMessageTable.COL_PRESENTED_WHEN + " = ? ) AND "+ InAppMessageTable.COL_OPENED_AT+ " IS NULL";
-                String[] selectionArgs = { "immediately", "next-open" };
+                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
+                String selection = InAppMessageTable.COL_OPENED_AT+ " IS NULL";
                 String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
-                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, sortOrder);
+                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
 
                 while(cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                     String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
+                    String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_PRESENTED_WHEN));
                     InAppMessage m = new InAppMessage();
                     m.setInAppId(inAppId);
                     m.setContent(new JSONObject(content));
+                    m.setPresentedWhen(presentedWhen);
                     itemsToPresent.add(m);
                 }
                 cursor.close();
@@ -267,19 +213,19 @@ class InAppContract {
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
 
-            String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};//
-
-            String selection = InAppMessageTable.COL_PRESENTED_WHEN + " = ? AND "+ InAppMessageTable.COL_OPENED_AT+ " IS NULL";//!!!!!
-            String[] selectionArgs = { "immediately" };//!!!
+            String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
+            String selection = InAppMessageTable.COL_OPENED_AT+ " IS NULL";
             String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
-            Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, sortOrder);
+            Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
 
             while(cursor.moveToNext()) {
                 int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                 String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
+                String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_PRESENTED_WHEN));
                 InAppMessage m = new InAppMessage();
                 m.setInAppId(inAppId);
+                m.setPresentedWhen(presentedWhen);
 
                 try{
                     m.setContent(new JSONObject(content));

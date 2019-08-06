@@ -47,7 +47,7 @@ class InAppMessagePresenter {
         return messagePresenter;
     }
 
-    void presentMessages(List<InAppMessage> itemsToPresent){
+    void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
 
         if (itemsToPresent.isEmpty()){
             return;
@@ -55,14 +55,67 @@ class InAppMessagePresenter {
 
         currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();//TODO: ensure weak ref used properly
 
-        if (currentActivityRef != null){
-            messageQueue.addAll(itemsToPresent);
-            if (dialog == null){
-                this.showWebView(currentActivityRef.get());
-            }
+        if (currentActivityRef == null) {
+            return;
         }
 
+        List<InAppMessage> oldQueue = new ArrayList<InAppMessage>(messageQueue);
+
+        this.addMessagesToQueue(itemsToPresent);
+        this.moveTickleToFront(tickleId);
+
+        if (dialog == null){
+            this.showWebView(currentActivityRef.get());
+            return;
+        }
+
+        this.maybeRefreshFirstMessageInQueue(oldQueue);
     }
+
+    private void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue){
+        if (oldQueue.isEmpty()){
+            return;
+        }
+
+        InAppMessage oldFront = oldQueue.get(0);
+
+        if (oldFront.getInAppId() != messageQueue.get(0).getInAppId()){
+            this.presentMessageToClient();
+        }
+    }
+
+    private void moveTickleToFront(Integer tickleId){
+        if (tickleId == null){
+            return;
+        }
+
+        for(int i=0; i<messageQueue.size(); i++){
+            InAppMessage next = messageQueue.get(i);
+            if (tickleId == next.getInAppId()){
+                messageQueue.remove(i);
+                messageQueue.add(0, next);
+
+                return;
+            }
+        }
+    }
+
+    private void addMessagesToQueue(List<InAppMessage> itemsToPresent){
+        for(InAppMessage messageToAppend: itemsToPresent){
+            boolean exists = false;
+            for (InAppMessage messageFromQueue: messageQueue){
+                if (messageToAppend.getInAppId() == messageFromQueue.getInAppId()){
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists){
+                messageQueue.add(messageToAppend);
+            }
+        }
+    }
+
 
     void clientReady(){//java bridge thread
         this.presentMessageToClient();
@@ -85,13 +138,6 @@ class InAppMessagePresenter {
         Log.d("vlad","messageOpened");
 
         this.setSpinnerVisibility(View.GONE);
-
-        InAppMessage message = messageQueue.get(0);
-        messageQueue.remove(0);
-
-        this.updateOpenedAt(message);
-
-        this.trackOpenedEvent(message.getInAppId());
     }
 
     private void updateOpenedAt(InAppMessage message){
@@ -117,6 +163,12 @@ class InAppMessagePresenter {
         if (dialog == null || wv == null){
             return;
         }
+
+        InAppMessage message = messageQueue.get(0);
+        messageQueue.remove(0);
+
+        this.updateOpenedAt(message);
+        this.trackOpenedEvent(message.getInAppId());
 
         if (messageQueue.isEmpty()){
             this.closeDialog();

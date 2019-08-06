@@ -12,7 +12,7 @@ import com.google.android.gms.gcm.TaskParams;
 
 import java.util.Date;
 
-class InAppTaskService extends GcmTaskService {
+public class InAppTaskService extends GcmTaskService {
 
     //https://stackoverflow.com/questions/31396499/gcm-network-manager-periodic-task-not-firing (check options)
     void startPeriodicFetches(final Application application){
@@ -37,11 +37,9 @@ class InAppTaskService extends GcmTaskService {
 
     @Override
     public int onRunTask(TaskParams params) {//background thread
-
+Log.d("vlad", "TASK RUN");
         InAppMessageService s = new InAppMessageService(this);
-
-        s.fetch();
-
+        s.fetch(null);
         return GcmNetworkManager.RESULT_SUCCESS;
     }
 }
