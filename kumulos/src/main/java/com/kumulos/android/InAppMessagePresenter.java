@@ -170,6 +170,8 @@ class InAppMessagePresenter {
         this.updateOpenedAt(message);
         this.trackOpenedEvent(message.getInAppId());
 
+        //TODO: clear notification
+
         if (messageQueue.isEmpty()){
             this.closeDialog();
             return;

@@ -49,17 +49,8 @@ class InAppMessageService {
         reqServ.readInAppMessages(mContext, callback, lastSyncTime);
     }
 
-//    void handlePushOpen(int inAppId){
-//
-//
-//        List<InAppMessage> messages = this.readMessages();
-//
-//        //if in , present
-//        //if not,
-//
-//    }
 
-    List<InAppMessage> readMessages(Integer tickleId){
+    void readMessages(boolean fromBackground, Integer tickleId){
 
         Callable<List<InAppMessage>> task = new InAppContract.ReadInAppMessagesCallable(mContext);
         final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
@@ -68,17 +59,17 @@ class InAppMessageService {
         try {
             unreadMessages = future.get();
         } catch (InterruptedException | ExecutionException ex) {
-            return null;
+            return;
         }
 
-
-
+        if (tickleId != null) {
+            Log.d("vlad", "readMessages with tickle id : " + tickleId);
+        }
 
 
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         for(InAppMessage message: unreadMessages){
-            //TODO: nextOpen not shown when
-            if (message.getPresentedWhen().equals("immediately") || message.getPresentedWhen().equals("next-open") || Integer.valueOf(message.getInAppId()).equals(tickleId)){
+            if (message.getPresentedWhen().equals("immediately") || (fromBackground && message.getPresentedWhen().equals("next-open")) || Integer.valueOf(message.getInAppId()).equals(tickleId)){
                 itemsToPresent.add(message);
             }
         }
@@ -87,7 +78,7 @@ class InAppMessageService {
 
         InAppMessagePresenter.getInstance().presentMessages(itemsToPresent, tickleId);//TODO: can multiple threads call this simultaneously?
 
-        return itemsToPresent;
+
 
 
     }

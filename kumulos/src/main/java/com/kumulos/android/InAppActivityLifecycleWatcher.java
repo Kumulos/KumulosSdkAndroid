@@ -43,23 +43,23 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
     public void onActivityStarted(Activity activity) {
         Log.d("vlad", "activity started");
 
-        //TODO: if activity has tickleId, readMessages(tickleId)
-        if (numStarted == 0) {
-            Log.d("vlad", "app goes fg!!!");
+        Integer tickleId = this.getTickleId(activity);
+        if (isBackground() || tickleId != null) {
+            Log.d("vlad", isBackground() ? "onActivityStarted: app goes fg!!!" : "onActivityStarted: tickleId "+ tickleId);
 
-            InAppMessageService ims = new InAppMessageService(activity);
-            ims.readMessages(this.getTickleId(activity));
+            new InAppMessageService(activity).readMessages(isBackground(), tickleId);
 
             Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
 
         }
+
         numStarted++;
     }
+
 
     private Integer getTickleId(Activity activity){
         Intent i = activity.getIntent();
         int tickleIdExtra = i.getIntExtra("k.tickleId", -1);
-        Log.d("vlad", "tickleId extra: "+ tickleIdExtra);
         return tickleIdExtra == -1 ? null : tickleIdExtra;
     }
 
