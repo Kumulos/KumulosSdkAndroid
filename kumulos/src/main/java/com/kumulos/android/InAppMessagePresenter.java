@@ -2,6 +2,7 @@ package com.kumulos.android;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
@@ -30,30 +31,20 @@ import java.util.concurrent.Future;
 class InAppMessagePresenter {
 
     private static final String TAG = InAppMessagePresenter.class.getName();
-    private Handler mHandler = new Handler(Looper.getMainLooper());
-    private List<InAppMessage> messageQueue = new ArrayList<>();
-    private WebView wv = null;
-    private Dialog dialog = null;
-    private ProgressBar spinner = null;
-    private WeakReference<Activity> currentActivityRef;
 
-    private static InAppMessagePresenter messagePresenter;
+    //TODO: these should be set to null when closeDialog. Fine?
+    private static List<InAppMessage> messageQueue = new ArrayList<>();
+    private static WebView wv = null;
+    private static Dialog dialog = null;
+    private static ProgressBar spinner = null;
 
-    //TODO: thread safety
-    static InAppMessagePresenter getInstance() {
-        if (messagePresenter == null) {
-            messagePresenter = new InAppMessagePresenter();
-        }
-        return messagePresenter;
-    }
-
-    void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
+    static void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
 
         if (itemsToPresent.isEmpty()){
             return;
         }
 
-        currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();//TODO: ensure weak ref used properly
+        WeakReference<Activity> currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
 
         if (currentActivityRef == null) {
             return;
@@ -61,18 +52,18 @@ class InAppMessagePresenter {
 
         List<InAppMessage> oldQueue = new ArrayList<InAppMessage>(messageQueue);
 
-        this.addMessagesToQueue(itemsToPresent);
-        this.moveTickleToFront(tickleId);
+        addMessagesToQueue(itemsToPresent);
+        moveTickleToFront(tickleId);
 
         if (dialog == null){
-            this.showWebView(currentActivityRef.get());
+            showWebView(currentActivityRef.get());
             return;
         }
 
-        this.maybeRefreshFirstMessageInQueue(oldQueue);
+        maybeRefreshFirstMessageInQueue(oldQueue);
     }
 
-    private void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue){
+    private static void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue){
         if (oldQueue.isEmpty()){
             return;
         }
@@ -80,11 +71,11 @@ class InAppMessagePresenter {
         InAppMessage oldFront = oldQueue.get(0);
 
         if (oldFront.getInAppId() != messageQueue.get(0).getInAppId()){
-            this.presentMessageToClient();
+            presentMessageToClient();
         }
     }
 
-    private void moveTickleToFront(Integer tickleId){
+    private static void moveTickleToFront(Integer tickleId){
         if (tickleId == null){
             return;
         }
@@ -100,7 +91,7 @@ class InAppMessagePresenter {
         }
     }
 
-    private void addMessagesToQueue(List<InAppMessage> itemsToPresent){
+    private static void addMessagesToQueue(List<InAppMessage> itemsToPresent){
         for(InAppMessage messageToAppend: itemsToPresent){
             boolean exists = false;
             for (InAppMessage messageFromQueue: messageQueue){
@@ -117,49 +108,30 @@ class InAppMessagePresenter {
     }
 
 
-    void clientReady(){//java bridge thread
-        this.presentMessageToClient();
+    static void clientReady(){//java bridge thread
+        presentMessageToClient();
     }
 
-    private void presentMessageToClient(){
+    private static void presentMessageToClient(){
         Log.d("vlad","presentMessageToClient");
         if (messageQueue.isEmpty()){
-            this.closeDialog();
+            closeDialog();
             return;
         }
 
-        this.setSpinnerVisibility(View.VISIBLE);
+        setSpinnerVisibility(View.VISIBLE);
 
         InAppMessage message = messageQueue.get(0);
-        this.sendToClient("PRESENT_MESSAGE", message.getContent());
+        sendToClient("PRESENT_MESSAGE", message.getContent());
     }
 
-    void messageOpened(){//java bridge thread
+    static void messageOpened(){//java bridge thread
         Log.d("vlad","messageOpened");
 
-        this.setSpinnerVisibility(View.GONE);
+        setSpinnerVisibility(View.GONE);
     }
 
-    private void updateOpenedAt(InAppMessage message){
-        message.setOpenedAt(new Date());
-        Runnable task = new InAppContract.TrackMessageOpenedRunnable(currentActivityRef.get(), message);
-        Kumulos.executorService.submit(task);
-    }
-
-    private void trackOpenedEvent(int id){
-        JSONObject params = new JSONObject();
-        try {
-            params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
-            params.put("id", id);
-
-            Kumulos.trackEvent(currentActivityRef.get(), InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void messageClosed(){//java bridge thread
+    static void messageClosed(){//java bridge thread
         if (dialog == null || wv == null){
             return;
         }
@@ -167,20 +139,14 @@ class InAppMessagePresenter {
         InAppMessage message = messageQueue.get(0);
         messageQueue.remove(0);
 
-        this.updateOpenedAt(message);
-        this.trackOpenedEvent(message.getInAppId());
+        InAppMessageService.handleMessageClosed(message);
 
-        //TODO: clear notification
-
-        if (messageQueue.isEmpty()){
-            this.closeDialog();
-            return;
-        }
-
-        this.presentMessageToClient();
+        presentMessageToClient();
     }
 
-    private void setSpinnerVisibility(int visibility){
+
+
+    private static void setSpinnerVisibility(int visibility){
         wv.post(new Runnable() {
             @Override
             public void run() {
@@ -189,7 +155,7 @@ class InAppMessagePresenter {
         });
     }
 
-    private void sendToClient(String type, JSONObject data){
+    private static void sendToClient(String type, JSONObject data){
         if (wv == null){
             return;
         }
@@ -220,14 +186,15 @@ class InAppMessagePresenter {
 
 
 
-    private void closeDialog(){
+    private static void closeDialog(){
         dialog.dismiss();
         dialog = null;
         wv = null;
         spinner = null;
     }
 
-    private void showWebView(Activity currentActivity){
+    private static void showWebView(Activity currentActivity){
+        Handler mHandler = new Handler(Looper.getMainLooper());
         mHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -248,7 +215,7 @@ class InAppMessagePresenter {
                             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
                                 Log.d("vlad", "back button pressed");
 
-                                InAppMessagePresenter.this.sendToClient("CLOSE_MESSAGE", null);
+                                InAppMessagePresenter.sendToClient("CLOSE_MESSAGE", null);
                             }
                             return true;
                         }
@@ -262,7 +229,7 @@ class InAppMessagePresenter {
                     wv.getSettings().setCacheMode(android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK);
                     wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     wv.getSettings().setJavaScriptEnabled(true);
-                    wv.addJavascriptInterface(new InAppJavaScriptInterface(currentActivity, InAppMessagePresenter.this), "Android");
+                    wv.addJavascriptInterface(new InAppJavaScriptInterface(currentActivity), "Android");
 
                     wv.setWebViewClient(new WebViewClient() {
 

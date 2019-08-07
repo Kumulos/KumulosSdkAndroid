@@ -47,7 +47,7 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
         if (isBackground() || tickleId != null) {
             Log.d("vlad", isBackground() ? "onActivityStarted: app goes fg!!!" : "onActivityStarted: tickleId "+ tickleId);
 
-            new InAppMessageService(activity).readMessages(isBackground(), tickleId);
+            InAppMessageService.readMessages(activity, isBackground(), tickleId);
 
             Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
 

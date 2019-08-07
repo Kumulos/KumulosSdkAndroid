@@ -8,12 +8,9 @@ import org.json.JSONObject;
 
 class InAppJavaScriptInterface {
 
-    private InAppMessagePresenter mMessagePresenter;
-
     private static final String TAG = InAppJavaScriptInterface.class.getName();
 
-    InAppJavaScriptInterface(Context c, InAppMessagePresenter messagePresenter) {
-        mMessagePresenter = messagePresenter;
+    InAppJavaScriptInterface(Context c) {
     }
 
     @JavascriptInterface
@@ -33,13 +30,13 @@ class InAppJavaScriptInterface {
 
         switch(messageType){
             case "READY":
-                mMessagePresenter.clientReady();
+                InAppMessagePresenter.clientReady();
                 return;
             case "MESSAGE_OPENED":
-                mMessagePresenter.messageOpened();
+                InAppMessagePresenter.messageOpened();
                 return;
             case "MESSAGE_CLOSED":
-                mMessagePresenter.messageClosed();
+                InAppMessagePresenter.messageClosed();
                 return;
             default:
                 Log.d(TAG, "Unknown message type: "+messageType);

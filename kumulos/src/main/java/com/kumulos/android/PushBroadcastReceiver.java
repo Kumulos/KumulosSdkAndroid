@@ -35,7 +35,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        new InAppMessageService(context).fetch(tickleId);
+        InAppMessageService.fetch(context, tickleId);
     }
 
     private void maybeAddTickleIdExtra(PushMessage pushMessage, Intent launchIntent){
@@ -129,33 +129,41 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        // TODO fix this in 2038 when we run out of time
-        notificationManager.notify((int) pushMessage.getTimeSent(), notification);
+        notificationManager.notify("kumulos", this.getNotificationId(pushMessage) , notification);
+    }
+
+    private int getNotificationId(PushMessage pushMessage){
+        Integer tickleId = getTickleId(pushMessage);
+        if (tickleId == null){
+            // TODO fix this in 2038 when we run out of time
+            return (int) pushMessage.getTimeSent();
+        }
+        return tickleId;
     }
 
     private void runBackgroundHandler(Context context, PushMessage pushMessage){
-            Intent serviceIntent = getBackgroundPushServiceIntent(context, pushMessage);
+        Intent serviceIntent = getBackgroundPushServiceIntent(context, pushMessage);
 
-            if (null == serviceIntent) {
-                return;
-            }
+        if (null == serviceIntent) {
+            return;
+        }
 
-            ComponentName component = serviceIntent.getComponent();
-            if (null == component) {
-                Kumulos.log(TAG, "Service intent did not specify a component, ignoring.");
-                return;
-            }
+        ComponentName component = serviceIntent.getComponent();
+        if (null == component) {
+            Kumulos.log(TAG, "Service intent did not specify a component, ignoring.");
+            return;
+        }
 
-            Class<? extends Service> cls = null;
-            try {
-                cls = (Class<? extends Service>) Class.forName(component.getClassName());
-            } catch (ClassNotFoundException e) {
-                Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
-            }
+        Class<? extends Service> cls = null;
+        try {
+            cls = (Class<? extends Service>) Class.forName(component.getClassName());
+        } catch (ClassNotFoundException e) {
+            Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
+        }
 
-            if (null != cls) {
-                context.startService(serviceIntent);
-            }
+        if (null != cls) {
+            context.startService(serviceIntent);
+        }
     }
 
 

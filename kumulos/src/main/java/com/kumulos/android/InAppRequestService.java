@@ -36,7 +36,7 @@ class InAppRequestService {
         }
     }
 
-    void readInAppMessages(Context c, final Kumulos.ResultCallback<List<InAppMessage>> callback, Date lastSyncTime) {
+    static void readInAppMessages(Context c, final Kumulos.ResultCallback<List<InAppMessage>> callback, Date lastSyncTime) {
         OkHttpClient httpClient;
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 

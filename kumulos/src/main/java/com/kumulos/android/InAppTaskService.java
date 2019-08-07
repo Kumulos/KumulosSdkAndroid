@@ -37,9 +37,8 @@ public class InAppTaskService extends GcmTaskService {
 
     @Override
     public int onRunTask(TaskParams params) {//background thread
-Log.d("vlad", "TASK RUN");
-        InAppMessageService s = new InAppMessageService(this);
-        s.fetch(null);
+        Log.d("vlad", "TASK RUN");
+        InAppMessageService.fetch(this, null);
         return GcmNetworkManager.RESULT_SUCCESS;
     }
 }

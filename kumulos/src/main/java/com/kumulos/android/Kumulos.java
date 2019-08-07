@@ -69,7 +69,7 @@ public final class Kumulos {
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
-
+    static Context applicationContext;
 
 
     /** package */ static class BaseCallback {
@@ -106,6 +106,8 @@ public final class Kumulos {
             log("Kumulos is already initialized, aborting...");
             return;
         }
+
+        applicationContext = application.getApplicationContext();
 
         currentConfig = config;
 
@@ -383,7 +385,7 @@ public final class Kumulos {
         trackEvent(context, eventType, properties, System.currentTimeMillis(), false);
     }
 
-     /**
+    /**
      * Tracks a custom analytics event with Kumulos.
      *
      * After being recorded locally, all stored events will be flushed to the server.

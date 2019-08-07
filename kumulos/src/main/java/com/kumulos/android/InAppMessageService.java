@@ -1,14 +1,9 @@
 package com.kumulos.android;
 
-import android.app.Application;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
-
-import com.google.android.gms.gcm.GcmNetworkManager;
-import com.google.android.gms.gcm.GcmTaskService;
-import com.google.android.gms.gcm.PeriodicTask;
-import com.google.android.gms.gcm.TaskParams;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -22,21 +17,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 class InAppMessageService {
-
-    private InAppRequestService reqServ = new InAppRequestService();
-    static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
+    private static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
     private static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
-    static final int MESSAGE_TYPE_IN_APP = 2;
-    private Context mContext;
+    private static final int MESSAGE_TYPE_IN_APP = 2;
 
-    InAppMessageService(Context context){
-        mContext = context;
-    }
-
-    void fetch(Integer tickleId){
+    static void fetch(Context context, Integer tickleId){
         Log.d("vlad", "thread: "+Thread.currentThread().getName());
 
-        SharedPreferences preferences = mContext.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
+        SharedPreferences preferences = context.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
         long millis = preferences.getLong("last_sync_time", 0L);
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
 
@@ -45,14 +33,15 @@ class InAppMessageService {
 
         int tiid = tickleId == null ? 0 : tickleId;
         Log.d("vlad", "fetch called!!! tickleId: "+tiid);
-        FetchCallback callback = new FetchCallback(tickleId);
-        reqServ.readInAppMessages(mContext, callback, lastSyncTime);
+
+        FetchCallback callback = new FetchCallback(context, tickleId);
+        InAppRequestService.readInAppMessages(context, callback, lastSyncTime);
     }
 
 
-    void readMessages(boolean fromBackground, Integer tickleId){
+    static void readMessages(Context context, boolean fromBackground, Integer tickleId){
 
-        Callable<List<InAppMessage>> task = new InAppContract.ReadInAppMessagesCallable(mContext);
+        Callable<List<InAppMessage>> task = new InAppContract.ReadInAppMessagesCallable(context);
         final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
 
         List<InAppMessage> unreadMessages;
@@ -76,17 +65,41 @@ class InAppMessageService {
 
         //TODO: if tickleId != null, and message with it not present, extra fetch
 
-        InAppMessagePresenter.getInstance().presentMessages(itemsToPresent, tickleId);//TODO: can multiple threads call this simultaneously?
+        InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);//TODO: can multiple threads call this simultaneously?
+    }
 
+    static void handleMessageClosed(InAppMessage message){
+        updateOpenedAt(message);
+        trackOpenedEvent(message.getInAppId());
+        clearNotification(message.getInAppId());
+    }
 
+    private static void updateOpenedAt(InAppMessage message){
+        message.setOpenedAt(new Date());
+        Runnable task = new InAppContract.TrackMessageOpenedRunnable(Kumulos.applicationContext, message);
+        Kumulos.executorService.submit(task);
+    }
 
+    private static void trackOpenedEvent(int id){
+        JSONObject params = new JSONObject();
+        try {
+            params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
+            params.put("id", id);
 
+            Kumulos.trackEvent(Kumulos.applicationContext, InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void clearNotification(int inAppId){
+        NotificationManager notificationManager = (NotificationManager) Kumulos.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel("kumulos", inAppId);
     }
 
 
-
-    private void storeLastSyncTime(List<InAppMessage> inAppMessages){
-
+    private static void storeLastSyncTime(Context context, List<InAppMessage> inAppMessages){
         Date maxUpdatedAt = inAppMessages.get(0).getUpdatedAt();
 
         for (int i=1; i<inAppMessages.size();i++){
@@ -96,24 +109,20 @@ class InAppMessageService {
             }
         }
 
-        SharedPreferences prefs = mContext.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putLong("last_sync_time", maxUpdatedAt.getTime());
         editor.apply();
     }
 
-    private boolean isBackground(){
-        return InAppActivityLifecycleWatcher.getCurrentActivity() == null;
-    }
-
-
-
-    private class FetchCallback extends Kumulos.ResultCallback<List<InAppMessage>> {
+    private static class FetchCallback extends Kumulos.ResultCallback<List<InAppMessage>> {
 
         Integer mTickleId;
+        Context mContext;
 
-        FetchCallback(Integer tickleId){
+        FetchCallback(Context context, Integer tickleId){
             this.mTickleId = tickleId;
+            this.mContext = context;
         }
 
         @Override
@@ -127,7 +136,7 @@ class InAppMessageService {
                 return;
             }
 
-            InAppMessageService.this.storeLastSyncTime(inAppMessages);
+            InAppMessageService.storeLastSyncTime(this.mContext, inAppMessages);
 
 
             Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(mContext, inAppMessages);
@@ -161,7 +170,7 @@ class InAppMessageService {
             }
             Log.d("vlad", "size to present: "+itemsToPresent.size());
 
-            InAppMessagePresenter.getInstance().presentMessages(itemsToPresent, mTickleId);//TODO: can multiple threads call this simultaneously?
+            InAppMessagePresenter.presentMessages(itemsToPresent, mTickleId);//TODO: can multiple threads call this simultaneously?
 
         }
 
@@ -174,7 +183,7 @@ class InAppMessageService {
                     params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
                     params.put("id", deliveredId);
 
-                    Kumulos.trackEvent(mContext, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
+                    Kumulos.trackEvent(Kumulos.applicationContext, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
                 }
                 catch (JSONException e) {
                     e.printStackTrace();
@@ -190,7 +199,6 @@ class InAppMessageService {
 
 
 }
-
 
 
 
