@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
@@ -247,7 +248,7 @@ class InAppMessagePresenter {
                     wv = (WebView) dialog.findViewById(R.id.webview);
                     spinner = dialog.findViewById(R.id.progressBar);
 
-                    wv.getSettings().setCacheMode(android.webkit.WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                    wv.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);//TODO: set when not developing renderer :) LOAD_CACHE_ELSE_NETWORK
                     wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     wv.getSettings().setJavaScriptEnabled(true);
                     wv.addJavascriptInterface(new InAppJavaScriptInterface(currentActivity), "Android");
@@ -277,6 +278,8 @@ class InAppMessagePresenter {
                         }
                     });
 
+
+                    //wv.loadUrl("https://iar.app.delivery");
                     wv.loadUrl("http://192.168.1.24:8080");
                 }
                 catch(Exception e){
