@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -39,7 +40,6 @@ class InAppMessagePresenter {
     private static ProgressBar spinner = null;
 
     static void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
-
         if (itemsToPresent.isEmpty()){
             return;
         }
@@ -56,6 +56,11 @@ class InAppMessagePresenter {
         moveTickleToFront(tickleId);
 
         if (dialog == null){
+            showWebView(currentActivityRef.get());
+            return;
+        }
+        else if( getDialogActivity(dialog.getContext()).hashCode() != currentActivityRef.get().hashCode()){
+            closeDialog();
             showWebView(currentActivityRef.get());
             return;
         }
@@ -184,7 +189,23 @@ class InAppMessagePresenter {
         });
     }
 
+    static void maybeCloseDialog(Activity stoppedActivity){
+        Activity dialogActivity = getDialogActivity(dialog.getContext());
+        if (stoppedActivity.hashCode() == dialogActivity.hashCode()){
+            closeDialog();
+        }
+    }
 
+    private static Activity getDialogActivity(Context cont) {
+        if (cont == null)
+            return null;
+        else if (cont instanceof Activity)
+            return (Activity)cont;
+        else if (cont instanceof ContextWrapper)
+            return getDialogActivity(((ContextWrapper)cont).getBaseContext());
+
+        return null;
+    }
 
     private static void closeDialog(){
         dialog.dismiss();

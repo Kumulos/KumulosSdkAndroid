@@ -5,14 +5,9 @@ import android.app.Application;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.Pair;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+
 
 class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCallbacks{
 
@@ -34,6 +29,9 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
 
     @Override
     public void onActivityDestroyed(Activity activity) {
+        Log.d("vlad", "activity destroyed");
+        InAppMessagePresenter.maybeCloseDialog(activity);
+
         if (currentActivity != null && currentActivity.get().hashCode() == activity.hashCode()) {Log.d("vlad", "current activity is null!!!");
             currentActivity = null;
         }
@@ -65,6 +63,9 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
 
     @Override
     public void onActivityStopped(Activity activity) {
+
+
+        Log.d("vlad", "activity stopped");
         numStarted--;
         if (numStarted == 0) {
             Log.d("vlad", "app goes bg!!!");
