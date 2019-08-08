@@ -63,10 +63,10 @@ class InAppJavaScriptInterface {
             switch(action.getType()){
                 case "subscribeToChannel":
                     PushSubscriptionManager psm = new PushSubscriptionManager();
-                    psm.subscribe(Kumulos.applicationContext, new String[]{action.getChannelUuid()});
+                    psm.subscribe(Kumulos.application, new String[]{action.getChannelUuid()});
                     break;
                 case "trackConversionEvent":
-                    Kumulos.trackEvent(Kumulos.applicationContext, action.getEventType(), new JSONObject());
+                    Kumulos.trackEvent(Kumulos.application, action.getEventType(), new JSONObject());
                     break;
                 case "openUrl":
                     if (currentActivityRef == null){

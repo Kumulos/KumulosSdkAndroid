@@ -31,12 +31,18 @@ public final class KumulosConfig {
     @DrawableRes
     private int notificationSmallIconId;
     private boolean crashReportingEnabled;
+    private InAppConsentStrategy inAppConsentStrategy;
     private int sessionIdleTimeoutSeconds;
 
     private JSONObject runtimeInfo;
     private JSONObject sdkInfo;
 
     private CoreConfigurationBuilder acraConfigBuilder;
+
+    public enum InAppConsentStrategy{
+        AUTO_ENROLL,
+        EXPLICIT_BY_USER
+    }
 
     // Private constructor to discourage not using the Builder.
     private KumulosConfig() {}
@@ -67,6 +73,11 @@ public final class KumulosConfig {
 
     private void setSdkInfo(JSONObject info) {
         this.sdkInfo = info;
+    }
+
+
+    private void setInAppConsentStrategy(InAppConsentStrategy strategy) {
+        this.inAppConsentStrategy = strategy;
     }
 
     public String getApiKey() {
@@ -103,6 +114,10 @@ public final class KumulosConfig {
         }
 
         return this.acraConfigBuilder;
+    }
+
+    InAppConsentStrategy getInAppConsentStrategy() {
+        return inAppConsentStrategy;
     }
 
     /** package */ Bundle toBundle() {
@@ -155,6 +170,7 @@ public final class KumulosConfig {
         @DrawableRes
         private int notificationSmallIconDrawableId = KumulosConfig.DEFAULT_NOTIFICATION_ICON_ID;
         private boolean enableCrashReporting = false;
+        private InAppConsentStrategy consentStrategy = null;
         private int sessionIdleTimeoutSeconds = KumulosConfig.DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS;
 
         private JSONObject runtimeInfo;
@@ -178,6 +194,11 @@ public final class KumulosConfig {
 
         public Builder enableCrashReporting() {
             this.enableCrashReporting = true;
+            return this;
+        }
+
+        public Builder enableInAppMessaging(InAppConsentStrategy strategy) {
+            this.consentStrategy = strategy;
             return this;
         }
 
@@ -222,6 +243,8 @@ public final class KumulosConfig {
             newConfig.setSessionIdleTimeoutSeconds(sessionIdleTimeoutSeconds);
             newConfig.setRuntimeInfo(this.runtimeInfo);
             newConfig.setSdkInfo(this.sdkInfo);
+
+            newConfig.setInAppConsentStrategy(consentStrategy);
 
             return newConfig;
         }

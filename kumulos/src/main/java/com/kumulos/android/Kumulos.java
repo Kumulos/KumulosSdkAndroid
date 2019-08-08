@@ -6,6 +6,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Debug;
 import android.os.Looper;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -69,8 +71,9 @@ public final class Kumulos {
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
-    static Context applicationContext;
-
+    static Application application;
+    private static InAppActivityLifecycleWatcher inAppActivityWatcher;
+    static InAppDeepLinkHandler inAppDeepLinkHandler = new InAppDeepLinkHandler();
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -107,7 +110,7 @@ public final class Kumulos {
             return;
         }
 
-        applicationContext = application.getApplicationContext();
+        Kumulos.application = application;
 
         currentConfig = config;
 
@@ -123,14 +126,11 @@ public final class Kumulos {
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
-        //IN APP
-        application.registerActivityLifecycleCallbacks(new InAppActivityLifecycleWatcher());
-        InAppTaskService its = new InAppTaskService();
-        its.startPeriodicFetches(application);
-
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
+
+        initializeInApp();
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
@@ -556,7 +556,72 @@ public final class Kumulos {
     }
 
     //==============================================================================================
+    //-- In App APIs
+    public static void setInAppDeepLinkHandler(InAppDeepLinkHandler handler){
+        inAppDeepLinkHandler = handler;
+    }
+
+    public static void updateInAppConsentForUser(boolean consentGiven){
+        if (currentConfig.getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
+            throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
+        }
+
+        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        boolean inAppWasEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+
+        if (consentGiven != inAppWasEnabled){
+            handleInAppEnablementChange(prefs, consentGiven);
+        }
+    }
+
+    //==============================================================================================
     //-- Internal Helpers
+
+    private static void initializeInApp(){
+        KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
+        if (currentConfig.getInAppConsentStrategy() == KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
+            return;
+        }
+
+        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        boolean inAppWasEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+
+        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppWasEnabled){
+            handleInAppEnablementChange(prefs, true);
+        }
+        else if (strategy == null && inAppWasEnabled){
+            handleInAppEnablementChange(prefs, false);
+        }
+    }
+
+    private static void handleInAppEnablementChange(SharedPreferences prefs, boolean enabled){
+        try {
+            JSONObject params = new JSONObject().put("consented", enabled);
+            Kumulos.trackEvent(application, "k.inApp.statusUpdated", params);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(SharedPrefs.IN_APP_ENABLED, enabled);
+        editor.apply();
+
+        InAppTaskService its = new InAppTaskService();
+        if (enabled){
+            inAppActivityWatcher = new InAppActivityLifecycleWatcher();
+            application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
+            its.startPeriodicFetches(application);
+        }
+        else {
+            if (inAppActivityWatcher != null){
+                application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
+                inAppActivityWatcher = null;
+            }
+
+            its.cancelPeriodicFetches(application);
+        }
+    }
 
     /**
      * Generates the correct Authorization header value for HTTP Basic auth with the API key & secret
@@ -658,10 +723,5 @@ public final class Kumulos {
 
     /** package */ static boolean isInitialized() {
         return initialized;
-    }
-
-    static InAppDeepLinkHandler inAppDeepLinkHandler = new InAppDeepLinkHandler();
-    public static void setInAppDeepLinkHandler(InAppDeepLinkHandler handler){
-        inAppDeepLinkHandler = handler;
     }
 }

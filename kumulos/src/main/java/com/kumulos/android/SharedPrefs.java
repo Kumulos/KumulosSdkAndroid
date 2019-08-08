@@ -4,5 +4,6 @@ final class SharedPrefs {
 
     static final String PREFS_FILE = "kumulos_prefs";
     static final String KEY_USER_IDENTIFIER = "user_identifier";
+    static final String IN_APP_ENABLED = "in_app_enabled";
 
 }

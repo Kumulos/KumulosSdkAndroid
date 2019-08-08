@@ -76,7 +76,7 @@ class InAppMessageService {
 
     private static void updateOpenedAt(InAppMessage message){
         message.setOpenedAt(new Date());
-        Runnable task = new InAppContract.TrackMessageOpenedRunnable(Kumulos.applicationContext, message);
+        Runnable task = new InAppContract.TrackMessageOpenedRunnable(Kumulos.application, message);
         Kumulos.executorService.submit(task);
     }
 
@@ -86,7 +86,7 @@ class InAppMessageService {
             params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
             params.put("id", id);
 
-            Kumulos.trackEvent(Kumulos.applicationContext, InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
+            Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
         }
         catch (JSONException e) {
             e.printStackTrace();
@@ -94,7 +94,7 @@ class InAppMessageService {
     }
 
     private static void clearNotification(int inAppId){
-        NotificationManager notificationManager = (NotificationManager) Kumulos.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = (NotificationManager) Kumulos.application.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel("kumulos", inAppId);
     }
 
@@ -183,7 +183,7 @@ class InAppMessageService {
                     params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
                     params.put("id", deliveredId);
 
-                    Kumulos.trackEvent(Kumulos.applicationContext, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
+                    Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
                 }
                 catch (JSONException e) {
                     e.printStackTrace();

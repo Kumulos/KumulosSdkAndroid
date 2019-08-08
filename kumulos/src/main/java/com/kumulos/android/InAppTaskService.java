@@ -14,25 +14,31 @@ import java.util.Date;
 
 public class InAppTaskService extends GcmTaskService {
 
+    static final String TAG = "inapp-fetch";
+
     //https://stackoverflow.com/questions/31396499/gcm-network-manager-periodic-task-not-firing (check options)
-    void startPeriodicFetches(final Application application){
+    void startPeriodicFetches(Application application){
         long periodSecs = 30L; // the task should be executed every 30 seconds
         long flexSecs = 15L; // the task can run as early as -15 seconds from the scheduled time
 
-        String tag = "inapp-fetch";
+
 
         PeriodicTask periodic = new PeriodicTask.Builder()
                 .setService(InAppTaskService.class)
                 .setPeriod(periodSecs)
                 .setFlex(flexSecs)
-                .setTag(tag)
+                .setTag(TAG)
                 .setPersisted(false)
                 .setRequiredNetwork(com.google.android.gms.gcm.Task.NETWORK_STATE_ANY)
                 .setRequiresCharging(false)
-                .setUpdateCurrent(true)
+                .setUpdateCurrent(true)//new task with the same tag replaces
                 .build();
 
         GcmNetworkManager.getInstance(application).schedule(periodic);//Since this involves system IPC calls that can ocassionally be slow, it should be called on a background thread to avoid blocking the main (UI) thread.
+    }
+
+    void cancelPeriodicFetches(Application application){
+        GcmNetworkManager.getInstance(application).cancelTask(TAG, InAppTaskService.class);
     }
 
     @Override
