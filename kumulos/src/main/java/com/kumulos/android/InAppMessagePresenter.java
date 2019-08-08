@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -34,7 +35,7 @@ class InAppMessagePresenter {
 
     private static final String TAG = InAppMessagePresenter.class.getName();
 
-    //TODO: these should be set to null when closeDialog. Fine?
+    //TODO: these should be set to null when closeDialog. When activity is destroyed, they are. Cannot use DialogFragment as v4 required. Fine?
     private static List<InAppMessage> messageQueue = new ArrayList<>();
     private static WebView wv = null;
     private static Dialog dialog = null;
@@ -125,6 +126,10 @@ class InAppMessagePresenter {
             return;
         }
 
+        if (dialog == null){
+            return;
+        }
+
         setSpinnerVisibility(View.VISIBLE);
 
         InAppMessage message = messageQueue.get(0);
@@ -138,9 +143,6 @@ class InAppMessagePresenter {
     }
 
     static void messageClosed(){//java bridge thread
-        if (dialog == null || wv == null){
-            return;
-        }
 
         InAppMessage message = messageQueue.get(0);
         messageQueue.remove(0);
@@ -150,7 +152,9 @@ class InAppMessagePresenter {
         presentMessageToClient();
     }
 
-
+    static void closeCurrentMessage(){
+        InAppMessagePresenter.sendToClient("CLOSE_MESSAGE", null);
+    }
 
     private static void setSpinnerVisibility(int visibility){
         wv.post(new Runnable() {
@@ -226,6 +230,12 @@ class InAppMessagePresenter {
                         WebView.setWebContentsDebuggingEnabled(true);//chrome://inspect/#devices
                     }
 
+                    //TODO: notch stuff https://developer.android.com/guide/topics/display-cutout
+                    //1) calculate notch height
+                    //2) determine where is the notch. Cross/close may be under it. Can apply padding to it as well / can move to the other corner
+                    //3) having padding for content may disalign  bg image with contents ==> is it needed really?
+
+
                     RelativeLayout.LayoutParams paramsWebView = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
                     dialog = new Dialog(currentActivity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
                     LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -237,21 +247,20 @@ class InAppMessagePresenter {
                             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
                                 Log.d("vlad", "back button pressed");
 
-                                InAppMessagePresenter.sendToClient("CLOSE_MESSAGE", null);
+                                InAppMessagePresenter.closeCurrentMessage();
                             }
                             return true;
                         }
                     });
                     dialog.show();
 
-                    //has to be called after dialog.show() !??
                     wv = (WebView) dialog.findViewById(R.id.webview);
                     spinner = dialog.findViewById(R.id.progressBar);
 
                     wv.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);//TODO: set when not developing renderer :) LOAD_CACHE_ELSE_NETWORK
                     wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     wv.getSettings().setJavaScriptEnabled(true);
-                    wv.addJavascriptInterface(new InAppJavaScriptInterface(currentActivity), "Android");
+                    wv.addJavascriptInterface(new InAppJavaScriptInterface(), "Android");
 
                     wv.setWebViewClient(new WebViewClient() {
 

@@ -1,21 +1,24 @@
 package com.kumulos.android;
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
 class InAppJavaScriptInterface {
 
     private static final String TAG = InAppJavaScriptInterface.class.getName();
-
-    InAppJavaScriptInterface(Context c) {
-    }
 
     @JavascriptInterface
     public void postClientMessage(String msg) {
@@ -58,6 +61,8 @@ class InAppJavaScriptInterface {
     }
 
     private void executeActions(List<ExecutableAction> actions){
+        InAppMessagePresenter.closeCurrentMessage();
+
         for(ExecutableAction a : actions){
             switch(a.getType()){
                 case "subscribeToChannel":
@@ -67,17 +72,34 @@ class InAppJavaScriptInterface {
                 case "trackConversionEvent":
                     Kumulos.trackEvent(Kumulos.applicationContext, a.getEventType(), new JSONObject());
                     break;
+            }
+        }
+
+        WeakReference<Activity> currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
+        if (currentActivityRef == null){
+            return;
+        }
+        Activity currentActivity = currentActivityRef.get();
+
+        for(ExecutableAction a : actions){
+            switch(a.getType()){
                 case "openUrl":
-                    //TODO: launch activity
-                    //TODO: close dialog
+                    this.openUrl(currentActivity, a.getUrl());
+                    return;
                 case "deepLink":
                     //TODO: beda
                 case "requestAppStoreRating":
-                    //TODO: nejasno
-                case "closeMessage":
-                    //TODO: nahnado
-
+                    Log.d("vlad",currentActivity.getPackageName() );
+                    this.openUrl(currentActivity, "market://details?id=" + currentActivity.getPackageName());
+                    break;
             }
+        }
+    }
+
+    private void openUrl(Activity currentActivity, String uri){
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        if (browserIntent.resolveActivity(currentActivity.getPackageManager()) != null) {
+            currentActivity.startActivity(browserIntent);
         }
     }
 
@@ -85,10 +107,15 @@ class InAppJavaScriptInterface {
         Log.d("vlad", data.toString());
         List<ExecutableAction> actions = new ArrayList<>();
 
-        JSONArray rawActions = data.optJSONArray("actions");
+
+            JSONArray rawActions = data.optJSONArray("actions");
+            Log.d("vlad", rawActions.toString());
+
+
 
         for (int i=0; i< rawActions.length(); i++){
             JSONObject rawAction = rawActions.optJSONObject(i);
+            Log.d("vlad", rawAction.toString());
 
             String actionType = rawAction.optString("type", null);
             JSONObject rawActionData = rawAction.optJSONObject("data");
@@ -106,7 +133,7 @@ class InAppJavaScriptInterface {
                     String eventType = rawActionData.optString("eventType");
                     action.setEventType(eventType);
                     break;
-                case "openUrl"://specifically close current message, launch url activity, mb close dialog to be sure
+                case "openUrl":
                     String url = rawActionData.optString("url");
                     action.setUrl(url);
                     break;
