@@ -659,4 +659,9 @@ public final class Kumulos {
     /** package */ static boolean isInitialized() {
         return initialized;
     }
+
+    static InAppDeepLinkHandler inAppDeepLinkHandler = new InAppDeepLinkHandler();
+    public static void setInAppDeepLinkHandler(InAppDeepLinkHandler handler){
+        inAppDeepLinkHandler = handler;
+    }
 }

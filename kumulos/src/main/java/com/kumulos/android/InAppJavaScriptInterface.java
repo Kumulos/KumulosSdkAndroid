@@ -46,14 +46,8 @@ class InAppJavaScriptInterface {
                 InAppMessagePresenter.messageClosed();
                 return;
             case "EXECUTE_ACTIONS":
-
                 List<ExecutableAction> actions = this.parseButtonActionData(data);
-                for(ExecutableAction a : actions){
-                    Log.d("vlad", a.toString());
-                }
-
                 this.executeActions(actions);
-                //InAppMessagePresenter.executeActions(actions);
                 return;
             default:
                 Log.d(TAG, "Unknown message type: "+messageType);
@@ -63,34 +57,31 @@ class InAppJavaScriptInterface {
     private void executeActions(List<ExecutableAction> actions){
         InAppMessagePresenter.closeCurrentMessage();
 
-        for(ExecutableAction a : actions){
-            switch(a.getType()){
+        WeakReference<Activity> currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
+
+        for(ExecutableAction action : actions){
+            switch(action.getType()){
                 case "subscribeToChannel":
                     PushSubscriptionManager psm = new PushSubscriptionManager();
-                    psm.subscribe(Kumulos.applicationContext, new String[]{a.getChannelUuid()});
+                    psm.subscribe(Kumulos.applicationContext, new String[]{action.getChannelUuid()});
                     break;
                 case "trackConversionEvent":
-                    Kumulos.trackEvent(Kumulos.applicationContext, a.getEventType(), new JSONObject());
+                    Kumulos.trackEvent(Kumulos.applicationContext, action.getEventType(), new JSONObject());
                     break;
-            }
-        }
-
-        WeakReference<Activity> currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
-        if (currentActivityRef == null){
-            return;
-        }
-        Activity currentActivity = currentActivityRef.get();
-
-        for(ExecutableAction a : actions){
-            switch(a.getType()){
                 case "openUrl":
-                    this.openUrl(currentActivity, a.getUrl());
+                    if (currentActivityRef == null){
+                        return;
+                    }
+                    this.openUrl(currentActivityRef.get(), action.getUrl());
                     return;
                 case "deepLink":
-                    //TODO: beda
+                    Kumulos.inAppDeepLinkHandler.handle(action.getDeepLink());
+                    return;
                 case "requestAppStoreRating":
-                    Log.d("vlad",currentActivity.getPackageName() );
-                    this.openUrl(currentActivity, "market://details?id=" + currentActivity.getPackageName());
+                    if (currentActivityRef == null){
+                        return;
+                    }
+                    this.openUrl(currentActivityRef.get(), "market://details?id=" + currentActivityRef.get().getPackageName());
                     break;
             }
         }
@@ -104,25 +95,17 @@ class InAppJavaScriptInterface {
     }
 
     private List<ExecutableAction> parseButtonActionData(JSONObject data){
-        Log.d("vlad", data.toString());
         List<ExecutableAction> actions = new ArrayList<>();
-
-
-            JSONArray rawActions = data.optJSONArray("actions");
-            Log.d("vlad", rawActions.toString());
-
-
+        JSONArray rawActions = data.optJSONArray("actions");
 
         for (int i=0; i< rawActions.length(); i++){
             JSONObject rawAction = rawActions.optJSONObject(i);
-            Log.d("vlad", rawAction.toString());
 
             String actionType = rawAction.optString("type", null);
             JSONObject rawActionData = rawAction.optJSONObject("data");
 
             ExecutableAction action = new ExecutableAction();
             action.setType(actionType);
-
 
             switch(actionType){
                 case "subscribeToChannel":
@@ -139,7 +122,14 @@ class InAppJavaScriptInterface {
                     break;
                 case "deepLink":
                     String deepLink = rawActionData.optString("deepLink");
-                    action.setDeepLink(deepLink);
+                    try{
+                        JSONObject jsonDeepLink = new JSONObject(deepLink);
+                        action.setDeepLink(jsonDeepLink);
+                    }
+                    catch(JSONException e){
+                        continue;
+                    }
+
                     break;
                 case "closeMessage":
                 case "requestAppStoreRating":
@@ -158,8 +148,7 @@ class InAppJavaScriptInterface {
         String url;
         String channelUuid;
         String eventType;
-        String deepLink;
-
+        JSONObject deepLink;
 
         void setType(String type){
             this.type = type;
@@ -177,38 +166,28 @@ class InAppJavaScriptInterface {
             this.url = url;
         }
 
-        void setDeepLink(String deepLink){
+        void setDeepLink(JSONObject deepLink){
             this.deepLink = deepLink;
         }
 
-        public String getType() {
+        String getType() {
             return type;
         }
 
-        public String getUrl() {
+        String getUrl() {
             return url;
         }
 
-        public String getChannelUuid() {
+        String getChannelUuid() {
             return channelUuid;
         }
 
-        public String getEventType() {
+        String getEventType() {
             return eventType;
         }
 
-        public String getDeepLink() {
+        JSONObject getDeepLink() {
             return deepLink;
         }
-
-        @Override
-        public String toString(){
-            return type  + " "+ (url ==null ? " null " : url)+ " "+(channelUuid ==null ? " null " : channelUuid)+ " "+ (eventType ==null ? " null " : eventType)+ " "+(deepLink ==null ? " null " : deepLink);
-        }
-
     }
-
-
-
-
 }
