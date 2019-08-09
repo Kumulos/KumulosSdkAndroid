@@ -561,7 +561,8 @@ public final class Kumulos {
         boolean inAppWasEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
 
         if (consentGiven != inAppWasEnabled){
-            handleInAppEnablementChange(prefs, consentGiven);
+            updateInAppEnablementFlags(prefs, consentGiven);
+            toggleInAppMessageMonitoring(consentGiven);
         }
     }
 
@@ -570,22 +571,23 @@ public final class Kumulos {
 
     private static void initializeInApp(){
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
-        if (currentConfig.getInAppConsentStrategy() == KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
-            return;
-        }
-
         SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        boolean inAppWasEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+        boolean inAppEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
 
-        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppWasEnabled){
-            handleInAppEnablementChange(prefs, true);
+        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppEnabled){
+            inAppEnabled = true;
+            updateInAppEnablementFlags(prefs, inAppEnabled);
+
         }
-        else if (strategy == null && inAppWasEnabled){
-            handleInAppEnablementChange(prefs, false);
+        else if (strategy == null && inAppEnabled){
+            inAppEnabled = false;
+            updateInAppEnablementFlags(prefs, inAppEnabled);
         }
+
+       toggleInAppMessageMonitoring(inAppEnabled);
     }
 
-    private static void handleInAppEnablementChange(SharedPreferences prefs, boolean enabled){
+    private static void updateInAppEnablementFlags(SharedPreferences prefs, boolean enabled){
         try {
             JSONObject params = new JSONObject().put("consented", enabled);
             Kumulos.trackEvent(application, "k.inApp.statusUpdated", params);
@@ -597,7 +599,9 @@ public final class Kumulos {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(SharedPrefs.IN_APP_ENABLED, enabled);
         editor.apply();
+    }
 
+    private static void toggleInAppMessageMonitoring(boolean enabled){
         InAppTaskService its = new InAppTaskService();
         if (enabled){
             inAppActivityWatcher = new InAppActivityLifecycleWatcher();

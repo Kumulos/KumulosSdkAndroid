@@ -190,6 +190,9 @@ class InAppMessagePresenter {
     }
 
     static void maybeCloseDialog(Activity stoppedActivity){
+        if (dialog == null){
+            return;
+        }
         Activity dialogActivity = getDialogActivity(dialog.getContext());
         if (stoppedActivity.hashCode() == dialogActivity.hashCode()){
             closeDialog();

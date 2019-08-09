@@ -34,7 +34,7 @@ public class InAppTaskService extends GcmTaskService {
             public void run() {
                 GcmNetworkManager.getInstance(application).schedule(periodic);
             }
-        });
+        }).start();
     }
 
     void cancelPeriodicFetches(Application application){
@@ -42,7 +42,7 @@ public class InAppTaskService extends GcmTaskService {
             public void run() {
                 GcmNetworkManager.getInstance(application).cancelTask(TAG, InAppTaskService.class);
             }
-        });
+        }).start();;
     }
 
     @Override
