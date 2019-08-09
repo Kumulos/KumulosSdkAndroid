@@ -19,10 +19,15 @@ import java.util.List;
 class InAppJavaScriptInterface {
 
     private static final String TAG = InAppJavaScriptInterface.class.getName();
+    private static final String BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL = "subscribeToChannel";
+    private static final String BUTTON_ACTION_TRACK_CONVERSION_EVENT = "trackConversionEvent";
+    private static final String BUTTON_ACTION_OPEN_URL = "openUrl";
+    private static final String BUTTON_ACTION_DEEP_LINK = "deepLink";
+    private static final String BUTTON_ACTION_REQUEST_APP_STORE_RATING = "requestAppStoreRating";
+    static final String NAME = "Android";
 
     @JavascriptInterface
     public void postClientMessage(String msg) {
-
         String messageType = null;
         JSONObject data = null;
         try{
@@ -61,23 +66,23 @@ class InAppJavaScriptInterface {
 
         for(ExecutableAction action : actions){
             switch(action.getType()){
-                case "subscribeToChannel":
+                case BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL:
                     PushSubscriptionManager psm = new PushSubscriptionManager();
                     psm.subscribe(Kumulos.application, new String[]{action.getChannelUuid()});
                     break;
-                case "trackConversionEvent":
+                case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
                     Kumulos.trackEvent(Kumulos.application, action.getEventType(), new JSONObject());
                     break;
-                case "openUrl":
+                case BUTTON_ACTION_OPEN_URL:
                     if (currentActivityRef == null){
                         return;
                     }
                     this.openUrl(currentActivityRef.get(), action.getUrl());
                     return;
-                case "deepLink":
+                case BUTTON_ACTION_DEEP_LINK:
                     Kumulos.inAppDeepLinkHandler.handle(action.getDeepLink());
                     return;
-                case "requestAppStoreRating":
+                case BUTTON_ACTION_REQUEST_APP_STORE_RATING:
                     if (currentActivityRef == null){
                         return;
                     }
@@ -108,19 +113,19 @@ class InAppJavaScriptInterface {
             action.setType(actionType);
 
             switch(actionType){
-                case "subscribeToChannel":
+                case BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL:
                     String channelUuid = rawActionData.optString("channelUuid");
                     action.setChannelUuid(channelUuid);
                     break;
-                case "trackConversionEvent":
+                case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
                     String eventType = rawActionData.optString("eventType");
                     action.setEventType(eventType);
                     break;
-                case "openUrl":
+                case BUTTON_ACTION_OPEN_URL:
                     String url = rawActionData.optString("url");
                     action.setUrl(url);
                     break;
-                case "deepLink":
+                case BUTTON_ACTION_DEEP_LINK:
                     String deepLink = rawActionData.optString("deepLink");
                     try{
                         JSONObject jsonDeepLink = new JSONObject(deepLink);
@@ -129,16 +134,10 @@ class InAppJavaScriptInterface {
                     catch(JSONException e){
                         continue;
                     }
-
-                    break;
-                case "closeMessage":
-                case "requestAppStoreRating":
                 default:
             }
-
             actions.add(action);
         }
-
         return actions;
     }
 

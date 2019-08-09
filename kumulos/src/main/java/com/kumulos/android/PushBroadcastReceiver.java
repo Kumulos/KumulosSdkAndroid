@@ -11,24 +11,29 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
-
     public static final String TAG = PushBroadcastReceiver.class.getName();
 
     public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
 
     private static final String DEFAULT_CHANNEL_ID = "general";
+    private static final int DEEP_LINK_TYPE_IN_APP = 1;
+    static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
+    static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
 
     private void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
-
-        //TODO: if in-app not enabled, return
+        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        boolean inAppEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+        if (!inAppEnabled){
+            return;
+        }
 
         Integer tickleId = this.getTickleId(pushMessage);
         if (tickleId == null){
@@ -38,16 +43,19 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         InAppMessageService.fetch(context, tickleId);
     }
 
-    private void maybeAddTickleIdExtra(PushMessage pushMessage, Intent launchIntent){
-
-        //TODO: if in-app not enabled, return
+    private void maybeAddTickleIdExtra(Context context, PushMessage pushMessage, Intent launchIntent){
+        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        boolean inAppEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+        if (!inAppEnabled){
+            return;
+        }
 
         Integer tickleId = this.getTickleId(pushMessage);
         if (tickleId == null){
             return;
         }
 
-        launchIntent.putExtra("k.tickleId", tickleId);
+        launchIntent.putExtra(EXTRAS_KEY_TICKLE_ID, tickleId);
     }
 
     private Integer getTickleId(PushMessage pushMessage){
@@ -59,7 +67,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         int linkType = deepLink.optInt("type", -1);
 
-        if (linkType != 1){//TODO: 1 -> inapp
+        if (linkType != DEEP_LINK_TYPE_IN_APP){
             return null;
         }
 
@@ -90,10 +98,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 break;
         }
     }
-
-
-
-
 
     /**
      * Handles showing a notification in the notification drawer when a content push is received.
@@ -129,7 +133,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        notificationManager.notify("kumulos", this.getNotificationId(pushMessage) , notification);
+        notificationManager.notify(KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage) , notification);
     }
 
     private int getNotificationId(PushMessage pushMessage){
@@ -165,8 +169,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             context.startService(serviceIntent);
         }
     }
-
-
 
     /**
      * Handles launching the Activity specified by the {#getPushOpenActivityIntent} method when a push
@@ -213,7 +215,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             launchIntent = new Intent(Intent.ACTION_VIEW, pushMessage.getUrl());
         }
 
-        this.maybeAddTickleIdExtra(pushMessage, launchIntent);
+        this.maybeAddTickleIdExtra(context, pushMessage, launchIntent);
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -329,6 +331,4 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     protected Intent getBackgroundPushServiceIntent(Context context, PushMessage pushMessage) {
         return null;
     }
-
-
 }

@@ -1,13 +1,10 @@
 
 package com.kumulos.android;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.os.Build;
-import android.os.Bundle;
 import android.os.Debug;
 import android.os.Looper;
 import android.support.annotation.NonNull;
@@ -28,15 +25,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import okhttp3.Call;
 import okhttp3.FormBody;
@@ -58,7 +50,6 @@ public final class Kumulos {
     /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
     /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
-    private static final String K_PREFS_FILE = "kumulos_prefs";
     private static boolean initialized;
 
     private static String installId;

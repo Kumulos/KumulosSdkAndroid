@@ -1,16 +1,12 @@
 package com.kumulos.android;
 
 import android.app.Application;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.GcmTaskService;
 import com.google.android.gms.gcm.PeriodicTask;
 import com.google.android.gms.gcm.TaskParams;
-
-import java.util.Date;
 
 public class InAppTaskService extends GcmTaskService {
 
@@ -22,7 +18,7 @@ public class InAppTaskService extends GcmTaskService {
         long flexSecs = 15L; // the task can run as early as -15 seconds from the scheduled time
 
 
-
+        //TODO: sensible values
         PeriodicTask periodic = new PeriodicTask.Builder()
                 .setService(InAppTaskService.class)
                 .setPeriod(periodSecs)
@@ -34,11 +30,19 @@ public class InAppTaskService extends GcmTaskService {
                 .setUpdateCurrent(true)//new task with the same tag replaces
                 .build();
 
-        GcmNetworkManager.getInstance(application).schedule(periodic);//Since this involves system IPC calls that can ocassionally be slow, it should be called on a background thread to avoid blocking the main (UI) thread.
+        new Thread(new Runnable() {
+            public void run() {
+                GcmNetworkManager.getInstance(application).schedule(periodic);
+            }
+        });
     }
 
     void cancelPeriodicFetches(Application application){
-        GcmNetworkManager.getInstance(application).cancelTask(TAG, InAppTaskService.class);
+        new Thread(new Runnable() {
+            public void run() {
+                GcmNetworkManager.getInstance(application).cancelTask(TAG, InAppTaskService.class);
+            }
+        });
     }
 
     @Override

@@ -34,6 +34,8 @@ import java.util.concurrent.Future;
 class InAppMessagePresenter {
 
     private static final String TAG = InAppMessagePresenter.class.getName();
+    private static final String HOST_MESSAGE_TYPE_PRESENT_MESSAGE = "PRESENT_MESSAGE";
+    private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
 
     //TODO: these should be set to null when closeDialog. When activity is destroyed, they are. Cannot use DialogFragment as v4 required. Fine?
     private static List<InAppMessage> messageQueue = new ArrayList<>();
@@ -114,11 +116,6 @@ class InAppMessagePresenter {
         }
     }
 
-
-    static void clientReady(){//java bridge thread
-        presentMessageToClient();
-    }
-
     private static void presentMessageToClient(){
         Log.d("vlad","presentMessageToClient");
         if (messageQueue.isEmpty()){
@@ -133,12 +130,14 @@ class InAppMessagePresenter {
         setSpinnerVisibility(View.VISIBLE);
 
         InAppMessage message = messageQueue.get(0);
-        sendToClient("PRESENT_MESSAGE", message.getContent());
+        sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, message.getContent());
+    }
+
+    static void clientReady(){//java bridge thread
+        presentMessageToClient();
     }
 
     static void messageOpened(){//java bridge thread
-        Log.d("vlad","messageOpened");
-
         setSpinnerVisibility(View.GONE);
     }
 
@@ -153,7 +152,7 @@ class InAppMessagePresenter {
     }
 
     static void closeCurrentMessage(){
-        InAppMessagePresenter.sendToClient("CLOSE_MESSAGE", null);
+        InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
     }
 
     private static void setSpinnerVisibility(int visibility){
@@ -166,10 +165,6 @@ class InAppMessagePresenter {
     }
 
     private static void sendToClient(String type, JSONObject data){
-        if (wv == null){
-            return;
-        }
-
         wv.post(new Runnable() {
             @Override
             public void run() {
@@ -243,10 +238,7 @@ class InAppMessagePresenter {
                     dialog.setOnKeyListener(new Dialog.OnKeyListener() {
                         @Override
                         public boolean onKey(DialogInterface arg0, int keyCode, KeyEvent event) {
-
                             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
-                                Log.d("vlad", "back button pressed");
-
                                 InAppMessagePresenter.closeCurrentMessage();
                             }
                             return true;
@@ -260,20 +252,9 @@ class InAppMessagePresenter {
                     wv.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);//TODO: set when not developing renderer :) LOAD_CACHE_ELSE_NETWORK
                     wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     wv.getSettings().setJavaScriptEnabled(true);
-                    wv.addJavascriptInterface(new InAppJavaScriptInterface(), "Android");
+                    wv.addJavascriptInterface(new InAppJavaScriptInterface(), InAppJavaScriptInterface.NAME);
 
                     wv.setWebViewClient(new WebViewClient() {
-
-                        @Override
-                        public void onPageCommitVisible(WebView view, String url) {
-                            super.onPageCommitVisible(view, url);
-                        }
-
-                        @Override
-                        public void onLoadResource(WebView view, String url) {
-                            super.onLoadResource(view, url);
-                        }
-
                         @Override
                         public void onPageStarted(WebView view, String url, Bitmap favicon) {
                             super.onPageStarted(view, url, favicon);
@@ -292,7 +273,7 @@ class InAppMessagePresenter {
                     wv.loadUrl("http://192.168.1.24:8080");
                 }
                 catch(Exception e){
-                    Log.d("vlad", e.getMessage());
+                    Kumulos.log(TAG, e.getMessage());
                 }
             }
         });

@@ -40,7 +40,6 @@ class InAppContract {
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
-
     static class TrackMessageOpenedRunnable implements Runnable {
         private static final String TAG = TrackMessageOpenedRunnable.class.getName();
 
@@ -78,12 +77,7 @@ class InAppContract {
                 e.printStackTrace();
             }
         }
-
     }
-
-
-
-
 
     static class ReadInAppMessagesCallable implements Callable<List<InAppMessage>> {
 
@@ -101,10 +95,8 @@ class InAppContract {
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             try {
-
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-                //READ all messages not shown before
                 String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
                 String selection = InAppMessageTable.COL_OPENED_AT+ " IS NULL";
                 String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
@@ -133,7 +125,6 @@ class InAppContract {
             }
 
             return itemsToPresent;
-
         }
     }
 
@@ -151,9 +142,7 @@ class InAppContract {
 
         @Override
         public Pair<List<InAppMessage>, List<Integer>> call() {
-
             SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             List<Integer> deliveredIds = new ArrayList<>();
@@ -177,11 +166,7 @@ class InAppContract {
                 Kumulos.log(TAG, e.getMessage());
             }
 
-
             return new Pair<>(itemsToPresent,deliveredIds);
-
-
-
         }
 
         private List<Integer> insertRows(SQLiteDatabase db, List<ContentValues> rows){

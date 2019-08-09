@@ -8,7 +8,6 @@ import android.util.Log;
 
 import java.lang.ref.WeakReference;
 
-
 class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCallbacks{
 
     private static WeakReference<Activity> currentActivity = null;
@@ -16,8 +15,6 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
         return currentActivity;
     }
     private static int numStarted = 0;
-
-
     static boolean isBackground(){
         return numStarted == 0;
     }
@@ -54,10 +51,9 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
         numStarted++;
     }
 
-
     private Integer getTickleId(Activity activity){
         Intent i = activity.getIntent();
-        int tickleIdExtra = i.getIntExtra("k.tickleId", -1);
+        int tickleIdExtra = i.getIntExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, -1);
         return tickleIdExtra == -1 ? null : tickleIdExtra;
     }
 

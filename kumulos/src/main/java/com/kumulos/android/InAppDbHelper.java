@@ -24,7 +24,6 @@ class InAppDbHelper extends SQLiteOpenHelper {
             + InAppMessageTable.COL_OPENED_AT + " DATETIME,"
             + InAppMessageTable.COL_UPDATED_AT + " DATETIME NOT NULL )";
 
-
     InAppDbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
     }
@@ -40,9 +39,7 @@ class InAppDbHelper extends SQLiteOpenHelper {
         }
     }
 
-
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
     }
-
 }

@@ -29,12 +29,10 @@ class InAppMessage {
     InAppMessage(JSONObject obj) throws JSONException, ParseException {
         this.inAppId = obj.getInt("id");
         this.presentedWhen = obj.getString("presentedWhen");
-
         this.data = obj.optJSONObject("data");
         this.badgeConfig = obj.optJSONObject("badge");
         this.content = obj.getJSONObject("content");
         this.inbox = obj.optJSONObject("inbox");
-
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -80,15 +78,15 @@ class InAppMessage {
     }
 
     void setInAppId(int id){
-       this.inAppId = id;
+        this.inAppId = id;
     }
 
     void setContent(JSONObject content){
-       this.content = content;
+        this.content = content;
     }
 
     void setOpenedAt(Date openedAt){
-       this.openedAt = openedAt;
+        this.openedAt = openedAt;
     }
 
     void setPresentedWhen(String presentedWhen){

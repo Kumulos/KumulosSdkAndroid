@@ -20,24 +20,21 @@ class InAppMessageService {
     private static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
     private static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
     private static final int MESSAGE_TYPE_IN_APP = 2;
+    private static final String TAG = InAppMessageService.class.getName();
+    private static final String PRESENTED_WHEN_IMMEDIATELY = "immediately";
+    private static final String PRESENTED_WHEN_NEXT_OPEN = "next-open";
+    private static final String PRESENTED_WHEN_NEVER = "never";
 
     static void fetch(Context context, Integer tickleId){
         Log.d("vlad", "thread: "+Thread.currentThread().getName());
 
-        SharedPreferences preferences = context.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
-        long millis = preferences.getLong("last_sync_time", 0L);
+        SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        long millis = preferences.getLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, 0L);
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
-
-        //lastSyncTime = null;//to remove time filtering
-
-
-        int tiid = tickleId == null ? 0 : tickleId;
-        Log.d("vlad", "fetch called!!! tickleId: "+tiid);
 
         FetchCallback callback = new FetchCallback(context, tickleId);
         InAppRequestService.readInAppMessages(context, callback, lastSyncTime);
     }
-
 
     static void readMessages(Context context, boolean fromBackground, Integer tickleId){
 
@@ -58,7 +55,9 @@ class InAppMessageService {
 
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         for(InAppMessage message: unreadMessages){
-            if (message.getPresentedWhen().equals("immediately") || (fromBackground && message.getPresentedWhen().equals("next-open")) || Integer.valueOf(message.getInAppId()).equals(tickleId)){
+            if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
+                    || (fromBackground && message.getPresentedWhen().equals(PRESENTED_WHEN_NEXT_OPEN))
+                    || Integer.valueOf(message.getInAppId()).equals(tickleId)){
                 itemsToPresent.add(message);
             }
         }
@@ -95,9 +94,8 @@ class InAppMessageService {
 
     private static void clearNotification(int inAppId){
         NotificationManager notificationManager = (NotificationManager) Kumulos.application.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel("kumulos", inAppId);
+        notificationManager.cancel(PushBroadcastReceiver.KUMULOS_NOTIFICATION_TAG, inAppId);
     }
-
 
     private static void storeLastSyncTime(Context context, List<InAppMessage> inAppMessages){
         Date maxUpdatedAt = inAppMessages.get(0).getUpdatedAt();
@@ -109,14 +107,13 @@ class InAppMessageService {
             }
         }
 
-        SharedPreferences prefs = context.getSharedPreferences("kumulos_prefs", Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putLong("last_sync_time", maxUpdatedAt.getTime());
+        editor.putLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, maxUpdatedAt.getTime());
         editor.apply();
     }
 
     private static class FetchCallback extends Kumulos.ResultCallback<List<InAppMessage>> {
-
         Integer mTickleId;
         Context mContext;
 
@@ -128,7 +125,6 @@ class InAppMessageService {
         @Override
         public void onSuccess(List<InAppMessage> inAppMessages) {
 
-
             //TODO: sometimes (especially initial fetch) TASK run happens same time as push received, results in 2 syncs. Coincidence? Don't think so
             Log.d("vlad", "FETCH ON SUCCESS");
             if (inAppMessages.isEmpty()){
@@ -137,7 +133,6 @@ class InAppMessageService {
             }
 
             InAppMessageService.storeLastSyncTime(this.mContext, inAppMessages);
-
 
             Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(mContext, inAppMessages);
             final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
@@ -164,14 +159,14 @@ class InAppMessageService {
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             for(InAppMessage message: unreadMessages){
-                if (message.getPresentedWhen().equals("immediately") || Integer.valueOf(message.getInAppId()).equals(mTickleId)){
+                if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
+                        || Integer.valueOf(message.getInAppId()).equals(mTickleId)){
                     itemsToPresent.add(message);
                 }
             }
             Log.d("vlad", "size to present: "+itemsToPresent.size());
 
             InAppMessagePresenter.presentMessages(itemsToPresent, mTickleId);//TODO: can multiple threads call this simultaneously?
-
         }
 
         private void trackDeliveredEvents( List<Integer> deliveredIds ){
@@ -183,7 +178,7 @@ class InAppMessageService {
                     params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
                     params.put("id", deliveredId);
 
-                    Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);//TODO: does it matter which context passed. consistency?
+                    Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);
                 }
                 catch (JSONException e) {
                     e.printStackTrace();
@@ -193,12 +188,7 @@ class InAppMessageService {
 
         @Override
         public void onFailure(Exception e) {
-            Log.d("vlad", e.getMessage());
+            Kumulos.log(TAG, e.getMessage());
         }
     }
-
-
 }
-
-
-
