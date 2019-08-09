@@ -207,8 +207,10 @@ class InAppMessagePresenter {
         return null;
     }
 
-    private static void closeDialog(){
-        dialog.dismiss();
+    static void closeDialog(){
+        if (dialog != null){
+            dialog.dismiss();
+        }
         dialog = null;
         wv = null;
         spinner = null;

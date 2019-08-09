@@ -605,6 +605,7 @@ public final class Kumulos {
             its.startPeriodicFetches(application);
         }
         else {
+            InAppMessagePresenter.closeDialog();
             if (inAppActivityWatcher != null){
                 application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
                 inAppActivityWatcher = null;
