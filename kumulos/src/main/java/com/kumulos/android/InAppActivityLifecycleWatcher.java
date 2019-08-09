@@ -4,15 +4,18 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
 
 class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCallbacks{
 
-    private static WeakReference<Activity> currentActivity = null;
-    static WeakReference<Activity> getCurrentActivity() {
-        return currentActivity;
+    private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
+
+    @Nullable
+    static Activity getCurrentActivity() {
+        return currentActivityRef.get();
     }
     private static int numStarted = 0;
     static boolean isBackground(){
@@ -21,7 +24,7 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
 
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-        currentActivity = new WeakReference<Activity>(activity);
+        currentActivityRef = new WeakReference<Activity>(activity);
     }
 
     @Override
@@ -29,8 +32,9 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
         Log.d("vlad", "activity destroyed");
         InAppMessagePresenter.maybeCloseDialog(activity);
 
-        if (currentActivity != null && currentActivity.get().hashCode() == activity.hashCode()) {Log.d("vlad", "current activity is null!!!");
-            currentActivity = null;
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity != null && currentActivity.hashCode() == activity.hashCode()) {Log.d("vlad", "current activity is null!!!");
+            currentActivityRef = new WeakReference<>(null);
         }
     }
 

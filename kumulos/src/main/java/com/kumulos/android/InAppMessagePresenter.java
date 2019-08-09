@@ -48,24 +48,24 @@ class InAppMessagePresenter {
             return;
         }
 
-        WeakReference<Activity> currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
+        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
 
-        if (currentActivityRef == null) {
+        if (currentActivity == null) {
             return;
         }
 
         List<InAppMessage> oldQueue = new ArrayList<InAppMessage>(messageQueue);
 
-        addMessagesToQueue(itemsToPresent);
+        addMessagesToQueue(itemsToPresent);//TODO: if 2 threads, can add message with the same id twice. make queeu thread safe
         moveTickleToFront(tickleId);
 
         if (dialog == null){
-            showWebView(currentActivityRef.get());
+            showWebView(currentActivity);
             return;
         }
-        else if( getDialogActivity(dialog.getContext()).hashCode() != currentActivityRef.get().hashCode()){
+        else if( getDialogActivity(dialog.getContext()).hashCode() != currentActivity.hashCode()){
             closeDialog();
-            showWebView(currentActivityRef.get());
+            showWebView(currentActivity);
             return;
         }
 

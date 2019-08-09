@@ -1,18 +1,14 @@
 package com.kumulos.android;
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +58,7 @@ class InAppJavaScriptInterface {
     private void executeActions(List<ExecutableAction> actions){
         InAppMessagePresenter.closeCurrentMessage();
 
-        WeakReference<Activity> currentActivityRef = InAppActivityLifecycleWatcher.getCurrentActivity();
+        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
 
         for(ExecutableAction action : actions){
             switch(action.getType()){
@@ -74,19 +70,19 @@ class InAppJavaScriptInterface {
                     Kumulos.trackEvent(Kumulos.application, action.getEventType(), new JSONObject());
                     break;
                 case BUTTON_ACTION_OPEN_URL:
-                    if (currentActivityRef == null){
+                    if (currentActivity == null){
                         return;
                     }
-                    this.openUrl(currentActivityRef.get(), action.getUrl());
+                    this.openUrl(currentActivity, action.getUrl());
                     return;
                 case BUTTON_ACTION_DEEP_LINK:
                     Kumulos.inAppDeepLinkHandler.handle(action.getDeepLink());
                     return;
                 case BUTTON_ACTION_REQUEST_APP_STORE_RATING:
-                    if (currentActivityRef == null){
+                    if (currentActivity == null){
                         return;
                     }
-                    this.openUrl(currentActivityRef.get(), "market://details?id=" + currentActivityRef.get().getPackageName());
+                    this.openUrl(currentActivity, "market://details?id=" + currentActivity.getPackageName());
                     break;
             }
         }
