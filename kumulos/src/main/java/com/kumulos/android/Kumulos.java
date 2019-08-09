@@ -64,7 +64,7 @@ public final class Kumulos {
     private static final Object userIdLocker = new Object();
     static Application application;
     private static InAppActivityLifecycleWatcher inAppActivityWatcher;
-    static InAppDeepLinkHandler inAppDeepLinkHandler = new InAppDeepLinkHandler();
+    static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -548,7 +548,7 @@ public final class Kumulos {
 
     //==============================================================================================
     //-- In App APIs
-    public static void setInAppDeepLinkHandler(InAppDeepLinkHandler handler){
+    public static void setInAppDeepLinkHandler(InAppDeepLinkHandlerInterface handler){
         inAppDeepLinkHandler = handler;
     }
 

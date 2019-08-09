@@ -76,7 +76,9 @@ class InAppJavaScriptInterface {
                     this.openUrl(currentActivity, action.getUrl());
                     return;
                 case BUTTON_ACTION_DEEP_LINK:
-                    Kumulos.inAppDeepLinkHandler.handle(action.getDeepLink());
+                    if (Kumulos.inAppDeepLinkHandler != null){
+                        Kumulos.inAppDeepLinkHandler.handle(action.getDeepLink());
+                    }
                     return;
                 case BUTTON_ACTION_REQUEST_APP_STORE_RATING:
                     if (currentActivity == null){

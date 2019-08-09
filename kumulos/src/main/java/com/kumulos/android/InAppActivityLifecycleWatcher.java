@@ -33,7 +33,11 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
         InAppMessagePresenter.maybeCloseDialog(activity);
 
         Activity currentActivity = getCurrentActivity();
-        if (currentActivity != null && currentActivity.hashCode() == activity.hashCode()) {Log.d("vlad", "current activity is null!!!");
+        if (currentActivity == null){
+            return;
+        }
+
+        if (currentActivity.hashCode() == activity.hashCode()) {Log.d("vlad", "current activity is null!!!");
             currentActivityRef = new WeakReference<>(null);
         }
     }
