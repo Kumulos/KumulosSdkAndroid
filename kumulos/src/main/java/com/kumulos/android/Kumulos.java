@@ -584,7 +584,9 @@ public final class Kumulos {
             updateInAppEnablementFlags(prefs, inAppEnabled);
         }
 
-       toggleInAppMessageMonitoring(inAppEnabled);
+        toggleInAppMessageMonitoring(inAppEnabled);
+
+        Kumulos.inAppDeepLinkHandler = currentConfig.getInAppDeepLinkHandler();
     }
 
     private static void updateInAppEnablementFlags(SharedPreferences prefs, boolean enabled){

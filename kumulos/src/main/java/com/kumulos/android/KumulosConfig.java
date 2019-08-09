@@ -32,6 +32,7 @@ public final class KumulosConfig {
     private int notificationSmallIconId;
     private boolean crashReportingEnabled;
     private InAppConsentStrategy inAppConsentStrategy;
+    private InAppDeepLinkHandlerInterface inAppDeepLinkHandler;
     private int sessionIdleTimeoutSeconds;
 
     private JSONObject runtimeInfo;
@@ -80,6 +81,10 @@ public final class KumulosConfig {
         this.inAppConsentStrategy = strategy;
     }
 
+    private void setInAppDeepLinkHandler(InAppDeepLinkHandlerInterface handler) {
+        this.inAppDeepLinkHandler = handler;
+    }
+
     public String getApiKey() {
         return apiKey;
     }
@@ -118,6 +123,9 @@ public final class KumulosConfig {
 
     InAppConsentStrategy getInAppConsentStrategy() {
         return inAppConsentStrategy;
+    }
+    InAppDeepLinkHandlerInterface getInAppDeepLinkHandler() {
+        return inAppDeepLinkHandler;
     }
 
     /** package */ Bundle toBundle() {
@@ -171,6 +179,7 @@ public final class KumulosConfig {
         private int notificationSmallIconDrawableId = KumulosConfig.DEFAULT_NOTIFICATION_ICON_ID;
         private boolean enableCrashReporting = false;
         private InAppConsentStrategy consentStrategy = null;
+        private InAppDeepLinkHandlerInterface inAppDeepLinkHandler;
         private int sessionIdleTimeoutSeconds = KumulosConfig.DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS;
 
         private JSONObject runtimeInfo;
@@ -201,6 +210,13 @@ public final class KumulosConfig {
             this.consentStrategy = strategy;
             return this;
         }
+
+        public Builder setInAppDeepLinkHandler(InAppDeepLinkHandlerInterface handler) {
+            this.inAppDeepLinkHandler = handler;
+            return this;
+        }
+
+
 
         /**
          * The minimum amount of time the user has to have left the app for a session end event to be
@@ -245,6 +261,7 @@ public final class KumulosConfig {
             newConfig.setSdkInfo(this.sdkInfo);
 
             newConfig.setInAppConsentStrategy(consentStrategy);
+            newConfig.setInAppDeepLinkHandler(this.inAppDeepLinkHandler);
 
             return newConfig;
         }
