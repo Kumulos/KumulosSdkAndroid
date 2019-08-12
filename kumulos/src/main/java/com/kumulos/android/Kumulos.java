@@ -121,7 +121,8 @@ public final class Kumulos {
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
 
-        initializeInApp();
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(application);
+        initializeInApp(userIdentifier);
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
@@ -435,8 +436,14 @@ public final class Kumulos {
         synchronized (userIdLocker) {
             SharedPreferences.Editor editor = prefs.edit();
             editor.remove(SharedPrefs.KEY_USER_IDENTIFIER);
+            editor.remove(SharedPrefs.IN_APP_LAST_SYNC_TIME);
             editor.apply();
         }
+
+        InAppMessageService.clearAllMessages(context);
+
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(application);
+        initializeInApp(userIdentifier);
     }
 
     /**
@@ -481,6 +488,8 @@ public final class Kumulos {
         }
 
         trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+
+        initializeInApp(userIdentifier);
     }
 
     //==============================================================================================
@@ -557,39 +566,47 @@ public final class Kumulos {
             throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
         }
 
-        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        boolean inAppWasEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
-
-        if (consentGiven != inAppWasEnabled){
-            updateInAppEnablementFlags(prefs, consentGiven);
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(application);
+        boolean inAppWasEnabledForCurrentUser = isInAppEnabledForCurrentUser(userIdentifier);
+        if (consentGiven != inAppWasEnabledForCurrentUser){
+            updateInAppEnablementFlags(userIdentifier, consentGiven);
             toggleInAppMessageMonitoring(consentGiven);
         }
     }
 
+
+
     //==============================================================================================
     //-- Internal Helpers
 
-    private static void initializeInApp(){
-        KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
+    private static boolean isInAppEnabledForCurrentUser(String userIdentifier){
         SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        boolean inAppEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+        return prefs.getBoolean(getInAppEnablementKey(userIdentifier), false);
+    }
 
-        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppEnabled){
-            inAppEnabled = true;
-            updateInAppEnablementFlags(prefs, inAppEnabled);
+    static boolean isInAppEnabledForCurrentUser(){
+        return isInAppEnabledForCurrentUser(Kumulos.getCurrentUserIdentifier(application));
+    }
 
+    private static void initializeInApp(String userIdentifier){
+        KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
+        boolean inAppWasEnabledForCurrentUser = isInAppEnabledForCurrentUser(userIdentifier);
+
+        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppWasEnabledForCurrentUser){
+            inAppWasEnabledForCurrentUser = true;
+            updateInAppEnablementFlags(userIdentifier, inAppWasEnabledForCurrentUser);
         }
-        else if (strategy == null && inAppEnabled){
-            inAppEnabled = false;
-            updateInAppEnablementFlags(prefs, inAppEnabled);
+        else if (strategy == null && inAppWasEnabledForCurrentUser){
+            inAppWasEnabledForCurrentUser = false;
+            updateInAppEnablementFlags(userIdentifier, inAppWasEnabledForCurrentUser);
         }
 
-        toggleInAppMessageMonitoring(inAppEnabled);
+        toggleInAppMessageMonitoring(inAppWasEnabledForCurrentUser);
 
         Kumulos.inAppDeepLinkHandler = currentConfig.getInAppDeepLinkHandler();
     }
 
-    private static void updateInAppEnablementFlags(SharedPreferences prefs, boolean enabled){
+    private static void updateInAppEnablementFlags(String userIdentifier, boolean enabled){
         try {
             JSONObject params = new JSONObject().put("consented", enabled);
             Kumulos.trackEvent(application, "k.inApp.statusUpdated", params);
@@ -598,8 +615,9 @@ public final class Kumulos {
             return;
         }
 
+        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.putBoolean(SharedPrefs.IN_APP_ENABLED, enabled);
+        editor.putBoolean(getInAppEnablementKey(userIdentifier), enabled);
         editor.apply();
     }
 
@@ -620,6 +638,11 @@ public final class Kumulos {
             its.cancelPeriodicFetches(application);
         }
     }
+
+    private static String getInAppEnablementKey(String userIdentifier){
+        return SharedPrefs.IN_APP_ENABLED+"-"+userIdentifier;
+    }
+
 
     /**
      * Generates the correct Authorization header value for HTTP Basic auth with the API key & secret

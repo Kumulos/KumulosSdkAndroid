@@ -25,9 +25,7 @@ public class InAppTaskService extends GcmTaskService {
                 .setFlex(flexSecs)
                 .setTag(TAG)
                 .setPersisted(false)
-                .setRequiredNetwork(com.google.android.gms.gcm.Task.NETWORK_STATE_ANY)
-                .setRequiresCharging(false)
-                .setUpdateCurrent(true)//new task with the same tag replaces
+                .setUpdateCurrent(true)
                 .build();
 
         new Thread(new Runnable() {

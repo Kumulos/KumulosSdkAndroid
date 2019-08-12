@@ -29,8 +29,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
 
     private void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
-        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        boolean inAppEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+        boolean inAppEnabled = Kumulos.isInAppEnabledForCurrentUser();
         if (!inAppEnabled){
             return;
         }
@@ -44,8 +43,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     private void maybeAddTickleIdExtra(Context context, PushMessage pushMessage, Intent launchIntent){
-        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        boolean inAppEnabled = prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
+        boolean inAppEnabled = Kumulos.isInAppEnabledForCurrentUser();
         if (!inAppEnabled){
             return;
         }

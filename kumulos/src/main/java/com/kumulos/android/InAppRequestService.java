@@ -95,7 +95,6 @@ class InAppRequestService {
                     return;
                 }
 
-                Log.d("vlad", ""+response.code());
                 switch (response.code()) {
                     case 404:
                         response.close();

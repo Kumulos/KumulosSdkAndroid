@@ -40,6 +40,32 @@ class InAppContract {
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
+    static class ClearDbRunnable implements Runnable {
+        private static final String TAG = InAppContract.ClearDbRunnable.class.getName();
+        private Context mContext;
+
+        ClearDbRunnable(Context context) {
+            mContext = context.getApplicationContext();
+        }
+
+        @Override
+        public void run() {
+            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
+            try {
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+                db.execSQL("delete from "+ InAppMessageTable.TABLE_NAME);
+
+                dbHelper.close();
+            }
+            catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed clearing in-app db ");
+                e.printStackTrace();
+            }
+        }
+    }
+
+
     static class TrackMessageOpenedRunnable implements Runnable {
         private static final String TAG = TrackMessageOpenedRunnable.class.getName();
 

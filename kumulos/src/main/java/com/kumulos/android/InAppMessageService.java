@@ -25,6 +25,11 @@ class InAppMessageService {
     private static final String PRESENTED_WHEN_NEXT_OPEN = "next-open";
     private static final String PRESENTED_WHEN_NEVER = "never";
 
+    static void clearAllMessages(Context context){
+        Runnable task = new InAppContract.ClearDbRunnable(context);
+        Kumulos.executorService.submit(task);
+    }
+
     static void fetch(Context context, Integer tickleId){
         Log.d("vlad", "thread: "+Thread.currentThread().getName());
 
