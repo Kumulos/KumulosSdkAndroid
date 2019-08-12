@@ -23,13 +23,8 @@ import android.widget.RelativeLayout;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 class InAppMessagePresenter {
 
@@ -37,13 +32,12 @@ class InAppMessagePresenter {
     private static final String HOST_MESSAGE_TYPE_PRESENT_MESSAGE = "PRESENT_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
 
-    //TODO: these should be set to null when closeDialog. When activity is destroyed, they are. Cannot use DialogFragment as v4 required. Fine?
     private static List<InAppMessage> messageQueue = new ArrayList<>();
     private static WebView wv = null;
     private static Dialog dialog = null;
     private static ProgressBar spinner = null;
 
-    static void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
+    static synchronized void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
         if (itemsToPresent.isEmpty()){
             return;
         }
@@ -56,7 +50,7 @@ class InAppMessagePresenter {
 
         List<InAppMessage> oldQueue = new ArrayList<InAppMessage>(messageQueue);
 
-        addMessagesToQueue(itemsToPresent);//TODO: if 2 threads, can add message with the same id twice. make queeu thread safe
+        addMessagesToQueue(itemsToPresent);
         moveTickleToFront(tickleId);
 
         if (dialog == null){
@@ -254,7 +248,12 @@ class InAppMessagePresenter {
                     wv = (WebView) dialog.findViewById(R.id.webview);
                     spinner = dialog.findViewById(R.id.progressBar);
 
-                    wv.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);//TODO: set when not developing renderer :) LOAD_CACHE_ELSE_NETWORK
+                    int cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK;
+                    if (BuildConfig.DEBUG) {
+                        cacheMode = WebSettings.LOAD_NO_CACHE;
+                    }
+                    wv.getSettings().setCacheMode(cacheMode);
+
                     wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     wv.getSettings().setJavaScriptEnabled(true);
                     wv.addJavascriptInterface(new InAppJavaScriptInterface(), InAppJavaScriptInterface.NAME);
