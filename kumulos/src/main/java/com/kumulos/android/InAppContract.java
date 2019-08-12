@@ -296,11 +296,11 @@ class InAppContract {
         }
 
         private String getNullableString(JSONObject json, String key){
-            String str = json.optString(key, null);
-            if(str.equals("null")) {
+            if (json.isNull(key)){
                 return null;
             }
-            return str;
+
+            return json.optString(key, null);
         }
     }
 
