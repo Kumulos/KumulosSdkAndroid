@@ -19,9 +19,11 @@ class InAppMessage {
     @Nullable
     private JSONObject data;
     private JSONObject content;
+    @Nullable
     private JSONObject inbox;
-
+    @Nullable
     private Date openedAt = null;
+    @Nullable
     private Date updatedAt;
 
     InAppMessage(){}
@@ -65,14 +67,15 @@ class InAppMessage {
         return content;
     }
 
+    @Nullable
     Date getOpenedAt() {
         return openedAt;
     }
-
+    @Nullable
     Date getUpdatedAt() {
         return updatedAt;
     }
-
+    @Nullable
     JSONObject getInbox() {
         return inbox;
     }
@@ -85,7 +88,7 @@ class InAppMessage {
         this.content = content;
     }
 
-    void setOpenedAt(Date openedAt){
+    void setOpenedAt(@Nullable Date openedAt){
         this.openedAt = openedAt;
     }
 

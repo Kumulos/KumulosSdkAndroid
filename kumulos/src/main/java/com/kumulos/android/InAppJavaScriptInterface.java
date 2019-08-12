@@ -67,7 +67,7 @@ class InAppJavaScriptInterface {
                     psm.subscribe(Kumulos.application, new String[]{action.getChannelUuid()});
                     break;
                 case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
-                    Kumulos.trackEvent(Kumulos.application, action.getEventType(), new JSONObject());
+                    Kumulos.trackEvent(Kumulos.application, action.getEventType(), null);
                     break;
                 case BUTTON_ACTION_OPEN_URL:
                     if (currentActivity == null){
