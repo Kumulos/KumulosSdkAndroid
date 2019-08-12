@@ -203,7 +203,7 @@ class InAppContract {
                 if (id == -1) {
                     db.update(InAppMessageTable.TABLE_NAME, row, InAppMessageTable.COL_ID+"=?", new String[] {""+row.getAsInteger(InAppMessageTable.COL_ID)});
                 }
-                //FIXME : tracks all messages, which were received and saved/updated. delivered_at when message was opened
+                //tracks all messages, which were received and saved/updated. delivered_at when message was opened
                 deliveredIds.add(row.getAsInteger(InAppMessageTable.COL_ID));
             }
 

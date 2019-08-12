@@ -69,7 +69,7 @@ class InAppMessageService {
 
         //TODO: if tickleId != null, and message with it not present, extra fetch
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);//TODO: can multiple threads call this simultaneously?
+        InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);
     }
 
     static void handleMessageClosed(InAppMessage message){
@@ -129,8 +129,6 @@ class InAppMessageService {
 
         @Override
         public void onSuccess(List<InAppMessage> inAppMessages) {
-
-            //TODO: sometimes (especially initial fetch) TASK run happens same time as push received, results in 2 syncs. Coincidence? Don't think so
             Log.d("vlad", "FETCH ON SUCCESS");
             if (inAppMessages.isEmpty()){
                 Log.d("vlad", "empty");
@@ -171,7 +169,7 @@ class InAppMessageService {
             }
             Log.d("vlad", "size to present: "+itemsToPresent.size());
 
-            InAppMessagePresenter.presentMessages(itemsToPresent, mTickleId);//TODO: can multiple threads call this simultaneously?
+            InAppMessagePresenter.presentMessages(itemsToPresent, mTickleId);
         }
 
         private void trackDeliveredEvents( List<Integer> deliveredIds ){
