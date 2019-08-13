@@ -62,7 +62,7 @@ public final class Kumulos {
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
-    static Application application;
+    private static Application application;
     private static InAppActivityLifecycleWatcher inAppActivityWatcher;
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
 
@@ -594,7 +594,7 @@ public final class Kumulos {
     }
 
     static boolean isInAppEnabled(){
-        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences prefs = Kumulos.application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         return prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
     }
 
@@ -631,7 +631,7 @@ public final class Kumulos {
     }
 
     private static void updateLocalInAppEnablementFlag(boolean enabled){
-        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences prefs = Kumulos.application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(SharedPrefs.IN_APP_ENABLED, enabled);
         editor.apply();
@@ -641,13 +641,13 @@ public final class Kumulos {
         InAppTaskService its = new InAppTaskService();
         if (enabled){
             inAppActivityWatcher = new InAppActivityLifecycleWatcher();
-            application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
+            Kumulos.application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
             its.startPeriodicFetches(application);
         }
         else {
             InAppMessagePresenter.closeDialog();
             if (inAppActivityWatcher != null){
-                application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
+                Kumulos.application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
                 inAppActivityWatcher = null;
             }
 

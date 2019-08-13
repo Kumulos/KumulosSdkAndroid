@@ -143,12 +143,12 @@ class InAppMessagePresenter {
         presentMessageToClient();
     }
 
-    static void closeCurrentMessage(){
+    static void closeCurrentMessage(Context context){
         InAppMessage message = messageQueue.get(0);
 
         InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
 
-        InAppMessageService.handleMessageClosed(message);
+        InAppMessageService.handleMessageClosed(context, message);
     }
 
     private static void setSpinnerVisibility(int visibility){
@@ -240,7 +240,7 @@ class InAppMessagePresenter {
                         @Override
                         public boolean onKey(DialogInterface arg0, int keyCode, KeyEvent event) {
                             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
-                                InAppMessagePresenter.closeCurrentMessage();
+                                InAppMessagePresenter.closeCurrentMessage(currentActivity);
                             }
                             return true;
                         }

@@ -1,6 +1,7 @@
 package com.kumulos.android;
 
 import android.app.Application;
+import android.content.Context;
 import android.util.Log;
 import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.GcmTaskService;
@@ -13,7 +14,7 @@ public class InAppTaskService extends GcmTaskService {
     private static final long DESIRED_TASK_FREQUENCY = 15 * 60L;//15 minutes
     private static final long ACCEPTED_FREQUENCY_DEVIATION = 5 * 60L; //can run 5 min earlier
 
-    void startPeriodicFetches(Application application){
+    void startPeriodicFetches(Context context){
         long periodSecs = DESIRED_TASK_FREQUENCY;
         long flexSecs = ACCEPTED_FREQUENCY_DEVIATION;
         if (BuildConfig.DEBUG){
@@ -31,7 +32,7 @@ public class InAppTaskService extends GcmTaskService {
 
         new Thread(new Runnable() {
             public void run() {
-                GcmNetworkManager.getInstance(application).schedule(periodic);
+                GcmNetworkManager.getInstance(context).schedule(periodic);
             }
         }).start();
     }

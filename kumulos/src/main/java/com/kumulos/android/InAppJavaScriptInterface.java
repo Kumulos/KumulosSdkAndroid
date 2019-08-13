@@ -58,28 +58,28 @@ class InAppJavaScriptInterface {
 
     private void executeActions(List<ExecutableAction> actions){
 
+        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+        if (currentActivity == null){
+            return;
+        }
+
         for(ExecutableAction action : actions){
             if (action.getType().equals(BUTTON_ACTION_CLOSE_MESSAGE)){
-                InAppMessagePresenter.closeCurrentMessage();
+                InAppMessagePresenter.closeCurrentMessage(currentActivity);
                 break;
             }
         }
-
-        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
 
         for(ExecutableAction action : actions){
             switch(action.getType()){
                 case BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL:
                     PushSubscriptionManager psm = new PushSubscriptionManager();
-                    psm.subscribe(Kumulos.application, new String[]{action.getChannelUuid()});
+                    psm.subscribe(currentActivity, new String[]{action.getChannelUuid()});
                     break;
                 case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
-                    Kumulos.trackEvent(Kumulos.application, action.getEventType(), null);
+                    Kumulos.trackEvent(currentActivity, action.getEventType(), null);
                     break;
                 case BUTTON_ACTION_OPEN_URL:
-                    if (currentActivity == null){
-                        return;
-                    }
                     this.openUrl(currentActivity, action.getUrl());
                     return;
                 case BUTTON_ACTION_DEEP_LINK:
@@ -88,9 +88,6 @@ class InAppJavaScriptInterface {
                     }
                     return;
                 case BUTTON_ACTION_REQUEST_APP_STORE_RATING:
-                    if (currentActivity == null){
-                        return;
-                    }
                     this.openPlayStore(currentActivity);
 
                     break;

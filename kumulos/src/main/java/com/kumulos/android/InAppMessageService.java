@@ -69,7 +69,7 @@ class InAppMessageService {
 
         InAppMessageService.storeLastSyncTime(context, inAppMessages);
 
-        trackDeliveredEvents(deliveredIds);
+        trackDeliveredEvents(context, deliveredIds);
 
         Log.d("vlad", "thread: "+Thread.currentThread().getName());
 
@@ -90,7 +90,7 @@ class InAppMessageService {
         InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);
     }
 
-    private static void trackDeliveredEvents( List<Integer> deliveredIds ){
+    private static void trackDeliveredEvents(Context context, List<Integer> deliveredIds ){
 
         JSONObject params = new JSONObject();
 
@@ -99,7 +99,7 @@ class InAppMessageService {
                 params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
                 params.put("id", deliveredId);
 
-                Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);
+                Kumulos.trackEvent(context, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);
             }
             catch (JSONException e) {
                 e.printStackTrace();
@@ -138,33 +138,33 @@ class InAppMessageService {
         InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);
     }
 
-    static void handleMessageClosed(InAppMessage message){
-        updateOpenedAt(message);
-        trackOpenedEvent(message.getInAppId());
-        clearNotification(message.getInAppId());
+    static void handleMessageClosed(Context context, InAppMessage message){
+        updateOpenedAt(context, message);
+        trackOpenedEvent(context, message.getInAppId());
+        clearNotification(context, message.getInAppId());
     }
 
-    private static void updateOpenedAt(InAppMessage message){
+    private static void updateOpenedAt(Context context, InAppMessage message){
         message.setOpenedAt(new Date());
-        Runnable task = new InAppContract.TrackMessageOpenedRunnable(Kumulos.application, message);
+        Runnable task = new InAppContract.TrackMessageOpenedRunnable(context, message);
         Kumulos.executorService.submit(task);
     }
 
-    private static void trackOpenedEvent(int id){
+    private static void trackOpenedEvent(Context context, int id){
         JSONObject params = new JSONObject();
         try {
             params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
             params.put("id", id);
 
-            Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
+            Kumulos.trackEvent(context, InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
         }
         catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    private static void clearNotification(int inAppId){
-        NotificationManager notificationManager = (NotificationManager) Kumulos.application.getSystemService(Context.NOTIFICATION_SERVICE);
+    private static void clearNotification(Context context, int inAppId){
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(PushBroadcastReceiver.KUMULOS_NOTIFICATION_TAG, inAppId);
     }
 
