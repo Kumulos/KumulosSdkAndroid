@@ -13,9 +13,12 @@ import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.Callable;
+import java.text.ParseException;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 import android.util.Pair;
@@ -39,6 +42,11 @@ class InAppContract {
     }
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    private static SimpleDateFormat incomingDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
+
+    static{
+        dbDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
 
     static class ClearDbRunnable implements Runnable {
         private static final String TAG = InAppContract.ClearDbRunnable.class.getName();
@@ -192,7 +200,7 @@ class InAppContract {
                 Kumulos.log(TAG, e.getMessage());
             }
 
-            return new Pair<>(itemsToPresent,deliveredIds);
+            return new Pair<>(itemsToPresent, deliveredIds);
         }
 
         private List<Integer> insertRows(SQLiteDatabase db, List<ContentValues> rows){
@@ -215,7 +223,7 @@ class InAppContract {
                     " WHERE ("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NULL AND "+ InAppMessageTable.COL_OPENED_AT+" IS NOT NULL) " +
                     " OR " +
                     "("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NOT NULL " +
-                    " AND (datetime('now') NOT BETWEEN IFNULL("+ InAppMessageTable.COL_INBOX_FROM+", '1970-01-01') AND IFNULL("+ InAppMessageTable.COL_INBOX_TO+", '3970-01-01')))";
+                    " AND (datetime('now') > IFNULL("+ InAppMessageTable.COL_INBOX_TO+", '3970-01-01')))";
 
             db.execSQL(deleteSql);
         }
@@ -255,7 +263,7 @@ class InAppContract {
         }
 
 
-        private List<ContentValues> assembleRows(){
+        private List<ContentValues> assembleRows() throws ParseException{
             List<ContentValues> rows = new ArrayList<>();
 
             for (InAppMessage message: mInAppMessages ){
@@ -276,7 +284,13 @@ class InAppContract {
 
                 if (inbox != null){
                     inboxFrom = this.getNullableString(inbox, "from");
+                    if (inboxFrom != null){
+                        inboxFrom = this.formatDateForDb(inboxFrom);
+                    }
                     inboxTo = this.getNullableString(inbox, "to");
+                    if (inboxTo != null){
+                        inboxTo = this.formatDateForDb(inboxTo);
+                    }
                 }
 
                 values.put(InAppMessageTable.COL_INBOX_CONFIG_JSON, inbox != null ? inbox.toString() : null);
@@ -293,6 +307,10 @@ class InAppContract {
             }
 
             return rows;
+        }
+
+        private String formatDateForDb(String date) throws ParseException{
+            return dbDateFormat.format(incomingDateFormat.parse(date));
         }
 
         private String getNullableString(JSONObject json, String key){
