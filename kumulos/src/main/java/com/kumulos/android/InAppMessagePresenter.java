@@ -10,10 +10,12 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -38,6 +40,10 @@ class InAppMessagePresenter {
     private static Dialog dialog = null;
     private static ProgressBar spinner = null;
 
+    private static int prevStatusBarColor;
+    private static boolean prevFlagTranslucentStatus;
+    private static boolean prevFlagDrawsSystemBarBackgrounds;
+
     static synchronized void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
         if (itemsToPresent.isEmpty()){
             return;
@@ -58,8 +64,10 @@ class InAppMessagePresenter {
             showWebView(currentActivity);
             return;
         }
-        else if( getDialogActivity(dialog.getContext()).hashCode() != currentActivity.hashCode()){
-            closeDialog();
+
+        Activity dialogActivity = getDialogActivity(dialog.getContext());
+        if(dialogActivity.hashCode() != currentActivity.hashCode()){
+            closeDialog(dialogActivity);
             showWebView(currentActivity);
             return;
         }
@@ -113,8 +121,14 @@ class InAppMessagePresenter {
 
     private static void presentMessageToClient(){
         Log.d("vlad","presentMessageToClient");
+        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+        if (currentActivity == null){
+            return;
+        }
+
         if (messageQueue.isEmpty()){
-            closeDialog();
+            closeDialog(currentActivity);
+
             return;
         }
 
@@ -191,7 +205,7 @@ class InAppMessagePresenter {
         }
         Activity dialogActivity = getDialogActivity(dialog.getContext());
         if (stoppedActivity.hashCode() == dialogActivity.hashCode()){
-            closeDialog();
+            closeDialog(stoppedActivity);
         }
     }
 
@@ -206,13 +220,68 @@ class InAppMessagePresenter {
         return null;
     }
 
-    static void closeDialog(){
+    static void closeDialog(Activity dialogActivity){
         if (dialog != null){
+            unsetStatusBarColorForDialog(dialogActivity);
             dialog.dismiss();
         }
         dialog = null;
         wv = null;
         spinner = null;
+
+
+
+
+
+    }
+
+
+    private static void setStatusBarColorForDialog(Activity currentActivity){
+        if (currentActivity == null){
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = currentActivity.getWindow();
+
+            prevStatusBarColor = window.getStatusBarColor();
+
+            int flags = window.getAttributes().flags;
+            prevFlagTranslucentStatus = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
+            prevFlagDrawsSystemBarBackgrounds = (flags & WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS) != 0;
+
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            int statusBarColor;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch, null);
+            }
+            else{
+                statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch);
+            }
+
+            window.setStatusBarColor(statusBarColor);
+        }
+    }
+
+    private static void unsetStatusBarColorForDialog(Activity dialogActivity){
+        if (dialogActivity == null){
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = dialogActivity.getWindow();
+            window.setStatusBarColor(prevStatusBarColor);
+
+            if (prevFlagTranslucentStatus){
+                window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            }
+
+            if (!prevFlagDrawsSystemBarBackgrounds){
+                window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            }
+
+        }
     }
 
     private static void showWebView(Activity currentActivity){
@@ -222,14 +291,10 @@ class InAppMessagePresenter {
             public void run() {
 
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                        WebView.setWebContentsDebuggingEnabled(true);//chrome://inspect/#devices
+                    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                        WebView.setWebContentsDebuggingEnabled(true);
                     }
 
-                    //TODO: notch stuff https://developer.android.com/guide/topics/display-cutout
-                    //1) calculate notch height
-                    //2) determine where is the notch. Cross/close may be under it. Can apply padding to it as well / can move to the other corner
-                    //3) having padding for content may disalign  bg image with contents ==> is it needed really?
 
 
                     RelativeLayout.LayoutParams paramsWebView = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
@@ -270,6 +335,7 @@ class InAppMessagePresenter {
                         @Override
                         public void onPageFinished(WebView view, String url) {
                             view.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                            setStatusBarColorForDialog(currentActivity);
                             super.onPageFinished(view, url);
                         }
                     });

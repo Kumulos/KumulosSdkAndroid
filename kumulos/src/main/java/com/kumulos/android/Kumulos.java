@@ -552,10 +552,6 @@ public final class Kumulos {
 
     //==============================================================================================
     //-- In App APIs
-    public static void setInAppDeepLinkHandler(InAppDeepLinkHandlerInterface handler){
-        inAppDeepLinkHandler = handler;
-    }
-
     public static void updateInAppConsentForUser(boolean consentGiven){
         if (currentConfig.getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
             throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
@@ -645,7 +641,6 @@ public final class Kumulos {
             its.startPeriodicFetches(application);
         }
         else {
-            InAppMessagePresenter.closeDialog();
             if (inAppActivityWatcher != null){
                 Kumulos.application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
                 inAppActivityWatcher = null;
