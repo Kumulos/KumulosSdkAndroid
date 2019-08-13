@@ -91,10 +91,23 @@ class InAppJavaScriptInterface {
                     if (currentActivity == null){
                         return;
                     }
-                    this.openUrl(currentActivity, "market://details?id=" + currentActivity.getPackageName());
+                    this.openPlayStore(currentActivity);
+
                     break;
             }
         }
+    }
+
+    private void openPlayStore(Activity currentActivity){
+        String packageName = currentActivity.getPackageName();
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + packageName));
+        if (intent.resolveActivity(currentActivity.getPackageManager()) != null) {
+            currentActivity.startActivity(intent);
+            return;
+        }
+
+        intent.setData(Uri.parse("https://play.google.com/store/apps/details?"+packageName));
+        currentActivity.startActivity(intent);
     }
 
     private void openUrl(Activity currentActivity, String uri){
