@@ -15,6 +15,7 @@ import java.util.List;
 class InAppJavaScriptInterface {
 
     private static final String TAG = InAppJavaScriptInterface.class.getName();
+    private static final String BUTTON_ACTION_CLOSE_MESSAGE = "closeMessage";
     private static final String BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL = "subscribeToChannel";
     private static final String BUTTON_ACTION_TRACK_CONVERSION_EVENT = "trackConversionEvent";
     private static final String BUTTON_ACTION_OPEN_URL = "openUrl";
@@ -56,7 +57,13 @@ class InAppJavaScriptInterface {
     }
 
     private void executeActions(List<ExecutableAction> actions){
-        InAppMessagePresenter.closeCurrentMessage();
+
+        for(ExecutableAction action : actions){
+            if (action.getType().equals(BUTTON_ACTION_CLOSE_MESSAGE)){
+                InAppMessagePresenter.closeCurrentMessage();
+                break;
+            }
+        }
 
         Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
 

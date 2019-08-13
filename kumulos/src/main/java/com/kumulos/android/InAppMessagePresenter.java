@@ -136,17 +136,18 @@ class InAppMessagePresenter {
     }
 
     static void messageClosed(){//java bridge thread
-
         InAppMessage message = messageQueue.get(0);
         messageQueue.remove(0);
-
-        InAppMessageService.handleMessageClosed(message);
 
         presentMessageToClient();
     }
 
     static void closeCurrentMessage(){
+        InAppMessage message = messageQueue.get(0);
+
         InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
+
+        InAppMessageService.handleMessageClosed(message);
     }
 
     private static void setSpinnerVisibility(int visibility){
