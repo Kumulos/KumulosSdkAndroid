@@ -135,8 +135,6 @@ class InAppMessageService {
                 return;
             }
 
-            InAppMessageService.storeLastSyncTime(this.mContext, inAppMessages);
-
             Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(mContext, inAppMessages);
             final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
 
@@ -150,6 +148,8 @@ class InAppMessageService {
             } catch (InterruptedException | ExecutionException ex) {
                 return;
             }
+
+            InAppMessageService.storeLastSyncTime(this.mContext, inAppMessages);
 
             this.trackDeliveredEvents(deliveredIds);
 
