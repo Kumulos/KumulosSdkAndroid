@@ -31,6 +31,7 @@ class InAppMessagePresenter {
     private static final String TAG = InAppMessagePresenter.class.getName();
     private static final String HOST_MESSAGE_TYPE_PRESENT_MESSAGE = "PRESENT_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
+    private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
 
     private static List<InAppMessage> messageQueue = new ArrayList<>();
     private static WebView wv = null;
@@ -273,9 +274,7 @@ class InAppMessagePresenter {
                         }
                     });
 
-
-                    //wv.loadUrl("https://iar.app.delivery");
-                    wv.loadUrl("http://192.168.1.24:8080");
+                    wv.loadUrl(IN_APP_RENDERER_URL);
                 }
                 catch(Exception e){
                     Kumulos.log(TAG, e.getMessage());
