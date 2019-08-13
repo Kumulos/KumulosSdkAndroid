@@ -14,6 +14,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 
+import com.google.android.gms.gcm.GcmNetworkManager;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,7 +40,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        InAppMessageService.fetch(context, tickleId);
+        new Thread(new Runnable() {
+            public void run() {
+                InAppMessageService.fetch(context, tickleId);
+            }
+        }).start();
     }
 
     private void maybeAddTickleIdExtra(Context context, PushMessage pushMessage, Intent launchIntent){

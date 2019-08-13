@@ -15,37 +15,23 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
 class InAppRequestService {
 
-    private static class UserNotFoundException extends Exception {
-        UserNotFoundException() {
-            super("User not found");
-        }
-    }
+    private static final String TAG = InAppRequestService.class.getName();
 
-
-    private static class ValidationException extends Exception {
-        ValidationException(String s) {
-            super(s);
-        }
-    }
-
-    static void readInAppMessages(Context c, final Kumulos.ResultCallback<List<InAppMessage>> callback, Date lastSyncTime) {
+    static List<InAppMessage> readInAppMessages(Context c, Date lastSyncTime) {
         OkHttpClient httpClient;
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
         try {
             httpClient = Kumulos.getHttpClient();
-
         } catch (Kumulos.UninitializedException e) {
-            callback.onFailure(e);
-            return;
+            Kumulos.log(TAG, e.getMessage());
+            return null;
         }
 
         String params = "";
@@ -66,53 +52,57 @@ class InAppRequestService {
                 .get()
                 .build();
 
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                callback.onFailure(e);
+        List<InAppMessage> messages = null;
+
+        try(Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                logFailedResponse(response);
+            }
+            else{
+                messages = getMessages(response);
+            }
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+
+        return messages;
+    }
+
+    private static void logFailedResponse(Response response){
+        switch (response.code()) {
+            case 404:
+                Kumulos.log(TAG, "User not found");
+                break;
+            case 422:
+                try {
+                    Kumulos.log(TAG, response.body().string());
+                } catch (NullPointerException|IOException e) {
+                    Kumulos.log(TAG, e.getMessage());
+                }
+                break;
+            default:
+                Kumulos.log(TAG, response.message());
+                break;
+        }
+    }
+
+    private static List<InAppMessage> getMessages(Response response){
+        try {
+            JSONArray result = new JSONArray(response.body().string());
+            List<InAppMessage> inAppMessages = new ArrayList<>();
+            int len = result.length();
+
+            for (int i = 0; i < len; i++) {
+                InAppMessage message = new InAppMessage(result.getJSONObject(i));
+                inAppMessages.add(message);
             }
 
-            @Override
-            public void onResponse(Call call, Response response) {
-                if (response.isSuccessful()) {
-                    try {
-                        JSONArray result = new JSONArray(response.body().string());
-                        List<InAppMessage> inAppMessages = new ArrayList<>();
-                        int len = result.length();
-
-                        for (int i = 0; i < len; i++) {
-                            InAppMessage message = new InAppMessage(result.getJSONObject(i));
-                            inAppMessages.add(message);
-                        }
-
-                        callback.onSuccess(inAppMessages);
-                    }
-                    catch (NullPointerException| JSONException | ParseException | IOException e) {
-                        callback.onFailure(e);
-                    }
-
-                    response.close();
-                    return;
-                }
-
-                switch (response.code()) {
-                    case 404:
-                        response.close();
-                        callback.onFailure(new UserNotFoundException());
-                        break;
-                    case 422:
-                        try {
-                            callback.onFailure(new ValidationException(response.body().string()));
-                        } catch (NullPointerException|IOException e) {
-                            callback.onFailure(e);
-                        }
-                        break;
-                    default:
-                        callback.onFailure(new Exception(response.message()));
-                        response.close();
-                        break;
-                }
-            }
-        });
+            return inAppMessages;
+        }
+        catch (NullPointerException| JSONException | ParseException | IOException e) {
+            Kumulos.log(TAG, e.getMessage());
+            return null;
+        }
     }
 }

@@ -30,15 +30,81 @@ class InAppMessageService {
         Kumulos.executorService.submit(task);
     }
 
-    static void fetch(Context context, Integer tickleId){
+    static boolean fetch(Context context, Integer tickleId){
         Log.d("vlad", "thread: "+Thread.currentThread().getName());
 
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         long millis = preferences.getLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, 0L);
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
 
-        FetchCallback callback = new FetchCallback(context, tickleId);
-        InAppRequestService.readInAppMessages(context, callback, lastSyncTime);
+        List<InAppMessage> inAppMessages = InAppRequestService.readInAppMessages(context, lastSyncTime);
+        if (inAppMessages == null){
+            return false;
+        }
+
+        showFetchedMessages(context, inAppMessages, tickleId);
+        return true;
+    }
+
+    private static void showFetchedMessages(Context context, List<InAppMessage> inAppMessages , Integer tickleId){
+        Log.d("vlad", "FETCH ON SUCCESS");
+        if (inAppMessages.isEmpty()){
+            Log.d("vlad", "empty");
+            return;
+        }
+
+        Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
+        final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
+
+        List<InAppMessage> unreadMessages;
+        List<Integer> deliveredIds;
+        try {
+            Pair<List<InAppMessage>, List<Integer>> p = future.get();
+            unreadMessages = p.first;
+            deliveredIds = p.second;
+            Log.d("vlad", ""+unreadMessages.size());
+        } catch (InterruptedException | ExecutionException ex) {
+            return;
+        }
+
+        InAppMessageService.storeLastSyncTime(context, inAppMessages);
+
+        trackDeliveredEvents(deliveredIds);
+
+        Log.d("vlad", "thread: "+Thread.currentThread().getName());
+
+        if (InAppActivityLifecycleWatcher.isBackground()){
+            Log.d("vlad", "present, but bg");
+            return;
+        }
+
+        List<InAppMessage> itemsToPresent = new ArrayList<>();
+        for(InAppMessage message: unreadMessages){
+            if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
+                    || Integer.valueOf(message.getInAppId()).equals(tickleId)){
+                itemsToPresent.add(message);
+            }
+        }
+        Log.d("vlad", "size to present: "+itemsToPresent.size());
+
+        InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);
+    }
+
+    private static void trackDeliveredEvents( List<Integer> deliveredIds ){
+
+        JSONObject params = new JSONObject();
+
+        for (Integer deliveredId: deliveredIds){
+            try {
+                params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
+                params.put("id", deliveredId);
+
+                Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);
+            }
+            catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     static void readMessages(Context context, boolean fromBackground, Integer tickleId){
@@ -116,82 +182,5 @@ class InAppMessageService {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, maxUpdatedAt.getTime());
         editor.apply();
-    }
-
-    private static class FetchCallback extends Kumulos.ResultCallback<List<InAppMessage>> {
-        Integer mTickleId;
-        Context mContext;
-
-        FetchCallback(Context context, Integer tickleId){
-            this.mTickleId = tickleId;
-            this.mContext = context;
-        }
-
-        @Override
-        public void onSuccess(List<InAppMessage> inAppMessages) {
-            Log.d("vlad", "FETCH ON SUCCESS");
-            if (inAppMessages.isEmpty()){
-                Log.d("vlad", "empty");
-                return;
-            }
-
-            Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(mContext, inAppMessages);
-            final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
-
-            List<InAppMessage> unreadMessages;
-            List<Integer> deliveredIds;
-            try {
-                Pair<List<InAppMessage>, List<Integer>> p = future.get();
-                unreadMessages = p.first;
-                deliveredIds = p.second;
-                Log.d("vlad", ""+unreadMessages.size());
-            } catch (InterruptedException | ExecutionException ex) {
-                return;
-            }
-
-            InAppMessageService.storeLastSyncTime(this.mContext, inAppMessages);
-
-            this.trackDeliveredEvents(deliveredIds);
-
-            Log.d("vlad", "thread: "+Thread.currentThread().getName());
-
-            if (InAppActivityLifecycleWatcher.isBackground()){
-                Log.d("vlad", "present, but bg");
-                return;
-            }
-
-            List<InAppMessage> itemsToPresent = new ArrayList<>();
-            for(InAppMessage message: unreadMessages){
-                if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
-                        || Integer.valueOf(message.getInAppId()).equals(mTickleId)){
-                    itemsToPresent.add(message);
-                }
-            }
-            Log.d("vlad", "size to present: "+itemsToPresent.size());
-
-            InAppMessagePresenter.presentMessages(itemsToPresent, mTickleId);
-        }
-
-        private void trackDeliveredEvents( List<Integer> deliveredIds ){
-
-            JSONObject params = new JSONObject();
-
-            for (Integer deliveredId: deliveredIds){
-                try {
-                    params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
-                    params.put("id", deliveredId);
-
-                    Kumulos.trackEvent(Kumulos.application, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);
-                }
-                catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            Kumulos.log(TAG, e.getMessage());
-        }
     }
 }
