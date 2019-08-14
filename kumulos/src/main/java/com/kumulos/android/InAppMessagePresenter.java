@@ -147,7 +147,16 @@ class InAppMessagePresenter {
     }
 
     static void clientReady(){//java bridge thread
-        presentMessageToClient();
+        if (wv == null){
+            return;
+        }
+
+        wv.post(new Runnable() {
+            @Override
+            public void run() {
+                presentMessageToClient();
+            }
+        });
     }
 
     static void messageOpened(){//java bridge thread
@@ -155,10 +164,19 @@ class InAppMessagePresenter {
     }
 
     static void messageClosed(){//java bridge thread
-        InAppMessage message = messageQueue.get(0);
-        messageQueue.remove(0);
+        if (wv == null){
+            return;
+        }
 
-        presentMessageToClient();
+        wv.post(new Runnable() {
+            @Override
+            public void run() {
+                InAppMessage message = messageQueue.get(0);
+                messageQueue.remove(0);
+
+                presentMessageToClient();
+            }
+        });
     }
 
     static void closeCurrentMessage(Context context){
