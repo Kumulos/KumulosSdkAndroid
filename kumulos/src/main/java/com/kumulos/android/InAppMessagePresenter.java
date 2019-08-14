@@ -224,7 +224,7 @@ class InAppMessagePresenter {
         return null;
     }
 
-    static void closeDialog(Activity dialogActivity){
+    private static void closeDialog(Activity dialogActivity){
         if (dialog != null){
             unsetStatusBarColorForDialog(dialogActivity);
             dialog.dismiss();
@@ -239,27 +239,29 @@ class InAppMessagePresenter {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = currentActivity.getWindow();
-
-            prevStatusBarColor = window.getStatusBarColor();
-
-            int flags = window.getAttributes().flags;
-            prevFlagTranslucentStatus = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
-            prevFlagDrawsSystemBarBackgrounds = (flags & WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS) != 0;
-
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            int statusBarColor;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch, null);
-            }
-            else{
-                statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch);
-            }
-
-            window.setStatusBarColor(statusBarColor);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
+            return;
         }
+
+        Window window = currentActivity.getWindow();
+
+        prevStatusBarColor = window.getStatusBarColor();
+
+        int flags = window.getAttributes().flags;
+        prevFlagTranslucentStatus = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
+        prevFlagDrawsSystemBarBackgrounds = (flags & WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS) != 0;
+
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        int statusBarColor;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch, null);
+        }
+        else{
+            statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch);
+        }
+
+        window.setStatusBarColor(statusBarColor);
     }
 
     private static void unsetStatusBarColorForDialog(Activity dialogActivity){
@@ -267,17 +269,19 @@ class InAppMessagePresenter {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = dialogActivity.getWindow();
-            window.setStatusBarColor(prevStatusBarColor);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
+            return;
+        }
 
-            if (prevFlagTranslucentStatus){
-                window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            }
+        Window window = dialogActivity.getWindow();
+        window.setStatusBarColor(prevStatusBarColor);
 
-            if (!prevFlagDrawsSystemBarBackgrounds){
-                window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            }
+        if (prevFlagTranslucentStatus){
+            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
+
+        if (!prevFlagDrawsSystemBarBackgrounds){
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         }
     }
 
