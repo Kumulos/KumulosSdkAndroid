@@ -314,7 +314,7 @@ class InAppContract {
         }
 
         private String getNullableString(JSONObject json, String key){
-            if (json.isNull(key)){
+            if (!json.has(key) || json.isNull(key)){
                 return null;
             }
 
