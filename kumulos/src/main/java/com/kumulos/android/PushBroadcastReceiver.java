@@ -18,6 +18,8 @@ import com.google.android.gms.gcm.GcmNetworkManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import android.os.Handler;
+import android.util.Log;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -29,58 +31,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     private static final int DEEP_LINK_TYPE_IN_APP = 1;
     static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
-
-    private void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
-        if (!Kumulos.isInAppEnabled()){
-            return;
-        }
-
-        Integer tickleId = this.getTickleId(pushMessage);
-        if (tickleId == null){
-            return;
-        }
-
-        new Thread(new Runnable() {
-            public void run() {
-                InAppMessageService.fetch(context, tickleId);
-            }
-        }).start();
-    }
-
-    private void maybeAddTickleIdExtra(Context context, PushMessage pushMessage, Intent launchIntent){
-        if (!Kumulos.isInAppEnabled()){
-            return;
-        }
-
-        Integer tickleId = this.getTickleId(pushMessage);
-        if (tickleId == null){
-            return;
-        }
-
-        launchIntent.putExtra(EXTRAS_KEY_TICKLE_ID, tickleId);
-    }
-
-    private Integer getTickleId(PushMessage pushMessage){
-        JSONObject deepLink = pushMessage.getData().optJSONObject("k.deeplink");
-
-        if (deepLink == null){
-            return null;
-        }
-
-        int linkType = deepLink.optInt("type", -1);
-
-        if (linkType != DEEP_LINK_TYPE_IN_APP){
-            return null;
-        }
-
-        try{
-            return deepLink.getJSONObject("data").getInt("id");
-        }
-        catch(JSONException e){
-            Kumulos.log(TAG, e.toString());
-            return null;
-        }
-    }
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -136,6 +86,58 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         notificationManager.notify(KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage) , notification);
+    }
+
+    private void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
+        if (!Kumulos.isInAppEnabled()){
+            return;
+        }
+
+        Integer tickleId = this.getTickleId(pushMessage);
+        if (tickleId == null){
+            return;
+        }
+
+        new Thread(new Runnable() {
+            public void run() {
+                InAppMessageService.fetch(context);
+            }
+        }).start();
+    }
+
+    private void maybeAddTickleIdExtra(Context context, PushMessage pushMessage, Intent launchIntent){
+        if (!Kumulos.isInAppEnabled()){
+            return;
+        }
+
+        Integer tickleId = this.getTickleId(pushMessage);
+        if (tickleId == null){
+            return;
+        }
+
+        launchIntent.putExtra(EXTRAS_KEY_TICKLE_ID, tickleId);
+    }
+
+    private Integer getTickleId(PushMessage pushMessage){
+        JSONObject deepLink = pushMessage.getData().optJSONObject("k.deeplink");
+
+        if (deepLink == null){
+            return null;
+        }
+
+        int linkType = deepLink.optInt("type", -1);
+
+        if (linkType != DEEP_LINK_TYPE_IN_APP){
+            return null;
+        }
+
+        try{
+            return deepLink.getJSONObject("data").getInt("id");
+        }
+        catch(JSONException e){
+            Kumulos.log(TAG, e.toString());
+            return null;
+        }
     }
 
     private int getNotificationId(PushMessage pushMessage){

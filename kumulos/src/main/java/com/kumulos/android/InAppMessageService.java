@@ -24,13 +24,14 @@ class InAppMessageService {
     private static final String PRESENTED_WHEN_IMMEDIATELY = "immediately";
     private static final String PRESENTED_WHEN_NEXT_OPEN = "next-open";
     private static final String PRESENTED_WHEN_NEVER = "never";
+    private static List<Integer> pendingTickleIds = new ArrayList<>();
 
     static void clearAllMessages(Context context){
         Runnable task = new InAppContract.ClearDbRunnable(context);
         Kumulos.executorService.submit(task);
     }
 
-    static boolean fetch(Context context, Integer tickleId){
+    static boolean fetch(Context context){
         Log.d("vlad", "thread: "+Thread.currentThread().getName());
 
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
@@ -42,11 +43,11 @@ class InAppMessageService {
             return false;
         }
 
-        showFetchedMessages(context, inAppMessages, tickleId);
+        showFetchedMessages(context, inAppMessages);
         return true;
     }
 
-    private static void showFetchedMessages(Context context, List<InAppMessage> inAppMessages , Integer tickleId){
+    private static void showFetchedMessages(Context context, List<InAppMessage> inAppMessages){
         Log.d("vlad", "FETCH ON SUCCESS");
         if (inAppMessages.isEmpty()){
             Log.d("vlad", "empty");
@@ -80,14 +81,21 @@ class InAppMessageService {
 
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         for(InAppMessage message: unreadMessages){
-            if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
-                    || Integer.valueOf(message.getInAppId()).equals(tickleId)){
+            boolean hasPendingTickleId = false;
+            for(Integer pendingTickleId : pendingTickleIds){
+                if (message.getInAppId() == pendingTickleId){
+                    hasPendingTickleId = true;
+                    break;
+                }
+            }
+            if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY) || hasPendingTickleId){
                 itemsToPresent.add(message);
             }
         }
         Log.d("vlad", "size to present: "+itemsToPresent.size());
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);
+        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
+        pendingTickleIds.clear();
     }
 
     private static void trackDeliveredEvents(Context context, List<Integer> deliveredIds ){
@@ -123,7 +131,6 @@ class InAppMessageService {
             Log.d("vlad", "readMessages with tickle id : " + tickleId);
         }
 
-
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         for(InAppMessage message: unreadMessages){
             if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
@@ -133,9 +140,26 @@ class InAppMessageService {
             }
         }
 
-        //TODO: if tickleId != null, and message with it not present, extra fetch
+        List<Integer> tickleIds = new ArrayList<>();
+        if (tickleId != null){
+            boolean tickleMessageFound = false;
+            for (InAppMessage message : itemsToPresent){
+                if (message.getInAppId() == tickleId){
+                    tickleMessageFound = true;
+                    break;
+                }
+            }
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, tickleId);
+            if (!tickleMessageFound){
+                Log.d("vlad", "push open, but tickle id NOT FOUND");
+                pendingTickleIds.add(tickleId);
+            }
+            else{
+                tickleIds.add(tickleId);
+            }
+        }
+
+        InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
     }
 
     static void handleMessageClosed(Context context, InAppMessage message){

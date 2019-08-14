@@ -27,6 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 class InAppMessagePresenter {
 
@@ -39,12 +40,11 @@ class InAppMessagePresenter {
     private static WebView wv = null;
     private static Dialog dialog = null;
     private static ProgressBar spinner = null;
-
     private static int prevStatusBarColor;
     private static boolean prevFlagTranslucentStatus;
     private static boolean prevFlagDrawsSystemBarBackgrounds;
 
-    static synchronized void presentMessages(List<InAppMessage> itemsToPresent, Integer tickleId){
+    static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
         if (itemsToPresent.isEmpty()){
             return;
         }
@@ -58,7 +58,7 @@ class InAppMessagePresenter {
         List<InAppMessage> oldQueue = new ArrayList<InAppMessage>(messageQueue);
 
         addMessagesToQueue(itemsToPresent);
-        moveTickleToFront(tickleId);
+        moveTicklesToFront(tickleIds);
 
         if (dialog == null){
             showWebView(currentActivity);
@@ -87,18 +87,22 @@ class InAppMessagePresenter {
         }
     }
 
-    private static void moveTickleToFront(Integer tickleId){
-        if (tickleId == null){
+    private static void moveTicklesToFront(List<Integer> tickleIds){
+        if (tickleIds.isEmpty()){
             return;
         }
 
-        for(int i=0; i<messageQueue.size(); i++){
-            InAppMessage next = messageQueue.get(i);
-            if (tickleId == next.getInAppId()){
-                messageQueue.remove(i);
-                messageQueue.add(0, next);
+        Log.d("vlad", "moving tickle to front!!!!");
 
-                return;
+        for (Integer tickleId : tickleIds){
+            for(int i=0; i<messageQueue.size(); i++){
+                InAppMessage next = messageQueue.get(i);
+                if (tickleId == next.getInAppId()){
+                    messageQueue.remove(i);
+                    messageQueue.add(0, next);
+
+                    break;
+                }
             }
         }
     }
@@ -228,13 +232,7 @@ class InAppMessagePresenter {
         dialog = null;
         wv = null;
         spinner = null;
-
-
-
-
-
     }
-
 
     private static void setStatusBarColorForDialog(Activity currentActivity){
         if (currentActivity == null){
@@ -280,7 +278,6 @@ class InAppMessagePresenter {
             if (!prevFlagDrawsSystemBarBackgrounds){
                 window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             }
-
         }
     }
 
@@ -289,13 +286,10 @@ class InAppMessagePresenter {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
-
                 try {
                     if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                         WebView.setWebContentsDebuggingEnabled(true);
                     }
-
-
 
                     RelativeLayout.LayoutParams paramsWebView = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
                     dialog = new Dialog(currentActivity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);

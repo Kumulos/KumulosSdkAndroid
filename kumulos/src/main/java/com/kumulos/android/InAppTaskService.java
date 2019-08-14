@@ -48,8 +48,8 @@ public class InAppTaskService extends GcmTaskService {
     @Override
     public int onRunTask(TaskParams params) {//background thread
         Log.d("vlad", "TASK RUN");
-        boolean success = InAppMessageService.fetch(this, null);
-Log.d("vlad", "success task: "+success);
+        boolean success = InAppMessageService.fetch(this);
+        Log.d("vlad", "success task: "+success);
         if (!success){
             return GcmNetworkManager.RESULT_RESCHEDULE;
         }
