@@ -141,14 +141,9 @@ class InAppJavaScriptInterface {
                     action.setUrl(url);
                     break;
                 case BUTTON_ACTION_DEEP_LINK:
-                    String deepLink = rawActionData.optString("deepLink");
-                    try{
-                        JSONObject jsonDeepLink = new JSONObject(deepLink);
-                        action.setDeepLink(jsonDeepLink);
-                    }
-                    catch(JSONException e){
-                        continue;
-                    }
+                    JSONObject deepLink = rawActionData.optJSONObject("deepLink");
+                    action.setDeepLink(deepLink);
+
                 default:
             }
             actions.add(action);
