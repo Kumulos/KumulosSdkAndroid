@@ -361,7 +361,13 @@ class InAppMessagePresenter {
                         @SuppressWarnings("deprecation")
                         @Override
                         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                            closeDialog(currentActivity);
+                            if (BuildConfig.DEBUG){
+                                Kumulos.log(TAG, "Error code: "+errorCode+". "+description);
+                            }
+                            
+                            if (errorCode == WebViewClient.ERROR_HOST_LOOKUP){
+                                closeDialog(currentActivity);
+                            }
                         }
 
                         @TargetApi(android.os.Build.VERSION_CODES.M)
