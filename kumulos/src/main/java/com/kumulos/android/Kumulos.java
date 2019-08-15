@@ -516,18 +516,19 @@ public final class Kumulos {
      * @param context
      * @param id
      */
-    public static void pushTrackOpen(Context context, final String id) throws UninitializedException {
+    public static void pushTrackOpen(Context context, final int id) throws UninitializedException {
         log("PUSH: Tracking open for " + id);
 
         JSONObject props = new JSONObject();
         try {
+            props.put("type", AnalyticsContract.MESSAGE_TYPE_PUSH);
             props.put("id", id);
         } catch (JSONException e) {
             e.printStackTrace();
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_OPENED, props);
+        Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_OPENED, props);
     }
 
     /**

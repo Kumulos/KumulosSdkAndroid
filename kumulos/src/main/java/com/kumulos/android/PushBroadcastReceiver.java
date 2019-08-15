@@ -11,15 +11,10 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Build;
-
-import com.google.android.gms.gcm.GcmNetworkManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import android.os.Handler;
-import android.util.Log;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -61,6 +56,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     protected void onPushReceived(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push received");
 
+        this.pushTrackDelivered(context, pushMessage);
+
         this.maybeTriggerInAppSync(context, pushMessage);
 
         if (pushMessage.runBackgroundHandler()) {
@@ -86,6 +83,19 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         notificationManager.notify(KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage) , notification);
+    }
+
+    private void pushTrackDelivered(Context context, PushMessage pushMessage){
+        try {
+            JSONObject params = new JSONObject();
+            params.put("type", AnalyticsContract.MESSAGE_TYPE_PUSH);
+            params.put("id", pushMessage.getId());
+
+            Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_DELIVERED, params);
+        }
+        catch(JSONException e){
+            Kumulos.log(TAG, e.toString());
+        }
     }
 
     private void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
@@ -247,7 +257,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param context
      * @param pushMessage
      * @return
-     * @see Kumulos#pushTrackOpen(Context,String) for correctly tracking conversions if you customize the content intent
+     * @see Kumulos#pushTrackOpen(Context,int) for correctly tracking conversions if you customize the content intent
      */
     protected Notification buildNotification(Context context, PushMessage pushMessage) {
         Intent openIntent = new Intent(ACTION_PUSH_OPENED);

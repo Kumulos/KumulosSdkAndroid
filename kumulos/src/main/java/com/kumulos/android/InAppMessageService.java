@@ -17,9 +17,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 class InAppMessageService {
-    private static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
-    private static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
-    private static final int MESSAGE_TYPE_IN_APP = 2;
     private static final String TAG = InAppMessageService.class.getName();
     private static final String PRESENTED_WHEN_IMMEDIATELY = "immediately";
     private static final String PRESENTED_WHEN_NEXT_OPEN = "next-open";
@@ -104,10 +101,10 @@ class InAppMessageService {
 
         for (Integer deliveredId: deliveredIds){
             try {
-                params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
+                params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
                 params.put("id", deliveredId);
 
-                Kumulos.trackEvent(context, InAppMessageService.EVENT_TYPE_MESSAGE_DELIVERED, params);
+                Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_DELIVERED, params);
             }
             catch (JSONException e) {
                 e.printStackTrace();
@@ -177,10 +174,10 @@ class InAppMessageService {
     private static void trackOpenedEvent(Context context, int id){
         JSONObject params = new JSONObject();
         try {
-            params.put("type", InAppMessageService.MESSAGE_TYPE_IN_APP);
+            params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
             params.put("id", id);
 
-            Kumulos.trackEvent(context, InAppMessageService.EVENT_TYPE_MESSAGE_OPENED, params);
+            Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_OPENED, params);
         }
         catch (JSONException e) {
             e.printStackTrace();

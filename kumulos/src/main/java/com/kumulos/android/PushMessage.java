@@ -16,7 +16,7 @@ public final class PushMessage implements Parcelable {
 
     public static final String EXTRAS_KEY = "com.kumulos.push.message";
 
-    private String id;
+    private int id;
     private String title;
     private String message;
     private JSONObject data;
@@ -24,7 +24,7 @@ public final class PushMessage implements Parcelable {
     private Uri url;
     private boolean runBackgroundHandler;
 
-    /** package */ PushMessage(String id, @Nullable String title, @Nullable String message, @Nullable JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler) {
+    /** package */ PushMessage(int id, @Nullable String title, @Nullable String message, @Nullable JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler) {
         this.id = id;
         this.title = title;
         this.message = message;
@@ -35,7 +35,7 @@ public final class PushMessage implements Parcelable {
     }
 
     private PushMessage(Parcel in) {
-        id = in.readString();
+        id = in.readInt();
         title = in.readString();
         message = in.readString();
         timeSent = in.readLong();
@@ -78,7 +78,7 @@ public final class PushMessage implements Parcelable {
         String dataString = (data != null) ? data.toString() : null;
         String urlString = (url != null) ? url.toString() : null;
 
-        dest.writeString(id);
+        dest.writeInt(id);
         dest.writeString(title);
         dest.writeString(message);
         dest.writeLong(timeSent);
@@ -87,7 +87,7 @@ public final class PushMessage implements Parcelable {
         dest.writeString(urlString);
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
