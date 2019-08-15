@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.NotificationManager;
@@ -17,6 +18,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -354,6 +357,19 @@ class InAppMessagePresenter {
                             setStatusBarColorForDialog(currentActivity);
                             super.onPageFinished(view, url);
                         }
+
+                        @SuppressWarnings("deprecation")
+                        @Override
+                        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                            closeDialog(currentActivity);
+                        }
+
+                        @TargetApi(android.os.Build.VERSION_CODES.M)
+                        @Override
+                        public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError rerr) {
+                            onReceivedError(view, rerr.getErrorCode(), rerr.getDescription().toString(), req.getUrl().toString());
+                        }
+
                     });
 
                     wv.loadUrl(IN_APP_RENDERER_URL);
