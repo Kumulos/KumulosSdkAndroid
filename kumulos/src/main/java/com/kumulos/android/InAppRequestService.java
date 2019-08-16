@@ -1,7 +1,6 @@
 package com.kumulos.android;
 
 import android.content.Context;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,9 +40,6 @@ class InAppRequestService {
             params= "?after="+ sdf.format(lastSyncTime);
         }
         String url = Kumulos.PUSH_BASE_URL + "/v1/users/"+userIdentifier+"/messages"+params;
-
-        Log.d("vlad", url);
-
 
         final Request request = new Request.Builder()
                 .url(url)

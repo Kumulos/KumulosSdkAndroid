@@ -6,14 +6,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -99,10 +97,6 @@ class InAppContract {
                 String[] selectionArgs = { mInAppMessage.getInAppId()+"" };
 
                 int count = db.update(InAppMessageTable.TABLE_NAME, values, selection, selectionArgs);
-
-                if (count == 1){
-                    Log.d("vlad", "opened_at written for inAppId: "+ mInAppMessage.getInAppId());
-                }
 
                 dbHelper.close();
             }

@@ -3,7 +3,6 @@ package com.kumulos.android;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,8 +28,6 @@ class InAppMessageService {
     }
 
     static boolean fetch(Context context){
-        Log.d("vlad", "thread: "+Thread.currentThread().getName());
-
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         long millis = preferences.getLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, 0L);
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
@@ -45,9 +42,7 @@ class InAppMessageService {
     }
 
     private static void showFetchedMessages(Context context, List<InAppMessage> inAppMessages){
-        Log.d("vlad", "FETCH ON SUCCESS");
         if (inAppMessages.isEmpty()){
-            Log.d("vlad", "empty");
             return;
         }
 
@@ -60,7 +55,6 @@ class InAppMessageService {
             Pair<List<InAppMessage>, List<Integer>> p = future.get();
             unreadMessages = p.first;
             deliveredIds = p.second;
-            Log.d("vlad", ""+unreadMessages.size());
         } catch (InterruptedException | ExecutionException ex) {
             return;
         }
@@ -69,10 +63,7 @@ class InAppMessageService {
 
         trackDeliveredEvents(context, deliveredIds);
 
-        Log.d("vlad", "thread: "+Thread.currentThread().getName());
-
         if (InAppActivityLifecycleWatcher.isBackground()){
-            Log.d("vlad", "present, but bg");
             return;
         }
 
@@ -89,7 +80,6 @@ class InAppMessageService {
                 itemsToPresent.add(message);
             }
         }
-        Log.d("vlad", "size to present: "+itemsToPresent.size());
 
         InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
         pendingTickleIds.clear();
@@ -124,10 +114,6 @@ class InAppMessageService {
             return;
         }
 
-        if (tickleId != null) {
-            Log.d("vlad", "readMessages with tickle id : " + tickleId);
-        }
-
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         for(InAppMessage message: unreadMessages){
             if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
@@ -148,7 +134,6 @@ class InAppMessageService {
             }
 
             if (!tickleMessageFound){
-                Log.d("vlad", "push open, but tickle id NOT FOUND");
                 pendingTickleIds.add(tickleId);
             }
             else{

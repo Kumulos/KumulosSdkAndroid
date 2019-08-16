@@ -5,7 +5,6 @@ import android.app.Application;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.lang.ref.WeakReference;
 
@@ -29,7 +28,6 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
 
     @Override
     public void onActivityDestroyed(Activity activity) {
-        Log.d("vlad", "activity destroyed");
         InAppMessagePresenter.maybeCloseDialog(activity);
 
         Activity currentActivity = getCurrentActivity();
@@ -37,23 +35,16 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
             return;
         }
 
-        if (currentActivity.hashCode() == activity.hashCode()) {Log.d("vlad", "current activity is null!!!");
+        if (currentActivity.hashCode() == activity.hashCode()) {
             currentActivityRef = new WeakReference<>(null);
         }
     }
 
     @Override
     public void onActivityStarted(Activity activity) {
-        Log.d("vlad", "activity started");
-
         Integer tickleId = this.getTickleId(activity);
         if (isBackground() || tickleId != null) {
-            Log.d("vlad", isBackground() ? "onActivityStarted: app goes fg!!!" : "onActivityStarted: tickleId "+ tickleId);
-
             InAppMessageService.readMessages(activity, isBackground(), tickleId);
-
-            Log.d("vlad", "read messages thread: "+Thread.currentThread().getName());
-
         }
 
         numStarted++;
@@ -67,13 +58,7 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
 
     @Override
     public void onActivityStopped(Activity activity) {
-
-
-        Log.d("vlad", "activity stopped");
         numStarted--;
-        if (numStarted == 0) {
-            Log.d("vlad", "app goes bg!!!");
-        }
     }
 
     @Override

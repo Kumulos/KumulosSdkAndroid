@@ -462,6 +462,10 @@ public final class Kumulos {
             throw new IllegalArgumentException("Kumulos.associateUserWithInstall requires a non-empty user identifier");
         }
 
+        if (userIdentifier.equals(getCurrentUserIdentifier(context))){
+            return;
+        }
+
         JSONObject props = new JSONObject();
 
         try {

@@ -11,7 +11,6 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -30,7 +29,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 class InAppMessagePresenter {
 
@@ -95,8 +93,6 @@ class InAppMessagePresenter {
             return;
         }
 
-        Log.d("vlad", "moving tickle to front!!!!");
-
         for (Integer tickleId : tickleIds){
             for(int i=0; i<messageQueue.size(); i++){
                 InAppMessage next = messageQueue.get(i);
@@ -127,7 +123,6 @@ class InAppMessagePresenter {
     }
 
     private static void presentMessageToClient(){
-        Log.d("vlad","presentMessageToClient");
         Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
         if (currentActivity == null){
             return;
@@ -149,7 +144,7 @@ class InAppMessagePresenter {
         sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, message.getContent());
     }
 
-    static void clientReady(){//java bridge thread
+    static void clientReady(){
         if (wv == null){
             return;
         }
@@ -162,11 +157,11 @@ class InAppMessagePresenter {
         });
     }
 
-    static void messageOpened(){//java bridge thread
+    static void messageOpened(){
         setSpinnerVisibility(View.GONE);
     }
 
-    static void messageClosed(){//java bridge thread
+    static void messageClosed(){
         if (wv == null){
             return;
         }

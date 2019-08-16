@@ -2,7 +2,6 @@ package com.kumulos.android;
 
 import android.app.Application;
 import android.content.Context;
-import android.util.Log;
 import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.GcmTaskService;
 import com.google.android.gms.gcm.PeriodicTask;
@@ -46,10 +45,8 @@ public class InAppTaskService extends GcmTaskService {
     }
 
     @Override
-    public int onRunTask(TaskParams params) {//background thread
-        Log.d("vlad", "TASK RUN");
+    public int onRunTask(TaskParams params) {
         boolean success = InAppMessageService.fetch(this);
-        Log.d("vlad", "success task: "+success);
         if (!success){
             return GcmNetworkManager.RESULT_RESCHEDULE;
         }
