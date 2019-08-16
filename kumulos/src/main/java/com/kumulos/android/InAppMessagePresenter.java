@@ -364,10 +364,8 @@ class InAppMessagePresenter {
                             if (BuildConfig.DEBUG){
                                 Kumulos.log(TAG, "Error code: "+errorCode+". "+description);
                             }
-                            
-                            if (errorCode == WebViewClient.ERROR_HOST_LOOKUP){
-                                closeDialog(currentActivity);
-                            }
+
+                            closeDialog(currentActivity);
                         }
 
                         @TargetApi(android.os.Build.VERSION_CODES.M)
