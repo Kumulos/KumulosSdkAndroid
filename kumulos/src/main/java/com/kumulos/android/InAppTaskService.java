@@ -41,7 +41,7 @@ public class InAppTaskService extends GcmTaskService {
             public void run() {
                 GcmNetworkManager.getInstance(application).cancelTask(TAG, InAppTaskService.class);
             }
-        }).start();;
+        }).start();
     }
 
     @Override
