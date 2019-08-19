@@ -3,6 +3,7 @@ package com.kumulos.android;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Debug;
@@ -557,6 +558,12 @@ public final class Kumulos {
 
     //==============================================================================================
     //-- In App APIs
+
+    /**
+     * Used to update in-app consent when enablement strategy is EXPLICIT_BY_USER
+     *
+     *   @param consentGiven
+     */
     public static void updateInAppConsentForUser(boolean consentGiven){
         if (currentConfig.getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
             throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
@@ -567,6 +574,25 @@ public final class Kumulos {
             updateInAppEnablementFlags(consentGiven);
             toggleInAppMessageMonitoring(consentGiven);
         }
+    }
+
+    /**
+     * Used to add Kumulos extras when overriding buildNotification and providing own launch intent
+     *
+     * @param pushMessage
+     * @param launchIntent
+     */
+    public static void addKumulosExtras(PushMessage pushMessage, Intent launchIntent){
+        if (!Kumulos.isInAppEnabled()){
+            return;
+        }
+
+        int tickleId = pushMessage.getTickleId();
+        if (tickleId == -1){
+            return;
+        }
+
+        launchIntent.putExtra(PushMessage.EXTRAS_KEY_TICKLE_ID, tickleId);
     }
 
     //==============================================================================================

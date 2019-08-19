@@ -23,9 +23,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
 
     private static final String DEFAULT_CHANNEL_ID = "general";
-    private static final int DEEP_LINK_TYPE_IN_APP = 1;
     static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
-    static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -103,8 +101,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        Integer tickleId = this.getTickleId(pushMessage);
-        if (tickleId == null){
+        int tickleId = pushMessage.getTickleId();
+        if (tickleId == -1){
             return;
         }
 
@@ -115,44 +113,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }).start();
     }
 
-    private void maybeAddTickleIdExtra(Context context, PushMessage pushMessage, Intent launchIntent){
-        if (!Kumulos.isInAppEnabled()){
-            return;
-        }
 
-        Integer tickleId = this.getTickleId(pushMessage);
-        if (tickleId == null){
-            return;
-        }
-
-        launchIntent.putExtra(EXTRAS_KEY_TICKLE_ID, tickleId);
-    }
-
-    private Integer getTickleId(PushMessage pushMessage){
-        JSONObject deepLink = pushMessage.getData().optJSONObject("k.deeplink");
-
-        if (deepLink == null){
-            return null;
-        }
-
-        int linkType = deepLink.optInt("type", -1);
-
-        if (linkType != DEEP_LINK_TYPE_IN_APP){
-            return null;
-        }
-
-        try{
-            return deepLink.getJSONObject("data").getInt("id");
-        }
-        catch(JSONException e){
-            Kumulos.log(TAG, e.toString());
-            return null;
-        }
-    }
 
     private int getNotificationId(PushMessage pushMessage){
-        Integer tickleId = getTickleId(pushMessage);
-        if (tickleId == null){
+        int tickleId = pushMessage.getTickleId();
+        if (tickleId == -1){
             // TODO fix this in 2038 when we run out of time
             return (int) pushMessage.getTimeSent();
         }
@@ -229,8 +194,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             launchIntent = new Intent(Intent.ACTION_VIEW, pushMessage.getUrl());
         }
 
-        this.maybeAddTickleIdExtra(context, pushMessage, launchIntent);
-
+        Kumulos.addKumulosExtras(pushMessage, launchIntent);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
@@ -244,7 +208,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         context.startActivity(launchIntent);
     }
-
 
 
     /**

@@ -52,7 +52,7 @@ class InAppActivityLifecycleWatcher implements Application.ActivityLifecycleCall
 
     private Integer getTickleId(Activity activity){
         Intent i = activity.getIntent();
-        int tickleIdExtra = i.getIntExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, -1);
+        int tickleIdExtra = i.getIntExtra(PushMessage.EXTRAS_KEY_TICKLE_ID, -1);
         return tickleIdExtra == -1 ? null : tickleIdExtra;
     }
 
