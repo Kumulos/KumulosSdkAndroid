@@ -576,25 +576,6 @@ public final class Kumulos {
         }
     }
 
-    /**
-     * Used to add Kumulos extras when overriding buildNotification and providing own launch intent
-     *
-     * @param pushMessage
-     * @param launchIntent
-     */
-    public static void addKumulosExtras(PushMessage pushMessage, Intent launchIntent){
-        if (!Kumulos.isInAppEnabled()){
-            return;
-        }
-
-        int tickleId = pushMessage.getTickleId();
-        if (tickleId == -1){
-            return;
-        }
-
-        launchIntent.putExtra(PushMessage.EXTRAS_KEY_TICKLE_ID, tickleId);
-    }
-
     //==============================================================================================
     //-- Internal Helpers
 

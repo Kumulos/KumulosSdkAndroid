@@ -15,7 +15,6 @@ import org.json.JSONObject;
 public final class PushMessage implements Parcelable {
 
     public static final String EXTRAS_KEY = "com.kumulos.push.message";
-    static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     private static final int DEEP_LINK_TYPE_IN_APP = 1;
     public static final String TAG = PushMessage.class.getName();
 

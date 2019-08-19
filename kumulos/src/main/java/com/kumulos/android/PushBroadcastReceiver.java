@@ -22,6 +22,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
 
+    static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
+
     private static final String DEFAULT_CHANNEL_ID = "general";
     static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
@@ -194,7 +196,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             launchIntent = new Intent(Intent.ACTION_VIEW, pushMessage.getUrl());
         }
 
-        Kumulos.addKumulosExtras(pushMessage, launchIntent);
+        addDeepLinkExtras(pushMessage, launchIntent);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
@@ -270,6 +272,25 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         return notificationBuilder.getNotification();
+    }
+
+    /**
+     * Used to add Kumulos extras when overriding buildNotification and providing own launch intent
+     *
+     * @param pushMessage
+     * @param launchIntent
+     */
+    protected static void addDeepLinkExtras(PushMessage pushMessage, Intent launchIntent){
+        if (!Kumulos.isInAppEnabled()){
+            return;
+        }
+
+        int tickleId = pushMessage.getTickleId();
+        if (tickleId == -1){
+            return;
+        }
+
+        launchIntent.putExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, tickleId);
     }
 
     /**
