@@ -25,7 +25,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
 
     private static final String DEFAULT_CHANNEL_ID = "general";
-    static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
+    protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -82,10 +82,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        notificationManager.notify(KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage) , notification);
+        notificationManager.notify(KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage), notification);
     }
 
-    private void pushTrackDelivered(Context context, PushMessage pushMessage){
+    protected void pushTrackDelivered(Context context, PushMessage pushMessage){
         try {
             JSONObject params = new JSONObject();
             params.put("type", AnalyticsContract.MESSAGE_TYPE_PUSH);
@@ -98,7 +98,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    private void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
+    protected void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
         if (!Kumulos.isInAppEnabled()){
             return;
         }
