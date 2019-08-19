@@ -463,12 +463,9 @@ public final class Kumulos {
             throw new IllegalArgumentException("Kumulos.associateUserWithInstall requires a non-empty user identifier");
         }
 
-        if (userIdentifier.equals(getCurrentUserIdentifier(context))){
-            return;
-        }
+        boolean isNewUserIdentifier = !userIdentifier.equals(getCurrentUserIdentifier(context));
 
         JSONObject props = new JSONObject();
-
         try {
             props.put("id", userIdentifier);
             if (null != attributes) {
@@ -479,17 +476,21 @@ public final class Kumulos {
             return;
         }
 
-        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        if (isNewUserIdentifier){
+            SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
 
-        synchronized (userIdLocker) {
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(SharedPrefs.KEY_USER_IDENTIFIER, userIdentifier);
-            editor.apply();
+            synchronized (userIdLocker) {
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString(SharedPrefs.KEY_USER_IDENTIFIER, userIdentifier);
+                editor.apply();
+            }
         }
 
         trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
 
-        handleInAppUserChange(context);
+        if (isNewUserIdentifier){
+            handleInAppUserChange(context);
+        }
     }
 
     //==============================================================================================
