@@ -189,4 +189,18 @@ class InAppMessageService {
         editor.putLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, maxUpdatedAt.getTime());
         editor.apply();
     }
+
+    static List<InAppInboxItem> readInboxItems(Context context){
+        Callable<List<InAppInboxItem>> task = new InAppContract.ReadInAppInboxCallable(context);
+        final Future<List<InAppInboxItem>> future = Kumulos.executorService.submit(task);
+
+        List<InAppInboxItem> inboxItems;
+        try {
+            inboxItems = future.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            return null;
+        }
+
+        return inboxItems;
+    }
 }
