@@ -198,7 +198,7 @@ class InAppMessageService {
         try {
             inboxItems = future.get();
         } catch (InterruptedException | ExecutionException ex) {
-            return null;
+            return new ArrayList<>();
         }
 
         return inboxItems;
