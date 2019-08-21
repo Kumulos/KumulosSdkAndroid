@@ -21,7 +21,6 @@ import java.text.ParseException;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 
-import android.support.annotation.Nullable;
 import android.util.Pair;
 
 class InAppContract {
@@ -230,7 +229,7 @@ class InAppContract {
 
             String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
             String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
-            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
+            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " DESC";
 
             Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
 

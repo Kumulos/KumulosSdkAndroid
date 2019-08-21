@@ -211,7 +211,8 @@ class InAppMessageService {
         try {
             inboxItems = future.get();
         } catch (InterruptedException | ExecutionException ex) {
-            return null;
+
+            return new ArrayList<>();
         }
 
         return inboxItems;
@@ -230,7 +231,11 @@ class InAppMessageService {
         }
 
         if (inboxMessage == null){
-           return KumulosInApp.InboxMessagePresentationResult.FAILED_EXPIRED;
+           return KumulosInApp.InboxMessagePresentationResult.FAILED;
+        }
+
+        if (item.getAvailableTo() != null && item.getAvailableTo().getTime() < new Date().getTime()){
+            return KumulosInApp.InboxMessagePresentationResult.FAILED_EXPIRED;
         }
 
         List<InAppMessage> itemsToPresent = new ArrayList<>();

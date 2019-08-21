@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -11,6 +12,8 @@ import java.util.List;
 public class KumulosInApp {
     private static InAppActivityLifecycleWatcher inAppActivityWatcher;
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
+
+    private static Application application;
 
     public enum InboxMessagePresentationResult{
         FAILED,
@@ -44,7 +47,8 @@ public class KumulosInApp {
      *
      *   @param consentGiven
      */
-    public static void updateInAppConsentForUser(boolean consentGiven){
+
+    public static void updateConsentForUser(boolean consentGiven){
         if (Kumulos.getConfig().getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
             throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
         }
@@ -56,11 +60,12 @@ public class KumulosInApp {
         }
     }
 
-
+    
     //==============================================================================================
     //-- Internal Helpers
 
-    static void initializeInApp(KumulosConfig currentConfig){
+    static void initializeInApp(Application application, KumulosConfig currentConfig){
+        KumulosInApp.application = application;
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         boolean inAppEnabled = isInAppEnabled();
@@ -85,21 +90,23 @@ public class KumulosInApp {
     }
 
     static boolean isInAppEnabled(){
-        SharedPreferences prefs = Kumulos.application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         return prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
     }
 
     private static void updateRemoteInAppEnablementFlag(boolean enabled){
         try {
             JSONObject params = new JSONObject().put("consented", enabled);
-            Kumulos.trackEvent(Kumulos.application, "k.inApp.statusUpdated", params);
+
+            Kumulos.trackEvent(application, "k.inApp.statusUpdated", params);
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
     private static void updateLocalInAppEnablementFlag(boolean enabled){
-        SharedPreferences prefs = Kumulos.application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(SharedPrefs.IN_APP_ENABLED, enabled);
         editor.apply();
@@ -131,16 +138,17 @@ public class KumulosInApp {
         InAppTaskService its = new InAppTaskService();
         if (enabled){
             inAppActivityWatcher = new InAppActivityLifecycleWatcher();
-            Kumulos.application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
-            its.startPeriodicFetches(Kumulos.application);
+
+            application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
+            its.startPeriodicFetches(application);
         }
         else {
             if (inAppActivityWatcher != null){
-                Kumulos.application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
+                application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
                 inAppActivityWatcher = null;
             }
 
-            its.cancelPeriodicFetches(Kumulos.application);
+            its.cancelPeriodicFetches(application);
         }
     }
 }
