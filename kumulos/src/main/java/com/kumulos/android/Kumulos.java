@@ -62,7 +62,6 @@ public final class Kumulos {
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
-    static Application application;
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -99,8 +98,6 @@ public final class Kumulos {
             return;
         }
 
-        Kumulos.application = application;
-
         currentConfig = config;
 
         installId = Installation.id(application);
@@ -119,7 +116,7 @@ public final class Kumulos {
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
 
-        KumulosInApp.initializeInApp(currentConfig);
+        KumulosInApp.initializeInApp(application, currentConfig);
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
