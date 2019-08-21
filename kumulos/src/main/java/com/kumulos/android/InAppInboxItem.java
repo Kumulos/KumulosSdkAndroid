@@ -22,7 +22,7 @@ public class InAppInboxItem {
         return id;
     }
 
-    public void setId(int id) {
+    void setId(int id) {
         this.id = id;
     }
 
@@ -30,7 +30,7 @@ public class InAppInboxItem {
         return title;
     }
 
-    public void setTitle(String title) {
+    void setTitle(String title) {
         this.title = title;
     }
 
@@ -38,7 +38,7 @@ public class InAppInboxItem {
         return subtitle;
     }
 
-    public void setSubtitle(String subtitle) {
+    void setSubtitle(String subtitle) {
         this.subtitle = subtitle;
     }
 
@@ -47,7 +47,7 @@ public class InAppInboxItem {
         return availableFrom;
     }
 
-    public void setAvailableFrom(@Nullable Date availableFrom) {
+    void setAvailableFrom(@Nullable Date availableFrom) {
         this.availableFrom = availableFrom;
     }
 
@@ -56,7 +56,7 @@ public class InAppInboxItem {
         return availableTo;
     }
 
-    public void setAvailableTo(@Nullable Date availableTo) {
+    void setAvailableTo(@Nullable Date availableTo) {
         this.availableTo = availableTo;
     }
 
@@ -65,7 +65,7 @@ public class InAppInboxItem {
         return dismissedAt;
     }
 
-    public void setDismissedAt(@Nullable Date dismissedAt) {
+    void setDismissedAt(@Nullable Date dismissedAt) {
         this.dismissedAt = dismissedAt;
     }
 }
