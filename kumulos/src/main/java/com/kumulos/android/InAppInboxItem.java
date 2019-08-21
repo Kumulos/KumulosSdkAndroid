@@ -5,6 +5,9 @@ import android.support.annotation.Nullable;
 import java.util.Date;
 
 public class InAppInboxItem {
+
+    InAppInboxItem(){ }
+
     private int id;
     private String title;
     private String subtitle;

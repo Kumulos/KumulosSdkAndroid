@@ -203,4 +203,28 @@ class InAppMessageService {
 
         return inboxItems;
     }
+
+
+    static KumulosInApp.InboxMessagePresentationResult presentMessage(Context context, InAppInboxItem item){
+        Callable<InAppMessage> task = new InAppContract.ReadInAppInboxMessageCallable(context, item.getId());
+        final Future<InAppMessage> future = Kumulos.executorService.submit(task);
+
+        InAppMessage inboxMessage;
+        try {
+            inboxMessage = future.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            return KumulosInApp.InboxMessagePresentationResult.FAILED;
+        }
+
+        if (inboxMessage == null){
+           return KumulosInApp.InboxMessagePresentationResult.FAILED_EXPIRED;
+        }
+
+        List<InAppMessage> itemsToPresent = new ArrayList<>();
+        itemsToPresent.add(inboxMessage);
+
+        InAppMessagePresenter.presentMessages(itemsToPresent, null);
+
+        return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
+    }
 }

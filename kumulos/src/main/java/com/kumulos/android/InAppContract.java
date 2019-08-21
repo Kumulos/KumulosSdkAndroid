@@ -126,7 +126,7 @@ class InAppContract {
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             try {
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
                 String selection = InAppMessageTable.COL_OPENED_AT+ " IS NULL";
@@ -335,7 +335,7 @@ class InAppContract {
 
             List<InAppInboxItem> inboxItems = new ArrayList<>();
             try {
-                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String columnList = InAppMessageTable.COL_ID + ", "
                         + InAppMessageTable.COL_OPENED_AT + ", "
@@ -389,6 +389,54 @@ class InAppContract {
             String date = cursor.getString(cursor.getColumnIndexOrThrow(column));
 
             return date == null ? null : sdf.parse(date);
+        }
+    }
+
+    static class ReadInAppInboxMessageCallable implements Callable<InAppMessage> {
+        private static final String TAG = ReadInAppInboxMessageCallable.class.getName();
+
+        private Context mContext;
+        private int mId;
+
+        ReadInAppInboxMessageCallable(Context context, int id) {
+            mContext = context.getApplicationContext();
+            mId = id;
+        }
+
+        @Override
+        public InAppMessage call() {
+            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
+
+            InAppMessage inboxMessage = null;
+            try {
+                SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
+                String selection = InAppMessageTable.COL_INBOX_CONFIG_JSON+ " IS NOT NULL AND "+ InAppMessageTable.COL_ID + " = ?";
+                String[] selectionArgs = { mId+"" };
+
+                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, null);
+
+                if (cursor.moveToFirst()){
+                    String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
+
+                    inboxMessage = new InAppMessage();
+                    inboxMessage.setInAppId(mId);
+                    inboxMessage.setContent(new JSONObject(content));
+                }
+
+                cursor.close();
+
+                dbHelper.close();
+            }
+            catch (SQLiteException e) {
+                e.printStackTrace();
+            }
+            catch(Exception e){
+                Kumulos.log(TAG, e.getMessage());
+            }
+
+            return inboxMessage;
         }
     }
 
