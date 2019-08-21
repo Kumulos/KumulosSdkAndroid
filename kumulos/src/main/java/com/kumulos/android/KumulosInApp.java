@@ -46,7 +46,7 @@ public class KumulosInApp {
      *
      *   @param consentGiven
      */
-    public static void updateInAppConsentForUser(boolean consentGiven){
+    public static void updateConsentForUser(boolean consentGiven){
         if (Kumulos.getConfig().getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
             throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
         }
@@ -57,8 +57,7 @@ public class KumulosInApp {
             toggleInAppMessageMonitoring(consentGiven);
         }
     }
-
-
+    
     //==============================================================================================
     //-- Internal Helpers
 
