@@ -189,4 +189,46 @@ class InAppMessageService {
         editor.putLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, maxUpdatedAt.getTime());
         editor.apply();
     }
+
+    static List<InAppInboxItem> readInboxItems(Context context){
+        Callable<List<InAppInboxItem>> task = new InAppContract.ReadInAppInboxCallable(context);
+        final Future<List<InAppInboxItem>> future = Kumulos.executorService.submit(task);
+
+        List<InAppInboxItem> inboxItems;
+        try {
+            inboxItems = future.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            return new ArrayList<>();
+        }
+
+        return inboxItems;
+    }
+
+
+    static KumulosInApp.InboxMessagePresentationResult presentMessage(Context context, InAppInboxItem item){
+        Callable<InAppMessage> task = new InAppContract.ReadInAppInboxMessageCallable(context, item.getId());
+        final Future<InAppMessage> future = Kumulos.executorService.submit(task);
+
+        InAppMessage inboxMessage;
+        try {
+            inboxMessage = future.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            return KumulosInApp.InboxMessagePresentationResult.FAILED;
+        }
+
+        if (inboxMessage == null){
+           return KumulosInApp.InboxMessagePresentationResult.FAILED;
+        }
+
+        if (item.getAvailableTo() != null && item.getAvailableTo().getTime() < new Date().getTime()){
+            return KumulosInApp.InboxMessagePresentationResult.FAILED_EXPIRED;
+        }
+
+        List<InAppMessage> itemsToPresent = new ArrayList<>();
+        itemsToPresent.add(inboxMessage);
+
+        InAppMessagePresenter.presentMessages(itemsToPresent, null);
+
+        return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
+    }
 }

@@ -89,7 +89,7 @@ class InAppMessagePresenter {
     }
 
     private static void moveTicklesToFront(List<Integer> tickleIds){
-        if (tickleIds.isEmpty()){
+        if (tickleIds == null || tickleIds.isEmpty()){
             return;
         }
 

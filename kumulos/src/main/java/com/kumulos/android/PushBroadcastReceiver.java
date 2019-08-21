@@ -99,7 +99,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     protected void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
-        if (!Kumulos.isInAppEnabled()){
+        if (!KumulosInApp.isInAppEnabled()){
             return;
         }
 
@@ -281,7 +281,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param launchIntent
      */
     protected static void addDeepLinkExtras(PushMessage pushMessage, Intent launchIntent){
-        if (!Kumulos.isInAppEnabled()){
+        if (!KumulosInApp.isInAppEnabled()){
             return;
         }
 

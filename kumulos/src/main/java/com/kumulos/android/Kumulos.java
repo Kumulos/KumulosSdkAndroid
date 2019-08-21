@@ -3,7 +3,6 @@ package com.kumulos.android;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Debug;
@@ -63,9 +62,6 @@ public final class Kumulos {
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
-    private static Application application;
-    private static InAppActivityLifecycleWatcher inAppActivityWatcher;
-    static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -102,8 +98,6 @@ public final class Kumulos {
             return;
         }
 
-        Kumulos.application = application;
-
         currentConfig = config;
 
         installId = Installation.id(application);
@@ -122,7 +116,7 @@ public final class Kumulos {
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
 
-        initializeInApp();
+        KumulosInApp.initializeInApp(application, currentConfig);
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
@@ -439,7 +433,7 @@ public final class Kumulos {
             editor.apply();
         }
 
-        handleInAppUserChange(context);
+        KumulosInApp.handleInAppUserChange(context, currentConfig);
     }
 
     /**
@@ -489,7 +483,7 @@ public final class Kumulos {
         trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
 
         if (isNewUserIdentifier){
-            handleInAppUserChange(context);
+            KumulosInApp.handleInAppUserChange(context, currentConfig);
         }
     }
 
@@ -556,113 +550,6 @@ public final class Kumulos {
 
         trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, System.currentTimeMillis(), true);
     }
-
-    //==============================================================================================
-    //-- In App APIs
-
-    /**
-     * Used to update in-app consent when enablement strategy is EXPLICIT_BY_USER
-     *
-     *   @param consentGiven
-     */
-    public static void updateInAppConsentForUser(boolean consentGiven){
-        if (currentConfig.getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
-            throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
-        }
-
-        boolean inAppWasEnabled = isInAppEnabled();
-        if (consentGiven != inAppWasEnabled){
-            updateInAppEnablementFlags(consentGiven);
-            toggleInAppMessageMonitoring(consentGiven);
-        }
-    }
-
-    //==============================================================================================
-    //-- Internal Helpers
-
-    private static void handleInAppUserChange(Context context){
-        InAppMessageService.clearAllMessages(context);
-
-        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.remove(SharedPrefs.IN_APP_LAST_SYNC_TIME);
-        editor.apply();
-
-        KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
-        if (strategy == KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
-            updateLocalInAppEnablementFlag(false);
-            updateRemoteInAppEnablementFlag(false);
-            toggleInAppMessageMonitoring(false);
-        }
-        else if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL){
-            updateRemoteInAppEnablementFlag(true);
-        }
-        else if (strategy == null){
-            updateRemoteInAppEnablementFlag(false);
-        }
-    }
-
-    static boolean isInAppEnabled(){
-        SharedPreferences prefs = Kumulos.application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        return prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
-    }
-
-    private static void initializeInApp(){
-        KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
-        boolean inAppEnabled = isInAppEnabled();
-
-        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppEnabled){
-            inAppEnabled = true;
-            updateInAppEnablementFlags(inAppEnabled);
-        }
-        else if (strategy == null && inAppEnabled){
-            inAppEnabled = false;
-            updateInAppEnablementFlags(inAppEnabled);
-        }
-
-        toggleInAppMessageMonitoring(inAppEnabled);
-
-        Kumulos.inAppDeepLinkHandler = currentConfig.getInAppDeepLinkHandler();
-    }
-
-    private static void updateInAppEnablementFlags(boolean enabled){
-        updateRemoteInAppEnablementFlag(enabled);
-        updateLocalInAppEnablementFlag(enabled);
-    }
-
-    private static void updateRemoteInAppEnablementFlag(boolean enabled){
-        try {
-            JSONObject params = new JSONObject().put("consented", enabled);
-            Kumulos.trackEvent(application, "k.inApp.statusUpdated", params);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void updateLocalInAppEnablementFlag(boolean enabled){
-        SharedPreferences prefs = Kumulos.application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putBoolean(SharedPrefs.IN_APP_ENABLED, enabled);
-        editor.apply();
-    }
-
-    private static void toggleInAppMessageMonitoring(boolean enabled){
-        InAppTaskService its = new InAppTaskService();
-        if (enabled){
-            inAppActivityWatcher = new InAppActivityLifecycleWatcher();
-            Kumulos.application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
-            its.startPeriodicFetches(application);
-        }
-        else {
-            if (inAppActivityWatcher != null){
-                Kumulos.application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
-                inAppActivityWatcher = null;
-            }
-
-            its.cancelPeriodicFetches(application);
-        }
-    }
-
 
     /**
      * Generates the correct Authorization header value for HTTP Basic auth with the API key & secret
