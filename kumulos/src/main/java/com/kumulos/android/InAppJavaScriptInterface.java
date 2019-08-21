@@ -42,7 +42,12 @@ class InAppJavaScriptInterface {
                 InAppMessagePresenter.clientReady();
                 return;
             case "MESSAGE_OPENED":
-                InAppMessagePresenter.messageOpened();
+                Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+                if (currentActivity == null){
+                    return;
+                }
+
+                InAppMessagePresenter.messageOpened(currentActivity);
                 return;
             case "MESSAGE_CLOSED":
                 InAppMessagePresenter.messageClosed();

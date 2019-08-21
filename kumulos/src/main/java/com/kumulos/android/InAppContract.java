@@ -31,7 +31,7 @@ class InAppContract {
     static class InAppMessageTable {
         static final String TABLE_NAME = "in_app_messages";
         static final String COL_ID = "inAppId";
-        static final String COL_OPENED_AT = "openedAt";
+        static final String COL_DISMISSED_AT = "dismissedAt";
         static final String COL_UPDATED_AT = "updatedAt";
         static final String COL_PRESENTED_WHEN = "presentedWhen";
         static final String COL_INBOX_FROM = "inboxFrom";
@@ -74,14 +74,13 @@ class InAppContract {
         }
     }
 
-
-    static class TrackMessageOpenedRunnable implements Runnable {
-        private static final String TAG = TrackMessageOpenedRunnable.class.getName();
+    static class TrackMessageDismissedRunnable implements Runnable {
+        private static final String TAG = TrackMessageDismissedRunnable.class.getName();
 
         private Context mContext;
         private InAppMessage mInAppMessage;
 
-        TrackMessageOpenedRunnable(Context context, InAppMessage message) {
+        TrackMessageDismissedRunnable(Context context, InAppMessage message) {
             mContext = context.getApplicationContext();
             mInAppMessage = message;
         }
@@ -94,7 +93,7 @@ class InAppContract {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 ContentValues values = new ContentValues();
-                values.put(InAppMessageTable.COL_OPENED_AT, dbDateFormat.format(mInAppMessage.getOpenedAt()));
+                values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(mInAppMessage.getDismissedAt()));
 
                 String selection = InAppMessageTable.COL_ID + " = ?";
                 String[] selectionArgs = { mInAppMessage.getInAppId()+"" };
@@ -129,7 +128,7 @@ class InAppContract {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = InAppMessageTable.COL_OPENED_AT+ " IS NULL";
+                String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
                 String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
                 Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
@@ -208,7 +207,7 @@ class InAppContract {
                 if (id == -1) {
                     db.update(InAppMessageTable.TABLE_NAME, row, InAppMessageTable.COL_ID+"=?", new String[] {""+row.getAsInteger(InAppMessageTable.COL_ID)});
                 }
-                //tracks all messages, which were received and saved/updated. delivered_at when message was opened
+                //tracks all messages, which were received and saved/updated
                 deliveredIds.add(row.getAsInteger(InAppMessageTable.COL_ID));
             }
 
@@ -217,7 +216,7 @@ class InAppContract {
 
         private void deleteRows(SQLiteDatabase db){
             String deleteSql ="DELETE FROM " + InAppMessageTable.TABLE_NAME +
-                    " WHERE ("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NULL AND "+ InAppMessageTable.COL_OPENED_AT+" IS NOT NULL) " +
+                    " WHERE ("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NULL AND "+ InAppMessageTable.COL_DISMISSED_AT+" IS NOT NULL) " +
                     " OR " +
                     "("+ InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NOT NULL " +
                     " AND (datetime('now') > IFNULL("+ InAppMessageTable.COL_INBOX_TO+", '3970-01-01')))";
@@ -230,7 +229,7 @@ class InAppContract {
             List<InAppMessage> itemsToPresent = new ArrayList<>();
 
             String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
-            String selection = InAppMessageTable.COL_OPENED_AT+ " IS NULL";
+            String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
             String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
             Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
@@ -268,8 +267,8 @@ class InAppContract {
 
                 values.put(InAppMessageTable.COL_ID, message.getInAppId());
 
-                if (message.getOpenedAt() != null){
-                    values.put(InAppMessageTable.COL_OPENED_AT, dbDateFormat.format(message.getOpenedAt()));
+                if (message.getDismissedAt() != null){
+                    values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(message.getDismissedAt()));
                 }
 
                 values.put(InAppMessageTable.COL_UPDATED_AT, dbDateFormat.format(message.getUpdatedAt()));
@@ -338,7 +337,7 @@ class InAppContract {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String columnList = InAppMessageTable.COL_ID + ", "
-                        + InAppMessageTable.COL_OPENED_AT + ", "
+                        + InAppMessageTable.COL_DISMISSED_AT + ", "
                         + InAppMessageTable.COL_INBOX_FROM + ", "
                         + InAppMessageTable.COL_INBOX_TO + ", "
                         + InAppMessageTable.COL_INBOX_CONFIG_JSON;
@@ -359,7 +358,7 @@ class InAppContract {
 
                     Date availableFrom = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_FROM);
                     Date availableTo = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_TO);
-                    Date dismissedAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_OPENED_AT);
+                    Date dismissedAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_DISMISSED_AT);
 
                     InAppInboxItem i = new InAppInboxItem();
                     i.setId(inAppId);

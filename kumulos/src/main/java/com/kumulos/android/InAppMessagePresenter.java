@@ -157,7 +157,8 @@ class InAppMessagePresenter {
         });
     }
 
-    static void messageOpened(){
+    static void messageOpened(Context context){
+        InAppMessageService.trackOpenedEvent(context, messageQueue.get(0).getInAppId());
         setSpinnerVisibility(View.GONE);
     }
 

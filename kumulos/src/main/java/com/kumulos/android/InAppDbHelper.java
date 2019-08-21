@@ -21,7 +21,7 @@ class InAppDbHelper extends SQLiteOpenHelper {
             + InAppMessageTable.COL_INBOX_CONFIG_JSON + " TEXT,"
             + InAppMessageTable.COL_INBOX_FROM + " DATETIME,"
             + InAppMessageTable.COL_INBOX_TO + " DATETIME,"
-            + InAppMessageTable.COL_OPENED_AT + " DATETIME,"
+            + InAppMessageTable.COL_DISMISSED_AT + " DATETIME,"
             + InAppMessageTable.COL_UPDATED_AT + " DATETIME NOT NULL )";
 
     InAppDbHelper(Context context) {

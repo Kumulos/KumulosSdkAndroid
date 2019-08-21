@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
     static final String EVENT_TYPE_CLEAR_USER_ASSOCIATION = "k.stats.userAssociationCleared";
     static final String EVENT_TYPE_PUSH_DEVICE_REGISTERED = "k.push.deviceRegistered";
     static final String EVENT_TYPE_PUSH_DEVICE_UNSUBSCRIBED = "k.push.deviceUnsubscribed";
+    static final String EVENT_TYPE_MESSAGE_DISMISSED = "k.message.dismissed";
     static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
     static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
     static final String EVENT_TYPE_ENTERED_BEACON_PROXIMITY = "k.engage.beaconEnteredProximity";
