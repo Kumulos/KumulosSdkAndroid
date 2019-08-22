@@ -72,11 +72,13 @@ public class KumulosInApp {
 
         if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppEnabled){
             inAppEnabled = true;
-            updateInAppEnablementFlags(inAppEnabled);
+            updateInAppEnablementFlags(true);
         }
         else if (strategy == null && inAppEnabled){
             inAppEnabled = false;
-            updateInAppEnablementFlags(inAppEnabled);
+            updateInAppEnablementFlags(false);
+            InAppMessageService.clearAllMessages(application);
+            clearLastSyncTime(application);
         }
 
         toggleInAppMessageMonitoring(inAppEnabled);
@@ -112,18 +114,20 @@ public class KumulosInApp {
         editor.apply();
     }
 
-    static void handleInAppUserChange(Context context, KumulosConfig currentConfig){
-        InAppMessageService.clearAllMessages(context);
-
+    private static void clearLastSyncTime(Context context){
         SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove(SharedPrefs.IN_APP_LAST_SYNC_TIME);
         editor.apply();
+    }
+
+    static void handleInAppUserChange(Context context, KumulosConfig currentConfig){
+        InAppMessageService.clearAllMessages(context);
+        clearLastSyncTime(context);
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         if (strategy == KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
             updateLocalInAppEnablementFlag(false);
-            updateRemoteInAppEnablementFlag(false);
             toggleInAppMessageMonitoring(false);
         }
         else if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL){
