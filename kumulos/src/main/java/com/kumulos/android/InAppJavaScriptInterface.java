@@ -39,7 +39,12 @@ class InAppJavaScriptInterface {
 
         switch(messageType){
             case "READY":
-                InAppMessagePresenter.clientReady();
+                Activity ca = InAppActivityLifecycleWatcher.getCurrentActivity();
+                if (ca == null){
+                    return;
+                }
+
+                InAppMessagePresenter.clientReady(ca);
                 return;
             case "MESSAGE_OPENED":
                 Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
