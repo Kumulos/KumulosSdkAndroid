@@ -229,7 +229,7 @@ class InAppContract {
 
             String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
             String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
-            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " DESC";
+            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
             Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
 
@@ -344,7 +344,7 @@ class InAppContract {
                 String selectSql ="SELECT "+ columnList +" FROM " + InAppMessageTable.TABLE_NAME +
                         " WHERE " +InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NOT NULL "+
                         " AND (datetime('now') BETWEEN IFNULL("+ InAppMessageTable.COL_INBOX_FROM+", '1970-01-01') AND IFNULL("+ InAppMessageTable.COL_INBOX_TO+", '3970-01-01'))" +
-                        " ORDER BY "+InAppMessageTable.COL_UPDATED_AT+ " ASC";
+                        " ORDER BY "+InAppMessageTable.COL_UPDATED_AT+ " DESC";
 
                 Cursor cursor = db.rawQuery(selectSql, new String[]{});
 
