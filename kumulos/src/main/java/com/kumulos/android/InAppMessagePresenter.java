@@ -11,7 +11,9 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -30,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
+import android.util.Pair;
 
 class InAppMessagePresenter {
 
@@ -180,20 +183,50 @@ class InAppMessagePresenter {
             return;
         }
 
+        Pair notchPositions = determineNotchPositions(window, cutoutBoundingRectangles);
         float density = context.getResources().getDisplayMetrics().density;
 
-        JSONObject notchInsets = new JSONObject();
+        JSONObject notchData = new JSONObject();
         try{
-            notchInsets.put("insetTop", displayCutout.getSafeInsetTop() / density);
-            notchInsets.put("insetRight", displayCutout.getSafeInsetRight() / density);
-            notchInsets.put("insetBottom", displayCutout.getSafeInsetBottom() / density);
-            notchInsets.put("insetLeft", displayCutout.getSafeInsetLeft() / density);
+            notchData.put("hasNotchOnTheLeft", notchPositions.first);
+            notchData.put("hasNotchOnTheRight", notchPositions.second);
+            notchData.put("insetTop", displayCutout.getSafeInsetTop() / density);
+            notchData.put("insetRight", displayCutout.getSafeInsetRight() / density);
+            notchData.put("insetBottom", displayCutout.getSafeInsetBottom() / density);
+            notchData.put("insetLeft", displayCutout.getSafeInsetLeft() / density);
 
-            sendToClient(HOST_MESSAGE_TYPE_SET_NOTCH_INSETS, notchInsets);
+            sendToClient(HOST_MESSAGE_TYPE_SET_NOTCH_INSETS, notchData);
         }
         catch(JSONException e){
             Kumulos.log(TAG, e.getMessage());
         }
+    }
+
+    private static Pair<Boolean, Boolean> determineNotchPositions(Window window, List<Rect> cutoutBoundingRectangles){
+        Display display = window.getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics ();
+        display.getMetrics(outMetrics);
+
+        boolean hasNotchOnTheRight = false;
+        boolean hasNotchOnTheLeft = false;
+        for (Rect rect: cutoutBoundingRectangles){
+            if (rect.top == 0){
+                if (rect.left > outMetrics.widthPixels - rect.right){
+                    hasNotchOnTheRight = true;
+                }
+                else if (rect.left < outMetrics.widthPixels - rect.right){
+                    hasNotchOnTheLeft = true;
+                }
+            }
+            else if (rect.right >= outMetrics.widthPixels){
+                hasNotchOnTheRight = true;
+            }
+            else if (rect.left == 0){
+                hasNotchOnTheLeft = true;
+            }
+        }
+
+        return new Pair<Boolean, Boolean>(hasNotchOnTheLeft, hasNotchOnTheRight);
     }
 
     static void messageOpened(Context context){
