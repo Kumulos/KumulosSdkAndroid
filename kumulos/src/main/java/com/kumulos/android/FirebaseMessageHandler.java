@@ -38,23 +38,23 @@ public class FirebaseMessageHandler {
         String customStr = bundle.get("custom");
 
         // Extract bundle
-        String id;
+        int id;
         JSONObject data;
         JSONObject custom;
         Uri uri;
 
         try {
             custom = new JSONObject(customStr);
-            id = custom.getString("i");
             uri = (!custom.isNull("u")) ? Uri.parse(custom.getString("u")) : null;
             data = custom.optJSONObject("a");
+            id = data.getJSONObject("k.message").getJSONObject("data").getInt("id");
         } catch (JSONException e) {
             Kumulos.log(TAG, "Push received had no ID/data/uri or was incorrectly formatted, ignoring...");
             return;
         }
 
         String bgn = bundle.get("bgn");
-        boolean isBackground = (null != bgn && bgn.equals("1"));
+        boolean runBackgroundHandler = (null != bgn && bgn.equals("1"));
 
         PushMessage pushMessage = new PushMessage(
                 id,
@@ -63,7 +63,7 @@ public class FirebaseMessageHandler {
                 data,
                 remoteMessage.getSentTime(),
                 uri,
-                isBackground
+                runBackgroundHandler
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);
@@ -72,5 +72,4 @@ public class FirebaseMessageHandler {
 
         context.sendBroadcast(intent);
     }
-
 }

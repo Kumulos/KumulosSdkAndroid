@@ -3,7 +3,6 @@ package com.kumulos.android;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Debug;
@@ -51,7 +50,6 @@ public final class Kumulos {
     /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
     /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
-    private static final String K_PREFS_FILE = "kumulos_prefs";
     private static boolean initialized;
 
     private static String installId;
@@ -117,6 +115,8 @@ public final class Kumulos {
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
+
+        KumulosInApp.initializeInApp(application, currentConfig);
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
@@ -371,7 +371,7 @@ public final class Kumulos {
         trackEvent(context, eventType, properties, System.currentTimeMillis(), false);
     }
 
-     /**
+    /**
      * Tracks a custom analytics event with Kumulos.
      *
      * After being recorded locally, all stored events will be flushed to the server.
@@ -432,6 +432,8 @@ public final class Kumulos {
             editor.remove(SharedPrefs.KEY_USER_IDENTIFIER);
             editor.apply();
         }
+
+        KumulosInApp.handleInAppUserChange(context, currentConfig);
     }
 
     /**
@@ -455,8 +457,9 @@ public final class Kumulos {
             throw new IllegalArgumentException("Kumulos.associateUserWithInstall requires a non-empty user identifier");
         }
 
-        JSONObject props = new JSONObject();
+        boolean isNewUserIdentifier = !userIdentifier.equals(getCurrentUserIdentifier(context));
 
+        JSONObject props = new JSONObject();
         try {
             props.put("id", userIdentifier);
             if (null != attributes) {
@@ -467,15 +470,21 @@ public final class Kumulos {
             return;
         }
 
-        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+        if (isNewUserIdentifier){
+            SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
 
-        synchronized (userIdLocker) {
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(SharedPrefs.KEY_USER_IDENTIFIER, userIdentifier);
-            editor.apply();
+            synchronized (userIdLocker) {
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString(SharedPrefs.KEY_USER_IDENTIFIER, userIdentifier);
+                editor.apply();
+            }
         }
 
         trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+
+        if (isNewUserIdentifier){
+            KumulosInApp.handleInAppUserChange(context, currentConfig);
+        }
     }
 
     //==============================================================================================
@@ -507,18 +516,19 @@ public final class Kumulos {
      * @param context
      * @param id
      */
-    public static void pushTrackOpen(Context context, final String id) throws UninitializedException {
+    public static void pushTrackOpen(Context context, final int id) throws UninitializedException {
         log("PUSH: Tracking open for " + id);
 
         JSONObject props = new JSONObject();
         try {
+            props.put("type", AnalyticsContract.MESSAGE_TYPE_PUSH);
             props.put("id", id);
         } catch (JSONException e) {
             e.printStackTrace();
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_OPENED, props);
+        Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_OPENED, props);
     }
 
     /**
@@ -540,9 +550,6 @@ public final class Kumulos {
 
         trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, System.currentTimeMillis(), true);
     }
-
-    //==============================================================================================
-    //-- Internal Helpers
 
     /**
      * Generates the correct Authorization header value for HTTP Basic auth with the API key & secret

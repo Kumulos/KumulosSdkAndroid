@@ -15,31 +15,35 @@ import org.json.JSONObject;
 public final class PushMessage implements Parcelable {
 
     public static final String EXTRAS_KEY = "com.kumulos.push.message";
+    private static final int DEEP_LINK_TYPE_IN_APP = 1;
+    public static final String TAG = PushMessage.class.getName();
 
-    private String id;
+    private int id;
     private String title;
     private String message;
     private JSONObject data;
     private long timeSent;
     private Uri url;
-    private boolean isBackgroundPush;
+    private boolean runBackgroundHandler;
+    private int tickleId;
 
-    /** package */ PushMessage(String id, @Nullable String title, @Nullable String message, @Nullable JSONObject data, long timeSent, @Nullable Uri url, boolean isBackgroundPush) {
+    /** package */ PushMessage(int id, @Nullable String title, @Nullable String message, JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler) {
         this.id = id;
         this.title = title;
         this.message = message;
         this.data = data;
+        this.tickleId = this.getTickleId(data);
         this.timeSent = timeSent;
         this.url = url;
-        this.isBackgroundPush = isBackgroundPush;
+        this.runBackgroundHandler = runBackgroundHandler;
     }
 
     private PushMessage(Parcel in) {
-        id = in.readString();
+        id = in.readInt();
         title = in.readString();
         message = in.readString();
         timeSent = in.readLong();
-        isBackgroundPush = (in.readInt() == 1);
+        runBackgroundHandler = (in.readInt() == 1);
 
         String dataString = in.readString();
         if (null != dataString) {
@@ -53,6 +57,29 @@ public final class PushMessage implements Parcelable {
         String urlString = in.readString();
         if (null != urlString) {
             url = Uri.parse(urlString);
+        }
+        tickleId = in.readInt();
+    }
+
+    private Integer getTickleId(JSONObject data){
+        JSONObject deepLink = data.optJSONObject("k.deepLink");
+
+        if (deepLink == null){
+            return -1;
+        }
+
+        int linkType = deepLink.optInt("type", -1);
+
+        if (linkType != DEEP_LINK_TYPE_IN_APP){
+            return -1;
+        }
+
+        try{
+            return deepLink.getJSONObject("data").getInt("id");
+        }
+        catch(JSONException e){
+            Kumulos.log(TAG, e.toString());
+            return -1;
         }
     }
 
@@ -78,16 +105,17 @@ public final class PushMessage implements Parcelable {
         String dataString = (data != null) ? data.toString() : null;
         String urlString = (url != null) ? url.toString() : null;
 
-        dest.writeString(id);
+        dest.writeInt(id);
         dest.writeString(title);
         dest.writeString(message);
         dest.writeLong(timeSent);
-        dest.writeInt(isBackgroundPush ? 1 : 0);
+        dest.writeInt(runBackgroundHandler ? 1 : 0);
         dest.writeString(dataString);
         dest.writeString(urlString);
+        dest.writeInt(tickleId);
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -116,8 +144,12 @@ public final class PushMessage implements Parcelable {
         return url;
     }
 
-    public boolean isBackgroundPush() {
-        return isBackgroundPush;
+    int getTickleId() {
+        return tickleId;
+    }
+
+    public boolean runBackgroundHandler() {
+        return runBackgroundHandler;
     }
 
 }

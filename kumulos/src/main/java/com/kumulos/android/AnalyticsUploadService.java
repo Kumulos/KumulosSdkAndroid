@@ -30,5 +30,4 @@ public class AnalyticsUploadService extends GcmTaskService {
 
         return GcmNetworkManager.RESULT_SUCCESS;
     }
-
 }
