@@ -39,10 +39,20 @@ class InAppJavaScriptInterface {
 
         switch(messageType){
             case "READY":
-                InAppMessagePresenter.clientReady();
+                Activity ca = InAppActivityLifecycleWatcher.getCurrentActivity();
+                if (ca == null){
+                    return;
+                }
+
+                InAppMessagePresenter.clientReady(ca);
                 return;
             case "MESSAGE_OPENED":
-                InAppMessagePresenter.messageOpened();
+                Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+                if (currentActivity == null){
+                    return;
+                }
+
+                InAppMessagePresenter.messageOpened(currentActivity);
                 return;
             case "MESSAGE_CLOSED":
                 InAppMessagePresenter.messageClosed();
@@ -84,7 +94,11 @@ class InAppJavaScriptInterface {
                     return;
                 case BUTTON_ACTION_DEEP_LINK:
                     if (KumulosInApp.inAppDeepLinkHandler != null){
-                        KumulosInApp.inAppDeepLinkHandler.handle(action.getDeepLink());
+                        currentActivity.runOnUiThread(new Runnable() {
+                            public void run() {
+                                KumulosInApp.inAppDeepLinkHandler.handle(action.getDeepLink());
+                            }
+                        });
                     }
                     return;
                 case BUTTON_ACTION_REQUEST_APP_STORE_RATING:

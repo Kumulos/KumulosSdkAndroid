@@ -145,18 +145,31 @@ class InAppMessageService {
     }
 
     static void handleMessageClosed(Context context, InAppMessage message){
-        updateOpenedAt(context, message);
-        trackOpenedEvent(context, message.getInAppId());
+        updateDismissedAt(context, message);
+        trackDismissedEvent(context, message.getInAppId());
         clearNotification(context, message.getInAppId());
     }
 
-    private static void updateOpenedAt(Context context, InAppMessage message){
-        message.setOpenedAt(new Date());
-        Runnable task = new InAppContract.TrackMessageOpenedRunnable(context, message);
+    private static void updateDismissedAt(Context context, InAppMessage message){
+        message.setDismissedAt(new Date());
+        Runnable task = new InAppContract.TrackMessageDismissedRunnable(context, message);
         Kumulos.executorService.submit(task);
     }
 
-    private static void trackOpenedEvent(Context context, int id){
+    private static void trackDismissedEvent(Context context, int id){
+        JSONObject params = new JSONObject();
+        try {
+            params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
+            params.put("id", id);
+
+            Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_DISMISSED, params);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static void trackOpenedEvent(Context context, int id){
         JSONObject params = new JSONObject();
         try {
             params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
@@ -198,6 +211,7 @@ class InAppMessageService {
         try {
             inboxItems = future.get();
         } catch (InterruptedException | ExecutionException ex) {
+
             return new ArrayList<>();
         }
 

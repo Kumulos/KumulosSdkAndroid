@@ -3,15 +3,18 @@ package com.kumulos.android;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
+import android.view.DisplayCutout;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,12 +32,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
+import android.util.Pair;
 
 class InAppMessagePresenter {
 
     private static final String TAG = InAppMessagePresenter.class.getName();
     private static final String HOST_MESSAGE_TYPE_PRESENT_MESSAGE = "PRESENT_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
+    private static final String HOST_MESSAGE_TYPE_SET_NOTCH_INSETS = "SET_NOTCH_INSETS";
     private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
 
     private static List<InAppMessage> messageQueue = new ArrayList<>();
@@ -144,7 +149,7 @@ class InAppMessagePresenter {
         sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, message.getContent());
     }
 
-    static void clientReady(){
+    static void clientReady(Context context){
         if (wv == null){
             return;
         }
@@ -152,12 +157,80 @@ class InAppMessagePresenter {
         wv.post(new Runnable() {
             @Override
             public void run() {
+                maybeSetNotchInsets(context);
                 presentMessageToClient();
             }
         });
     }
 
-    static void messageOpened(){
+    private static void maybeSetNotchInsets(Context context){
+        if (dialog == null){
+            return;
+        }
+
+        Window window = dialog.getWindow();
+        if (window == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
+            return;
+        }
+
+        DisplayCutout displayCutout = window.getDecorView().getRootWindowInsets().getDisplayCutout();
+        if (displayCutout == null){
+            return;
+        }
+
+        List<Rect> cutoutBoundingRectangles = displayCutout.getBoundingRects();
+        if (cutoutBoundingRectangles.size() == 0) {
+            return;
+        }
+
+        Pair notchPositions = determineNotchPositions(window, cutoutBoundingRectangles);
+        float density = context.getResources().getDisplayMetrics().density;
+
+        JSONObject notchData = new JSONObject();
+        try{
+            notchData.put("hasNotchOnTheLeft", notchPositions.first);
+            notchData.put("hasNotchOnTheRight", notchPositions.second);
+            notchData.put("insetTop", displayCutout.getSafeInsetTop() / density);
+            notchData.put("insetRight", displayCutout.getSafeInsetRight() / density);
+            notchData.put("insetBottom", displayCutout.getSafeInsetBottom() / density);
+            notchData.put("insetLeft", displayCutout.getSafeInsetLeft() / density);
+
+            sendToClient(HOST_MESSAGE_TYPE_SET_NOTCH_INSETS, notchData);
+        }
+        catch(JSONException e){
+            Kumulos.log(TAG, e.getMessage());
+        }
+    }
+
+    private static Pair<Boolean, Boolean> determineNotchPositions(Window window, List<Rect> cutoutBoundingRectangles){
+        Display display = window.getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics ();
+        display.getMetrics(outMetrics);
+
+        boolean hasNotchOnTheRight = false;
+        boolean hasNotchOnTheLeft = false;
+        for (Rect rect: cutoutBoundingRectangles){
+            if (rect.top == 0){
+                if (rect.left > outMetrics.widthPixels - rect.right){
+                    hasNotchOnTheRight = true;
+                }
+                else if (rect.left < outMetrics.widthPixels - rect.right){
+                    hasNotchOnTheLeft = true;
+                }
+            }
+            else if (rect.right >= outMetrics.widthPixels){
+                hasNotchOnTheRight = true;
+            }
+            else if (rect.left == 0){
+                hasNotchOnTheLeft = true;
+            }
+        }
+
+        return new Pair<Boolean, Boolean>(hasNotchOnTheLeft, hasNotchOnTheRight);
+    }
+
+    static void messageOpened(Context context){
+        InAppMessageService.trackOpenedEvent(context, messageQueue.get(0).getInAppId());
         setSpinnerVisibility(View.GONE);
     }
 
@@ -301,6 +374,7 @@ class InAppMessagePresenter {
         }
     }
 
+
     private static void showWebView(Activity currentActivity){
         Handler mHandler = new Handler(Looper.getMainLooper());
         mHandler.post(new Runnable() {
@@ -313,6 +387,16 @@ class InAppMessagePresenter {
 
                     RelativeLayout.LayoutParams paramsWebView = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
                     dialog = new Dialog(currentActivity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
+
+                    Window window = dialog.getWindow();
+                    if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+                        WindowManager.LayoutParams windowAttributes = dialog.getWindow().getAttributes();
+                        windowAttributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+
+                        View view = window.getDecorView();
+                        view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+                    }
+
                     LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                     dialog.addContentView(inflater.inflate(R.layout.dialog_view, null), paramsWebView);
                     dialog.setOnKeyListener(new Dialog.OnKeyListener() {

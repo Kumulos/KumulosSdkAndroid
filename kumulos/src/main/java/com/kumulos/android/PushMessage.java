@@ -62,7 +62,7 @@ public final class PushMessage implements Parcelable {
     }
 
     private Integer getTickleId(JSONObject data){
-        JSONObject deepLink = data.optJSONObject("k.deeplink");
+        JSONObject deepLink = data.optJSONObject("k.deepLink");
 
         if (deepLink == null){
             return -1;

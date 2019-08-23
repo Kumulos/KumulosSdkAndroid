@@ -22,7 +22,7 @@ class InAppMessage {
     @Nullable
     private JSONObject inbox;
     @Nullable
-    private Date openedAt = null;
+    private Date dismissedAt = null;
     @Nullable
     private Date updatedAt;
 
@@ -41,7 +41,7 @@ class InAppMessage {
         this.updatedAt =  sdf.parse(obj.getString("updatedAt"));
 
         if (!obj.isNull("openedAt")) {
-            this.openedAt = sdf.parse(obj.getString("openedAt"));
+            this.dismissedAt = sdf.parse(obj.getString("openedAt"));
         }
     }
 
@@ -68,8 +68,8 @@ class InAppMessage {
     }
 
     @Nullable
-    Date getOpenedAt() {
-        return openedAt;
+    Date getDismissedAt() {
+        return dismissedAt;
     }
     @Nullable
     Date getUpdatedAt() {
@@ -88,8 +88,8 @@ class InAppMessage {
         this.content = content;
     }
 
-    void setOpenedAt(@Nullable Date openedAt){
-        this.openedAt = openedAt;
+    void setDismissedAt(@Nullable Date dismissedAt){
+        this.dismissedAt = dismissedAt;
     }
 
     void setPresentedWhen(String presentedWhen){

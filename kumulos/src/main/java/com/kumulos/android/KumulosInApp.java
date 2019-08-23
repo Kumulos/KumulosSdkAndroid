@@ -12,6 +12,7 @@ import java.util.List;
 public class KumulosInApp {
     private static InAppActivityLifecycleWatcher inAppActivityWatcher;
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
+
     private static Application application;
 
     public enum InboxMessagePresentationResult{
@@ -46,6 +47,7 @@ public class KumulosInApp {
      *
      *   @param consentGiven
      */
+
     public static void updateConsentForUser(boolean consentGiven){
         if (Kumulos.getConfig().getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
             throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
@@ -57,22 +59,26 @@ public class KumulosInApp {
             toggleInAppMessageMonitoring(consentGiven);
         }
     }
+
     
     //==============================================================================================
     //-- Internal Helpers
 
     static void initializeInApp(Application application, KumulosConfig currentConfig){
         KumulosInApp.application = application;
+
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         boolean inAppEnabled = isInAppEnabled();
 
         if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppEnabled){
             inAppEnabled = true;
-            updateInAppEnablementFlags(inAppEnabled);
+            updateInAppEnablementFlags(true);
         }
         else if (strategy == null && inAppEnabled){
             inAppEnabled = false;
-            updateInAppEnablementFlags(inAppEnabled);
+            updateInAppEnablementFlags(false);
+            InAppMessageService.clearAllMessages(application);
+            clearLastSyncTime(application);
         }
 
         toggleInAppMessageMonitoring(inAppEnabled);
@@ -93,6 +99,7 @@ public class KumulosInApp {
     private static void updateRemoteInAppEnablementFlag(boolean enabled){
         try {
             JSONObject params = new JSONObject().put("consented", enabled);
+
             Kumulos.trackEvent(application, "k.inApp.statusUpdated", params);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -101,23 +108,26 @@ public class KumulosInApp {
 
     private static void updateLocalInAppEnablementFlag(boolean enabled){
         SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(SharedPrefs.IN_APP_ENABLED, enabled);
         editor.apply();
     }
 
-    static void handleInAppUserChange(Context context, KumulosConfig currentConfig){
-        InAppMessageService.clearAllMessages(context);
-
+    private static void clearLastSyncTime(Context context){
         SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove(SharedPrefs.IN_APP_LAST_SYNC_TIME);
         editor.apply();
+    }
+
+    static void handleInAppUserChange(Context context, KumulosConfig currentConfig){
+        InAppMessageService.clearAllMessages(context);
+        clearLastSyncTime(context);
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         if (strategy == KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
             updateLocalInAppEnablementFlag(false);
-            updateRemoteInAppEnablementFlag(false);
             toggleInAppMessageMonitoring(false);
         }
         else if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL){
@@ -132,6 +142,7 @@ public class KumulosInApp {
         InAppTaskService its = new InAppTaskService();
         if (enabled){
             inAppActivityWatcher = new InAppActivityLifecycleWatcher();
+
             application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
             its.startPeriodicFetches(application);
         }
