@@ -420,7 +420,13 @@ class InAppMessagePresenter {
                     wv.getSettings().setCacheMode(cacheMode);
 
                     wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-                    wv.getSettings().setJavaScriptEnabled(true);
+
+                    WebSettings settings = wv.getSettings();
+                    settings.setJavaScriptEnabled(true);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1){
+                        settings.setMediaPlaybackRequiresUserGesture(false);
+                    }
+
                     wv.addJavascriptInterface(new InAppJavaScriptInterface(), InAppJavaScriptInterface.NAME);
 
                     wv.setWebViewClient(new WebViewClient() {
