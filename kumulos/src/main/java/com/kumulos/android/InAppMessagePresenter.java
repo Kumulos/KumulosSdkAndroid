@@ -251,6 +251,10 @@ class InAppMessagePresenter {
     }
 
     static void closeCurrentMessage(Context context){
+        if (dialog == null || messageQueue.isEmpty()){
+            return;
+        }
+
         InAppMessage message = messageQueue.get(0);
 
         InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
@@ -316,6 +320,7 @@ class InAppMessagePresenter {
     private static void closeDialog(Activity dialogActivity){
         if (dialog != null){
             unsetStatusBarColorForDialog(dialogActivity);
+            dialog.setOnKeyListener(null);
             dialog.dismiss();
         }
         dialog = null;
