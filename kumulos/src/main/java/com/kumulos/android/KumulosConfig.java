@@ -25,6 +25,7 @@ public final class KumulosConfig {
     private static final String KEY_SESSION_IDLE_TIMEOUT = "sessionTimeout";
     private static final String KEY_RUNTIME_INFO = "runtimeInfo";
     private static final String KEY_SDK_INFO = "sdkInfo";
+    private static final String KEY_IN_APP_CONSENT_STRATEGY = "inAppConsentStrategy";
 
     private String apiKey;
     private String secretKey;
@@ -144,6 +145,10 @@ public final class KumulosConfig {
             bundle.putString(KEY_SDK_INFO, sdkInfo.toString());
         }
 
+        if (null != inAppConsentStrategy){
+            bundle.putSerializable(KEY_IN_APP_CONSENT_STRATEGY, inAppConsentStrategy);
+        }
+
         return bundle;
     }
 
@@ -164,6 +169,8 @@ public final class KumulosConfig {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        config.inAppConsentStrategy = (InAppConsentStrategy) bundle.get(KEY_IN_APP_CONSENT_STRATEGY);
 
         return config;
     }

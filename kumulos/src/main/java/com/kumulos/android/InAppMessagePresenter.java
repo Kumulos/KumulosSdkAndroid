@@ -55,7 +55,7 @@ class InAppMessagePresenter {
             return;
         }
 
-        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
 
         if (currentActivity == null) {
             return;
@@ -128,7 +128,7 @@ class InAppMessagePresenter {
     }
 
     private static void presentMessageToClient(){
-        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (currentActivity == null){
             return;
         }

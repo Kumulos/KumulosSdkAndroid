@@ -10,7 +10,6 @@ import org.json.JSONObject;
 import java.util.List;
 
 public class KumulosInApp {
-    private static InAppActivityLifecycleWatcher inAppActivityWatcher;
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
 
     private static Application application;
@@ -141,17 +140,9 @@ public class KumulosInApp {
     private static void toggleInAppMessageMonitoring(boolean enabled){
         InAppTaskService its = new InAppTaskService();
         if (enabled){
-            inAppActivityWatcher = new InAppActivityLifecycleWatcher();
-
-            application.registerActivityLifecycleCallbacks(inAppActivityWatcher);
             its.startPeriodicFetches(application);
         }
         else {
-            if (inAppActivityWatcher != null){
-                application.unregisterActivityLifecycleCallbacks(inAppActivityWatcher);
-                inAppActivityWatcher = null;
-            }
-
             its.cancelPeriodicFetches(application);
         }
     }
