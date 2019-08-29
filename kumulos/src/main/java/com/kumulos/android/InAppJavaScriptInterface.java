@@ -96,7 +96,7 @@ class InAppJavaScriptInterface {
                     if (KumulosInApp.inAppDeepLinkHandler != null){
                         currentActivity.runOnUiThread(new Runnable() {
                             public void run() {
-                                KumulosInApp.inAppDeepLinkHandler.handle(action.getDeepLink());
+                                KumulosInApp.inAppDeepLinkHandler.handle(KumulosInApp.application, action.getDeepLink());
                             }
                         });
                     }

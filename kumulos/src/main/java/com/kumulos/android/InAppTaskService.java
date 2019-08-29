@@ -34,7 +34,7 @@ public class InAppTaskService extends GcmTaskService {
                 .setFlex(flexSecs)
                 .setTag(TAG)
                 .setUpdateCurrent(true)
-                .setExtras(bundle)
+                //.setExtras(bundle)
                 .build();
 
         new Thread(new Runnable() {

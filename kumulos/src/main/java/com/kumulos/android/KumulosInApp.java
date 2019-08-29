@@ -12,7 +12,7 @@ import java.util.List;
 public class KumulosInApp {
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
 
-    private static Application application;
+    static Application application;
 
     public enum InboxMessagePresentationResult{
         FAILED,

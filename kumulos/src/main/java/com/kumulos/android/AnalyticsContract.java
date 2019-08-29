@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -358,19 +359,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
         }
 
         @Override
-        public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-            currentActivityRef = new WeakReference<Activity>(activity);
-        }
+        public void onActivityCreated(Activity activity, Bundle savedInstanceState) { /* noop */}
 
         @Override
-        public void onActivityStarted(Activity activity) {
-            Integer tickleId = this.getTickleId(activity);
-            if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
-                InAppMessageService.readMessages(activity, isBackground(), tickleId);
-            }
-
-            numStarted++;
-        }
+        public void onActivityStarted(Activity activity) {  /* noop */ }
 
         private Integer getTickleId(Activity activity){
             Intent i = activity.getIntent();
@@ -380,6 +372,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
         @Override
         public void onActivityResumed(Activity activity) {
+            currentActivityRef = new WeakReference<Activity>(activity);
+
+            Integer tickleId = this.getTickleId(activity);
+            if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
+                InAppMessageService.readMessages(activity, isBackground(), tickleId);
+            }
+            numStarted++;
+
             final Context context = mContextRef.get();
             if (null == context) {
                 return;
@@ -400,11 +400,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
         @Override
         public void onActivityPaused(Activity activity) {
+            clearCurrentActivity(activity);
+            numStarted = Math.max(numStarted-1, 0);
+
             final Context context = mContextRef.get();
             if (null == context) {
                 return;
             }
-
 
             final KumulosConfig config = Kumulos.getConfig();
             final Bundle bundle = new Bundle();
@@ -429,9 +431,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
         }
 
         @Override
-        public void onActivityStopped(Activity activity) {
-            numStarted = Math.max(numStarted-1, 0);
-        }
+        public void onActivityStopped(Activity activity) {  /* noop */ }
 
         @Override
         public void onActivitySaveInstanceState(Activity activity, Bundle outState) {  /* noop */ }
@@ -440,6 +440,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
         public void onActivityDestroyed(Activity activity) {
             InAppMessagePresenter.maybeCloseDialog(activity);
 
+            clearCurrentActivity(activity);
+        }
+
+        private void clearCurrentActivity(Activity activity){
             Activity currentActivity = getCurrentActivity();
             if (currentActivity == null){
                 return;
@@ -450,5 +454,4 @@ import java.util.concurrent.atomic.AtomicBoolean;
             }
         }
     }
-
 }
