@@ -1,5 +1,7 @@
 package com.kumulos.android;
 
+import android.content.Context;
+
 import org.json.JSONObject;
 
 public interface InAppDeepLinkHandlerInterface {
@@ -9,5 +11,5 @@ public interface InAppDeepLinkHandlerInterface {
      * @param data deep link
      * @return
      */
-    void handle(JSONObject data);
+    void handle(Context context, JSONObject data);
 }

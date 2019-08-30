@@ -63,7 +63,7 @@ class InAppMessageService {
 
         trackDeliveredEvents(context, deliveredIds);
 
-        if (InAppActivityLifecycleWatcher.isBackground()){
+        if (AnalyticsContract.ForegroundStateWatcher.isBackground()){
             return;
         }
 

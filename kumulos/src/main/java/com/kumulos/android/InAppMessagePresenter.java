@@ -55,7 +55,7 @@ class InAppMessagePresenter {
             return;
         }
 
-        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
 
         if (currentActivity == null) {
             return;
@@ -128,7 +128,7 @@ class InAppMessagePresenter {
     }
 
     private static void presentMessageToClient(){
-        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (currentActivity == null){
             return;
         }
@@ -385,6 +385,10 @@ class InAppMessagePresenter {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
+                if (dialog != null){
+                    return;
+                }
+
                 try {
                     if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                         WebView.setWebContentsDebuggingEnabled(true);
@@ -403,7 +407,7 @@ class InAppMessagePresenter {
                     }
 
                     LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                    dialog.addContentView(inflater.inflate(R.layout.dialog_view, null), paramsWebView);
+                    dialog.setContentView(inflater.inflate(R.layout.dialog_view, null), paramsWebView);
                     dialog.setOnKeyListener(new Dialog.OnKeyListener() {
                         @Override
                         public boolean onKey(DialogInterface arg0, int keyCode, KeyEvent event) {

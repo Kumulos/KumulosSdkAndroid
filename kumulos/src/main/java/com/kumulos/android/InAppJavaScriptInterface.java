@@ -39,7 +39,7 @@ class InAppJavaScriptInterface {
 
         switch(messageType){
             case "READY":
-                Activity ca = InAppActivityLifecycleWatcher.getCurrentActivity();
+                Activity ca = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
                 if (ca == null){
                     return;
                 }
@@ -47,7 +47,7 @@ class InAppJavaScriptInterface {
                 InAppMessagePresenter.clientReady(ca);
                 return;
             case "MESSAGE_OPENED":
-                Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+                Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
                 if (currentActivity == null){
                     return;
                 }
@@ -68,7 +68,7 @@ class InAppJavaScriptInterface {
 
     private void executeActions(List<ExecutableAction> actions){
 
-        Activity currentActivity = InAppActivityLifecycleWatcher.getCurrentActivity();
+        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (currentActivity == null){
             return;
         }
@@ -96,7 +96,7 @@ class InAppJavaScriptInterface {
                     if (KumulosInApp.inAppDeepLinkHandler != null){
                         currentActivity.runOnUiThread(new Runnable() {
                             public void run() {
-                                KumulosInApp.inAppDeepLinkHandler.handle(action.getDeepLink());
+                                KumulosInApp.inAppDeepLinkHandler.handle(KumulosInApp.application, action.getDeepLink());
                             }
                         });
                     }
