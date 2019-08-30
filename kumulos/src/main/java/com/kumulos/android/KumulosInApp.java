@@ -59,6 +59,14 @@ public class KumulosInApp {
         }
     }
 
+    /**
+     * Allows setting the handler you want to use for in-app deep-link buttons
+     * @param handler
+     */
+    public static void setDeepLinkHandler(InAppDeepLinkHandlerInterface handler) {
+        inAppDeepLinkHandler = handler;
+    }
+
     
     //==============================================================================================
     //-- Internal Helpers
@@ -81,8 +89,6 @@ public class KumulosInApp {
         }
 
         toggleInAppMessageMonitoring(inAppEnabled);
-
-        inAppDeepLinkHandler = currentConfig.getInAppDeepLinkHandler();
     }
 
     private static void updateInAppEnablementFlags(boolean enabled){
