@@ -146,7 +146,7 @@ public final class KumulosConfig {
         }
 
         if (null != inAppConsentStrategy){
-            bundle.putSerializable(KEY_IN_APP_CONSENT_STRATEGY, inAppConsentStrategy);
+            bundle.putString(KEY_IN_APP_CONSENT_STRATEGY, inAppConsentStrategy.name());
         }
 
         return bundle;
@@ -170,7 +170,8 @@ public final class KumulosConfig {
             e.printStackTrace();
         }
 
-        config.inAppConsentStrategy = (InAppConsentStrategy) bundle.get(KEY_IN_APP_CONSENT_STRATEGY);
+        String strategy = bundle.getString(KEY_IN_APP_CONSENT_STRATEGY);
+        config.inAppConsentStrategy = strategy == null ? null : InAppConsentStrategy.valueOf(strategy);
 
         return config;
     }

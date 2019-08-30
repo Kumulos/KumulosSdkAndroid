@@ -34,7 +34,7 @@ public class InAppTaskService extends GcmTaskService {
                 .setFlex(flexSecs)
                 .setTag(TAG)
                 .setUpdateCurrent(true)
-                //.setExtras(bundle)
+                .setExtras(bundle)
                 .build();
 
         new Thread(new Runnable() {
@@ -57,6 +57,10 @@ public class InAppTaskService extends GcmTaskService {
         if (!Kumulos.isInitialized()) {
             Bundle bundle = params.getExtras();
             Bundle configBundle = bundle.getBundle(KEY_CONFIG);
+
+            if (null == configBundle) {
+                return GcmNetworkManager.RESULT_FAILURE;
+            }
 
             KumulosConfig config = KumulosConfig.fromBundle(configBundle);
             Kumulos.initialize(this.getApplication(), config);
