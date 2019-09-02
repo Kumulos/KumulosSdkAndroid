@@ -17,6 +17,10 @@ public class AnalyticsUploadService extends GcmTaskService {
             Bundle bundle = taskParams.getExtras();
             Bundle configBundle = bundle.getBundle(KEY_CONFIG);
 
+            if (null == configBundle) {
+                return GcmNetworkManager.RESULT_FAILURE;
+            }
+
             KumulosConfig config = KumulosConfig.fromBundle(configBundle);
             Kumulos.initialize(this.getApplication(), config);
         }
@@ -30,5 +34,4 @@ public class AnalyticsUploadService extends GcmTaskService {
 
         return GcmNetworkManager.RESULT_SUCCESS;
     }
-
 }

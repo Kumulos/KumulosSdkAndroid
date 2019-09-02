@@ -13,14 +13,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-public class PushBroadcastReceiver extends BroadcastReceiver {
+import org.json.JSONException;
+import org.json.JSONObject;
 
+public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
 
     public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
 
+    static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
+
     private static final String DEFAULT_CHANNEL_ID = "general";
+    protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -51,34 +56,16 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     protected void onPushReceived(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push received");
 
-        if (pushMessage.isBackgroundPush()) {
-            Intent serviceIntent = getBackgroundPushServiceIntent(context, pushMessage);
+        this.pushTrackDelivered(context, pushMessage);
 
-            if (null == serviceIntent) {
-                return;
-            }
+        this.maybeTriggerInAppSync(context, pushMessage);
 
-            ComponentName component = serviceIntent.getComponent();
-            if (null == component) {
-                Kumulos.log(TAG, "Service intent did not specify a component, ignoring.");
-                return;
-            }
-
-            Class<? extends Service> cls = null;
-            try {
-                cls = (Class<? extends Service>) Class.forName(component.getClassName());
-            } catch (ClassNotFoundException e) {
-                Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
-            }
-
-            if (null != cls) {
-                context.startService(serviceIntent);
-            }
-
-            return;
+        if (pushMessage.runBackgroundHandler()) {
+            this.runBackgroundHandler(context, pushMessage);
         }
-        else if (!pushMessage.hasTitleAndMessage()) {
-            // Non-background pushes should always have a title & message otherwise we can't show a notification
+
+        if (!pushMessage.hasTitleAndMessage()) {
+            // Always show Notification if has title + message
             return;
         }
 
@@ -95,8 +82,73 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        // TODO fix this in 2038 when we run out of time
-        notificationManager.notify((int) pushMessage.getTimeSent(), notification);
+        notificationManager.notify(KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage), notification);
+    }
+
+    protected void pushTrackDelivered(Context context, PushMessage pushMessage){
+        try {
+            JSONObject params = new JSONObject();
+            params.put("type", AnalyticsContract.MESSAGE_TYPE_PUSH);
+            params.put("id", pushMessage.getId());
+
+            Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_DELIVERED, params);
+        }
+        catch(JSONException e){
+            Kumulos.log(TAG, e.toString());
+        }
+    }
+
+    protected void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
+        if (!KumulosInApp.isInAppEnabled()){
+            return;
+        }
+
+        int tickleId = pushMessage.getTickleId();
+        if (tickleId == -1){
+            return;
+        }
+
+        new Thread(new Runnable() {
+            public void run() {
+                InAppMessageService.fetch(context);
+            }
+        }).start();
+    }
+
+
+
+    private int getNotificationId(PushMessage pushMessage){
+        int tickleId = pushMessage.getTickleId();
+        if (tickleId == -1){
+            // TODO fix this in 2038 when we run out of time
+            return (int) pushMessage.getTimeSent();
+        }
+        return tickleId;
+    }
+
+    private void runBackgroundHandler(Context context, PushMessage pushMessage){
+        Intent serviceIntent = getBackgroundPushServiceIntent(context, pushMessage);
+
+        if (null == serviceIntent) {
+            return;
+        }
+
+        ComponentName component = serviceIntent.getComponent();
+        if (null == component) {
+            Kumulos.log(TAG, "Service intent did not specify a component, ignoring.");
+            return;
+        }
+
+        Class<? extends Service> cls = null;
+        try {
+            cls = (Class<? extends Service>) Class.forName(component.getClassName());
+        } catch (ClassNotFoundException e) {
+            Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
+        }
+
+        if (null != cls) {
+            context.startService(serviceIntent);
+        }
     }
 
     /**
@@ -144,6 +196,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             launchIntent = new Intent(Intent.ACTION_VIEW, pushMessage.getUrl());
         }
 
+        addDeepLinkExtras(pushMessage, launchIntent);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
             TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
             taskStackBuilder.addParentStack(component);
@@ -157,6 +211,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         context.startActivity(launchIntent);
     }
 
+
     /**
      * Builds the notification shown in the notification drawer when a content push is received.
      * <p/>
@@ -167,7 +222,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param context
      * @param pushMessage
      * @return
-     * @see Kumulos#pushTrackOpen(Context,String) for correctly tracking conversions if you customize the content intent
+     * @see Kumulos#pushTrackOpen(Context,int) for correctly tracking conversions if you customize the content intent
      */
     protected Notification buildNotification(Context context, PushMessage pushMessage) {
         Intent openIntent = new Intent(ACTION_PUSH_OPENED);
@@ -217,6 +272,25 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         return notificationBuilder.getNotification();
+    }
+
+    /**
+     * Used to add Kumulos extras when overriding buildNotification and providing own launch intent
+     *
+     * @param pushMessage
+     * @param launchIntent
+     */
+    protected static void addDeepLinkExtras(PushMessage pushMessage, Intent launchIntent){
+        if (!KumulosInApp.isInAppEnabled()){
+            return;
+        }
+
+        int tickleId = pushMessage.getTickleId();
+        if (tickleId == -1){
+            return;
+        }
+
+        launchIntent.putExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, tickleId);
     }
 
     /**

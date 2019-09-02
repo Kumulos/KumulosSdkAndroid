@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
@@ -31,15 +32,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** package */ final class AnalyticsContract {
 
-    static final String EVENT_TYPE_FOREGROUND = "k.fg";
+    private static final String EVENT_TYPE_FOREGROUND = "k.fg";
     static final String EVENT_TYPE_BACKGROUND = "k.bg";
-    static final String EVENT_TYPE_CALL_HOME = "k.stats.installTracked";
+    private static final String EVENT_TYPE_CALL_HOME = "k.stats.installTracked";
     static final String EVENT_TYPE_ASSOCIATE_USER = "k.stats.userAssociated";
     static final String EVENT_TYPE_CLEAR_USER_ASSOCIATION = "k.stats.userAssociationCleared";
     static final String EVENT_TYPE_PUSH_DEVICE_REGISTERED = "k.push.deviceRegistered";
-    static final String EVENT_TYPE_PUSH_OPENED = "k.push.opened";
+    static final String EVENT_TYPE_PUSH_DEVICE_UNSUBSCRIBED = "k.push.deviceUnsubscribed";
+    static final String EVENT_TYPE_MESSAGE_DISMISSED = "k.message.dismissed";
+    static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";
+    static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
     static final String EVENT_TYPE_ENTERED_BEACON_PROXIMITY = "k.engage.beaconEnteredProximity";
     static final String EVENT_TYPE_LOCATION_UPDATED = "k.engage.locationUpdated";
+    static final int MESSAGE_TYPE_PUSH = 1;
+    static final int MESSAGE_TYPE_IN_APP = 2;
 
     private AnalyticsContract() {}
 
@@ -334,19 +340,45 @@ import java.util.concurrent.atomic.AtomicBoolean;
         WeakReference<Context> mContextRef;
         static AtomicBoolean startNewSession;
 
+        //IN APP
+        private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
+        @Nullable
+        static Activity getCurrentActivity() {
+            return currentActivityRef.get();
+        }
+        private static int numStarted = 0;
+        static boolean isBackground(){
+            return numStarted == 0;
+        }
+
+
         ForegroundStateWatcher(Context context) {
             mContextRef = new WeakReference<>(context);
             startNewSession = new AtomicBoolean(true);
         }
 
         @Override
-        public void onActivityCreated(Activity activity, Bundle savedInstanceState) { /* noop */ }
+        public void onActivityCreated(Activity activity, Bundle savedInstanceState) { /* noop */}
 
         @Override
-        public void onActivityStarted(Activity activity) { /* noop */ }
+        public void onActivityStarted(Activity activity) {  /* noop */ }
+
+        private Integer getTickleId(Activity activity){
+            Intent i = activity.getIntent();
+            int tickleIdExtra = i.getIntExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, -1);
+            return tickleIdExtra == -1 ? null : tickleIdExtra;
+        }
 
         @Override
         public void onActivityResumed(Activity activity) {
+            currentActivityRef = new WeakReference<Activity>(activity);
+
+            Integer tickleId = this.getTickleId(activity);
+            if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
+                InAppMessageService.readMessages(activity, isBackground(), tickleId);
+            }
+            numStarted++;
+
             final Context context = mContextRef.get();
             if (null == context) {
                 return;
@@ -367,11 +399,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
         @Override
         public void onActivityPaused(Activity activity) {
+            clearCurrentActivity(activity);
+            numStarted = Math.max(numStarted-1, 0);
+
             final Context context = mContextRef.get();
             if (null == context) {
                 return;
             }
-
 
             final KumulosConfig config = Kumulos.getConfig();
             final Bundle bundle = new Bundle();
@@ -396,13 +430,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
         }
 
         @Override
-        public void onActivityStopped(Activity activity) { /* noop */ }
+        public void onActivityStopped(Activity activity) {  /* noop */ }
 
         @Override
         public void onActivitySaveInstanceState(Activity activity, Bundle outState) {  /* noop */ }
 
         @Override
-        public void onActivityDestroyed(Activity activity) {  /* noop */ }
-    }
+        public void onActivityDestroyed(Activity activity) {
+            InAppMessagePresenter.maybeCloseDialog(activity);
 
+            clearCurrentActivity(activity);
+        }
+
+        private void clearCurrentActivity(Activity activity){
+            Activity currentActivity = getCurrentActivity();
+            if (currentActivity == null){
+                return;
+            }
+
+            if (currentActivity.hashCode() == activity.hashCode()) {
+                currentActivityRef = new WeakReference<>(null);
+            }
+        }
+    }
 }
