@@ -14,6 +14,7 @@ import android.util.Pair;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.Calendar;
 
 class InAppMessageService {
     private static final String TAG = InAppMessageService.class.getName();
@@ -103,7 +104,6 @@ class InAppMessageService {
     }
 
     static void readMessages(Context context, boolean fromBackground, Integer tickleId){
-
         Callable<List<InAppMessage>> task = new InAppContract.ReadInAppMessagesCallable(context);
         final Future<List<InAppMessage>> future = Kumulos.executorService.submit(task);
 
@@ -142,6 +142,33 @@ class InAppMessageService {
         }
 
         InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
+
+        maybeDoExtraFetch(context);
+    }
+
+    private static void maybeDoExtraFetch(Context context){
+        boolean shouldFetch = false;
+        if (BuildConfig.DEBUG){
+            shouldFetch = true;
+        }
+        else{
+            SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+            long lastSyncMillis = preferences.getLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, 0L);
+
+            Calendar now = Calendar.getInstance();
+            now.setTime(new Date());
+            if (lastSyncMillis == 0L || lastSyncMillis +  3600 * 1000 > now.getTimeInMillis()){
+                shouldFetch = true;
+            }
+        }
+
+        if (shouldFetch){
+            new Thread(new Runnable() {
+                public void run() {
+                    InAppMessageService.fetch(context);
+                }
+            }).start();
+        }
     }
 
     static void handleMessageClosed(Context context, InAppMessage message){
