@@ -28,7 +28,7 @@ class InAppMessageService {
         Kumulos.executorService.submit(task);
     }
 
-    static boolean fetch(Context context){
+    static boolean fetch(Context context, boolean includeNextOpen){
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         long millis = preferences.getLong(SharedPrefs.IN_APP_LAST_SYNC_TIME, 0L);
         Date lastSyncTime = millis == 0 ? null : new Date(millis);
@@ -38,11 +38,11 @@ class InAppMessageService {
             return false;
         }
 
-        showFetchedMessages(context, inAppMessages);
+        showFetchedMessages(context, inAppMessages, includeNextOpen);
         return true;
     }
 
-    private static void showFetchedMessages(Context context, List<InAppMessage> inAppMessages){
+    private static void showFetchedMessages(Context context, List<InAppMessage> inAppMessages, boolean includeNextOpen){
         if (inAppMessages.isEmpty()){
             return;
         }
@@ -77,7 +77,9 @@ class InAppMessageService {
                     break;
                 }
             }
-            if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY) || hasPendingTickleId){
+            if (message.getPresentedWhen().equals(PRESENTED_WHEN_IMMEDIATELY)
+                    || (includeNextOpen && message.getPresentedWhen().equals(PRESENTED_WHEN_NEXT_OPEN))
+                    || hasPendingTickleId){
                 itemsToPresent.add(message);
             }
         }
@@ -143,10 +145,10 @@ class InAppMessageService {
 
         InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
 
-        maybeDoExtraFetch(context);
+        maybeDoExtraFetch(context, fromBackground);
     }
 
-    private static void maybeDoExtraFetch(Context context){
+    private static void maybeDoExtraFetch(Context context, boolean fromBackground){
         boolean shouldFetch = false;
         if (BuildConfig.DEBUG){
             shouldFetch = true;
@@ -165,7 +167,7 @@ class InAppMessageService {
         if (shouldFetch){
             new Thread(new Runnable() {
                 public void run() {
-                    InAppMessageService.fetch(context);
+                    InAppMessageService.fetch(context, fromBackground);
                 }
             }).start();
         }
