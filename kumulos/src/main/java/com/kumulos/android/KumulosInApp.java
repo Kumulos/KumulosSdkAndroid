@@ -147,6 +147,12 @@ public class KumulosInApp {
         InAppTaskService its = new InAppTaskService();
         if (enabled){
             its.startPeriodicFetches(application);
+
+            new Thread(new Runnable() {
+                public void run() {
+                    InAppMessageService.fetch(KumulosInApp.application, true);
+                }
+            }).start();
         }
         else {
             its.cancelPeriodicFetches(application);

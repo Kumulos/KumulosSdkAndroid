@@ -110,7 +110,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         new Thread(new Runnable() {
             public void run() {
-                InAppMessageService.fetch(context);
+                InAppMessageService.fetch(context, false);
             }
         }).start();
     }

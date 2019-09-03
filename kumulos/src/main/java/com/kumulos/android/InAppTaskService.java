@@ -66,7 +66,7 @@ public class InAppTaskService extends GcmTaskService {
             Kumulos.initialize(this.getApplication(), config);
         }
 
-        boolean success = InAppMessageService.fetch(this);
+        boolean success = InAppMessageService.fetch(this, false);
         if (!success){
             return GcmNetworkManager.RESULT_RESCHEDULE;
         }
