@@ -159,7 +159,7 @@ class InAppMessageService {
 
             Calendar now = Calendar.getInstance();
             now.setTime(new Date());
-            if (lastSyncMillis == 0L || lastSyncMillis +  3600 * 1000 > now.getTimeInMillis()){
+            if (lastSyncMillis == 0L || lastSyncMillis +  3600 * 1000 < now.getTimeInMillis()){
                 shouldFetch = true;
             }
         }
