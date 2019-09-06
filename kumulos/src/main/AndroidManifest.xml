@@ -1,17 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kumulos.android">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-
     <application>
-        <service android:name=".AnalyticsUploadService"
-            android:exported="true"
-            android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
-            <intent-filter>
-                <action android:name="com.google.android.gms.gcm.ACTION_TASK_READY" />
-            </intent-filter>
-        </service>
-        <service android:name=".AnalyticsBackgroundEventService"
+        <provider
+            android:name=".KumulosContentProvider"
+            android:authorities="com.kumulos.android.lifecycle"
+            android:exported="false" />
+
+        <service
+            android:name=".AnalyticsBackgroundEventService"
             android:exported="true"
             android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
             <intent-filter>
@@ -19,7 +16,8 @@
             </intent-filter>
         </service>
 
-        <service android:name="com.kumulos.android.InAppTaskService"
+        <service
+            android:name="com.kumulos.android.InAppTaskService"
             android:exported="true"
             android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
             <intent-filter>
@@ -28,6 +26,16 @@
 
         </service>
 
+        <service
+            android:name=".AnalyticsUploadService"
+            android:exported="true"
+            android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">
+            <intent-filter>
+                <action android:name="com.google.android.gms.gcm.ACTION_TASK_READY" />
+            </intent-filter>
+        </service>
     </application>
+
+    <uses-permission android:name="android.permission.INTERNET" />
 
 </manifest>

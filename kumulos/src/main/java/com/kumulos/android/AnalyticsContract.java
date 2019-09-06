@@ -338,7 +338,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
     static class ForegroundStateWatcher implements Application.ActivityLifecycleCallbacks {
 
         WeakReference<Context> mContextRef;
-        static AtomicBoolean startNewSession;
 
         //IN APP
         private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
@@ -354,11 +353,62 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
         ForegroundStateWatcher(Context context) {
             mContextRef = new WeakReference<>(context);
+        }
+
+        @Override
+        public void onActivityCreated(Activity activity, Bundle savedInstanceState) { /* noop */ }
+
+        @Override
+        public void onActivityStarted(Activity activity) {  /* noop */ }
+
+        @Override
+        public void onActivityResumed(Activity activity) {
+            currentActivityRef = new WeakReference<>(activity);
+
+            numStarted++;
+        }
+
+        @Override
+        public void onActivityPaused(Activity activity) {
+            clearCurrentActivity(activity);
+            numStarted = Math.max(numStarted-1, 0);
+        }
+
+        @Override
+        public void onActivityStopped(Activity activity) {  /* noop */ }
+
+        @Override
+        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {  /* noop */ }
+
+        @Override
+        public void onActivityDestroyed(Activity activity) {
+            clearCurrentActivity(activity);
+        }
+
+        private void clearCurrentActivity(Activity activity){
+            Activity currentActivity = getCurrentActivity();
+            if (currentActivity == null){
+                return;
+            }
+
+            if (currentActivity.hashCode() == activity.hashCode()) {
+                currentActivityRef = new WeakReference<>(null);
+            }
+        }
+    }
+
+    static class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
+
+        WeakReference<Context> mContextRef;
+        static AtomicBoolean startNewSession;
+
+        AppStateWatcher(Context context) {
+            mContextRef = new WeakReference<>(context);
             startNewSession = new AtomicBoolean(true);
         }
 
         @Override
-        public void onActivityCreated(Activity activity, Bundle savedInstanceState) { /* noop */}
+        public void onActivityCreated(Activity activity, Bundle savedInstanceState) { /* noop */ }
 
         @Override
         public void onActivityStarted(Activity activity) {  /* noop */ }
@@ -371,13 +421,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
         @Override
         public void onActivityResumed(Activity activity) {
-            currentActivityRef = new WeakReference<Activity>(activity);
-
             Integer tickleId = this.getTickleId(activity);
-            if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
-                InAppMessageService.readMessages(activity, isBackground(), tickleId);
+            if ((ForegroundStateWatcher.isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
+                InAppMessageService.readMessages(activity, ForegroundStateWatcher.isBackground(), tickleId);
             }
-            numStarted++;
 
             final Context context = mContextRef.get();
             if (null == context) {
@@ -399,9 +446,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
         @Override
         public void onActivityPaused(Activity activity) {
-            clearCurrentActivity(activity);
-            numStarted = Math.max(numStarted-1, 0);
-
             final Context context = mContextRef.get();
             if (null == context) {
                 return;
@@ -438,19 +482,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
         @Override
         public void onActivityDestroyed(Activity activity) {
             InAppMessagePresenter.maybeCloseDialog(activity);
-
-            clearCurrentActivity(activity);
-        }
-
-        private void clearCurrentActivity(Activity activity){
-            Activity currentActivity = getCurrentActivity();
-            if (currentActivity == null){
-                return;
-            }
-
-            if (currentActivity.hashCode() == activity.hashCode()) {
-                currentActivityRef = new WeakReference<>(null);
-            }
         }
     }
 }

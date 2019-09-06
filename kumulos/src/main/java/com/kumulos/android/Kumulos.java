@@ -110,7 +110,7 @@ public final class Kumulos {
 
         initialized = true;
 
-        application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
+        application.registerActivityLifecycleCallbacks(new AnalyticsContract.AppStateWatcher(application));
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);

@@ -44,7 +44,7 @@ public class AnalyticsBackgroundEventService extends GcmTaskService {
 
         Runnable trackingTask = new AnalyticsContract.TrackEventRunnable(this, AnalyticsContract.EVENT_TYPE_BACKGROUND, ts, null, false);
         Kumulos.executorService.submit(trackingTask);
-        AnalyticsContract.ForegroundStateWatcher.startNewSession.set(true);
+        AnalyticsContract.AppStateWatcher.startNewSession.set(true);
 
         return GcmNetworkManager.RESULT_SUCCESS;
     }
