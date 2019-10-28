@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -11,10 +12,23 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Build;
+import android.support.v4.app.NotificationCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import 	android.app.Notification.BigPictureStyle;
+import android.util.Log;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.concurrent.ExecutionException;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -26,6 +40,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
     private static final String DEFAULT_CHANNEL_ID = "general";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
+
+    private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -267,12 +283,82 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            return notificationBuilder.build();
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return notificationBuilder.getNotification();
         }
 
-        return notificationBuilder.getNotification();
+
+
+        String pictureUrl = pushMessage.getPictureUrl();
+        if (pictureUrl != null){
+            new LoadNotificationPicture(context, notificationBuilder, pushMessage).execute();
+
+            return null;
+        }
+        return notificationBuilder.build();
+
+
+
     }
+
+
+
+
+    @TargetApi(16)
+    private class LoadNotificationPicture extends AsyncTask<Void, Void, Bitmap> {
+        private Notification.Builder builder;
+        private Context context;
+        private PushMessage pushMessage;
+
+        LoadNotificationPicture(Context context, Notification.Builder builder, PushMessage pushMessage) {
+            super();
+
+            this.builder = builder;
+            this.pushMessage = pushMessage;
+            this.context = context;
+        }
+
+        @Override
+        protected Bitmap doInBackground(Void... params) {
+            InputStream in;
+            try {
+
+                //TODO: get screen size, get correct url for resizer
+                URL url = new URL(MEDIA_RESIZER_BASE_URL + "/500x/"+this.pushMessage.getPictureUrl());
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                in = connection.getInputStream();
+                return BitmapFactory.decodeStream(in);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+            super.onPostExecute(result);
+
+            Notification notification = this.builder
+                    .setLargeIcon(result)
+                    .setStyle(new Notification.BigPictureStyle()
+                            .bigPicture(result)
+                            .bigLargeIcon((Bitmap) null))
+                    .build();
+
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (null == notificationManager) {
+                return;
+            }
+
+            notificationManager.notify(KUMULOS_NOTIFICATION_TAG, PushBroadcastReceiver.this.getNotificationId(pushMessage), notification);
+        }
+    }
+
 
     /**
      * Used to add Kumulos extras when overriding buildNotification and providing own launch intent
