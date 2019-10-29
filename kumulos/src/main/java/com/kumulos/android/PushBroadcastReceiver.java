@@ -317,17 +317,25 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             this.pendingResult = pendingResult;
         }
 
-        private URL getPictureUrl() throws MalformedURLException{
+        private URL getPictureUrl() throws MalformedURLException {
+            String pictureUrl = this.pushMessage.getPictureUrl();
+            if (pictureUrl == null){
+                throw new RuntimeException("Kumulos: pictureUrl cannot be null at this point");
+            }
+
+            if (pictureUrl.substring(0, 8).equals("https://")){
+                return new URL(pictureUrl);
+            }
+
             DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
 
-            return new URL(MEDIA_RESIZER_BASE_URL + "/" + metrics.widthPixels + "x/" + this.pushMessage.getPictureUrl());
+            return new URL(MEDIA_RESIZER_BASE_URL + "/" + metrics.widthPixels + "x/" + pictureUrl);
         }
 
         @Override
         protected Bitmap doInBackground(Void... params) {
             InputStream in;
             try {
-
                 URL url = this.getPictureUrl();
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
