@@ -17,20 +17,16 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.support.v4.app.NotificationCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import 	android.app.Notification.BigPictureStyle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.ExecutionException;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -297,7 +293,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         String pictureUrl = pushMessage.getPictureUrl();
         if (pictureUrl != null){
-            new LoadNotificationPicture(context, notificationBuilder, pushMessage).execute();
+            final PendingResult pendingResult = goAsync();
+            new LoadNotificationPicture(context, pendingResult, notificationBuilder, pushMessage).execute();
 
             return null;
         }
@@ -309,13 +306,15 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         private Notification.Builder builder;
         private Context context;
         private PushMessage pushMessage;
+        private PendingResult pendingResult;
 
-        LoadNotificationPicture(Context context, Notification.Builder builder, PushMessage pushMessage) {
+        LoadNotificationPicture(Context context, PendingResult pendingResult, Notification.Builder builder, PushMessage pushMessage) {
             super();
 
             this.builder = builder;
             this.pushMessage = pushMessage;
             this.context = context;
+            this.pendingResult = pendingResult;
         }
 
         private URL getPictureUrl() throws MalformedURLException{
@@ -349,6 +348,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             super.onPostExecute(result);
 
             if (result == null){
+                pendingResult.finish();
                 return;
             }
 
@@ -360,6 +360,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                     .build();
 
             PushBroadcastReceiver.this.showNotification(this.context, this.pushMessage, notification);
+            pendingResult.finish();
         }
     }
 

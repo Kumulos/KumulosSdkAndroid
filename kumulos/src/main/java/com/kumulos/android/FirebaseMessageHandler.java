@@ -3,7 +3,6 @@ package com.kumulos.android;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -37,13 +36,13 @@ public class FirebaseMessageHandler {
         }
 
         String customStr = bundle.get("custom");
-        Log.d("vlad", customStr);
+
         // Extract bundle
         int id;
         JSONObject data;
         JSONObject custom;
         Uri uri;
-        String pictureUrl = "wYLEdR0R/6b5aa515b4aecfe84bd0cf8e56afbd80.jpeg";//TODO: read somehow
+        String pictureUrl = bundle.get("bicon");
 
         try {
             custom = new JSONObject(customStr);
