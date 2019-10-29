@@ -40,7 +40,7 @@ class InAppMessagePresenter {
     private static final String HOST_MESSAGE_TYPE_PRESENT_MESSAGE = "PRESENT_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_SET_NOTCH_INSETS = "SET_NOTCH_INSETS";
-    private static final String IN_APP_RENDERER_URL = "http://192.168.1.24:8080";
+    private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
 
     private static List<InAppMessage> messageQueue = new ArrayList<>();
     private static WebView wv = null;
