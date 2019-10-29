@@ -12,6 +12,7 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -21,6 +22,7 @@ import android.support.v4.app.NotificationCompat;
 import org.json.JSONException;
 import org.json.JSONObject;
 import 	android.app.Notification.BigPictureStyle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import java.io.IOException;
@@ -90,6 +92,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         if (null == notification) {
             return;
         }
+
+        this.showNotification(context, pushMessage, notification);
+    }
+
+    private void showNotification(Context context, PushMessage pushMessage, Notification notification){
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -288,8 +295,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return notificationBuilder.getNotification();
         }
 
-
-
         String pictureUrl = pushMessage.getPictureUrl();
         if (pictureUrl != null){
             new LoadNotificationPicture(context, notificationBuilder, pushMessage).execute();
@@ -297,13 +302,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return null;
         }
         return notificationBuilder.build();
-
-
-
     }
-
-
-
 
     @TargetApi(16)
     private class LoadNotificationPicture extends AsyncTask<Void, Void, Bitmap> {
@@ -319,13 +318,19 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             this.context = context;
         }
 
+        private URL getPictureUrl() throws MalformedURLException{
+            DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+
+            return new URL(MEDIA_RESIZER_BASE_URL + "/" + metrics.widthPixels + "x/" + this.pushMessage.getPictureUrl());
+        }
+
         @Override
         protected Bitmap doInBackground(Void... params) {
             InputStream in;
             try {
 
-                //TODO: get screen size, get correct url for resizer
-                URL url = new URL(MEDIA_RESIZER_BASE_URL + "/500x/"+this.pushMessage.getPictureUrl());
+                URL url = this.getPictureUrl();
+
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
                 connection.connect();
@@ -343,6 +348,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         protected void onPostExecute(Bitmap result) {
             super.onPostExecute(result);
 
+            if (result == null){
+                return;
+            }
+
             Notification notification = this.builder
                     .setLargeIcon(result)
                     .setStyle(new Notification.BigPictureStyle()
@@ -350,15 +359,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                             .bigLargeIcon((Bitmap) null))
                     .build();
 
-            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (null == notificationManager) {
-                return;
-            }
-
-            notificationManager.notify(KUMULOS_NOTIFICATION_TAG, PushBroadcastReceiver.this.getNotificationId(pushMessage), notification);
+            PushBroadcastReceiver.this.showNotification(this.context, this.pushMessage, notification);
         }
     }
-
 
     /**
      * Used to add Kumulos extras when overriding buildNotification and providing own launch intent
