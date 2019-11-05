@@ -323,7 +323,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 throw new RuntimeException("Kumulos: pictureUrl cannot be null at this point");
             }
 
-            if (pictureUrl.substring(0, 8).equals("https://")){
+            if (pictureUrl.substring(0, 8).equals("https://") || pictureUrl.substring(0, 7).equals("http://")){
                 return new URL(pictureUrl);
             }
 
