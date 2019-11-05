@@ -23,8 +23,8 @@ android {
 
 dependencies {
     // Kumulos debug & release libraries
-    debugImplementation 'com.kumulos.android:kumulos-android-debug:8.1.0'
-    releaseImplementation 'com.kumulos.android:kumulos-android-release:8.1.0'
+    debugImplementation 'com.kumulos.android:kumulos-android-debug:8.2.0'
+    releaseImplementation 'com.kumulos.android:kumulos-android-release:8.2.0'
 }
 ```
 
