@@ -42,6 +42,7 @@ public class FirebaseMessageHandler {
         JSONObject data;
         JSONObject custom;
         Uri uri;
+        String pictureUrl = bundle.get("bicon");
 
         try {
             custom = new JSONObject(customStr);
@@ -63,7 +64,8 @@ public class FirebaseMessageHandler {
                 data,
                 remoteMessage.getSentTime(),
                 uri,
-                runBackgroundHandler
+                runBackgroundHandler,
+                pictureUrl
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);

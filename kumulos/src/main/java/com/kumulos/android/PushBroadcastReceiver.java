@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -11,10 +12,21 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Build;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import android.util.DisplayMetrics;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -26,6 +38,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
     private static final String DEFAULT_CHANNEL_ID = "general";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
+
+    private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -74,6 +88,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         if (null == notification) {
             return;
         }
+
+        this.showNotification(context, pushMessage, notification);
+    }
+
+    private void showNotification(Context context, PushMessage pushMessage, Notification notification){
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -267,11 +286,90 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            return notificationBuilder.build();
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            return notificationBuilder.getNotification();
         }
 
-        return notificationBuilder.getNotification();
+        String pictureUrl = pushMessage.getPictureUrl();
+        if (pictureUrl != null){
+            final PendingResult pendingResult = goAsync();
+            new LoadNotificationPicture(context, pendingResult, notificationBuilder, pushMessage).execute();
+
+            return null;
+        }
+        return notificationBuilder.build();
+    }
+
+    @TargetApi(16)
+    private class LoadNotificationPicture extends AsyncTask<Void, Void, Bitmap> {
+        private Notification.Builder builder;
+        private Context context;
+        private PushMessage pushMessage;
+        private PendingResult pendingResult;
+
+        LoadNotificationPicture(Context context, PendingResult pendingResult, Notification.Builder builder, PushMessage pushMessage) {
+            super();
+
+            this.builder = builder;
+            this.pushMessage = pushMessage;
+            this.context = context;
+            this.pendingResult = pendingResult;
+        }
+
+        private URL getPictureUrl() throws MalformedURLException {
+            String pictureUrl = this.pushMessage.getPictureUrl();
+            if (pictureUrl == null){
+                throw new RuntimeException("Kumulos: pictureUrl cannot be null at this point");
+            }
+
+            if (pictureUrl.substring(0, 8).equals("https://") || pictureUrl.substring(0, 7).equals("http://")){
+                return new URL(pictureUrl);
+            }
+
+            DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+
+            return new URL(MEDIA_RESIZER_BASE_URL + "/" + metrics.widthPixels + "x/" + pictureUrl);
+        }
+
+        @Override
+        protected Bitmap doInBackground(Void... params) {
+            InputStream in;
+            try {
+                URL url = this.getPictureUrl();
+
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                in = connection.getInputStream();
+                return BitmapFactory.decodeStream(in);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap result) {
+            super.onPostExecute(result);
+
+            if (result == null){
+                pendingResult.finish();
+                return;
+            }
+
+            Notification notification = this.builder
+                    .setLargeIcon(result)
+                    .setStyle(new Notification.BigPictureStyle()
+                            .bigPicture(result)
+                            .bigLargeIcon((Bitmap) null))
+                    .build();
+
+            PushBroadcastReceiver.this.showNotification(this.context, this.pushMessage, notification);
+            pendingResult.finish();
+        }
     }
 
     /**
