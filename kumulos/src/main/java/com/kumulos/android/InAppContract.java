@@ -129,7 +129,12 @@ class InAppContract {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
+                String selection = String.format("%s IS NULL AND (%s IS NULL OR (DATETIME(%s, '+'||%s||' hours') > DATETIME('now')))",
+                        InAppMessageTable.COL_DISMISSED_AT,
+                        InAppMessageTable.COL_TTL_HOURS,
+                        InAppMessageTable.COL_SENT_AT,
+                        InAppMessageTable.COL_TTL_HOURS);
+
                 String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
                 Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
@@ -216,14 +221,14 @@ class InAppContract {
         }
 
         private void deleteRows(SQLiteDatabase db){
-            String messageExpiredCondition = String.format("(%s IS NOT NULL AND (DATETIME(%s, +||%s|| hours) <= DATETIME('now'))",
+            String messageExpiredCondition = String.format("(%s IS NOT NULL AND (DATETIME(%s, '+'||%s||' hours') <= DATETIME('now'))",
                     InAppMessageTable.COL_TTL_HOURS,
                     InAppMessageTable.COL_SENT_AT,
                     InAppMessageTable.COL_TTL_HOURS);
 
             String noInboxAndMessageDismissed = String.format("(%s IS NULL AND %s IS NOT NULL)", InAppMessageTable.COL_INBOX_CONFIG_JSON,  InAppMessageTable.COL_DISMISSED_AT);
-            String noInboxAndMessageExpired = String.format("%s IS NULL AND %s)", InAppMessageTable.COL_INBOX_CONFIG_JSON, messageExpiredCondition);
-            String inboxExpiredAndMessageDismissedOrExpired = String.format("(%s IS NOT NULL AND (DATETIME('now') > IFNULL(%s, '3970-01-01)) AND (%s IS NOT NULL OR %s))",
+            String noInboxAndMessageExpired = String.format("(%s IS NULL AND %s))", InAppMessageTable.COL_INBOX_CONFIG_JSON, messageExpiredCondition);
+            String inboxExpiredAndMessageDismissedOrExpired = String.format("(%s IS NOT NULL AND (DATETIME('now') > IFNULL(%s, '3970-01-01')) AND (%s IS NOT NULL OR %s)))",
                     InAppMessageTable.COL_INBOX_CONFIG_JSON,
                     InAppMessageTable.COL_INBOX_TO,
                     InAppMessageTable.COL_DISMISSED_AT,
