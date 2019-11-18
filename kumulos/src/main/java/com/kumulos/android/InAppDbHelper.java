@@ -9,7 +9,7 @@ import com.kumulos.android.InAppContract.InAppMessageTable;
 
 class InAppDbHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "k_in_app.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
 
     private static final String SQL_CREATE_IN_APP_MESSAGES
             = "CREATE TABLE " + InAppMessageTable.TABLE_NAME + "("
@@ -22,7 +22,9 @@ class InAppDbHelper extends SQLiteOpenHelper {
             + InAppMessageTable.COL_INBOX_FROM + " DATETIME,"
             + InAppMessageTable.COL_INBOX_TO + " DATETIME,"
             + InAppMessageTable.COL_DISMISSED_AT + " DATETIME,"
-            + InAppMessageTable.COL_UPDATED_AT + " DATETIME NOT NULL )";
+            + InAppMessageTable.COL_UPDATED_AT + " DATETIME NOT NULL,"
+            + InAppMessageTable.COL_TTL_HOURS + " INTEGER,"
+            + InAppMessageTable.COL_SENT_AT + " DATETIME NOT NULL DEFAULT '1970-01-01')";
 
     InAppDbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -41,5 +43,16 @@ class InAppDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        switch(newVersion) {
+            case 2:
+                this.upgradeToVersion2(db);
+            default:
+                throw new IllegalStateException("onUpgrade() with unknown newVersion " + newVersion);
+        }
+    }
+
+    private void upgradeToVersion2(SQLiteDatabase db){
+        db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_TTL_HOURS + " INTEGER;");
+        db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_SENT_AT + " DATETIME NOT NULL DEFAULT '1970-01-01';");
     }
 }

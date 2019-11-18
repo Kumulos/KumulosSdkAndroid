@@ -22,9 +22,12 @@ class InAppMessage {
     @Nullable
     private JSONObject inbox;
     @Nullable
+    private Integer ttlHours;
+    @Nullable
     private Date dismissedAt = null;
     @Nullable
     private Date updatedAt;
+    private Date sentAt;
 
     InAppMessage(){}
 
@@ -36,9 +39,13 @@ class InAppMessage {
         this.content = obj.getJSONObject("content");
         this.inbox = obj.optJSONObject("inbox");
 
+        int ttlHours = obj.optInt("ttlHours");
+        this.ttlHours =  ttlHours == 0 ? null : ttlHours;
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.updatedAt =  sdf.parse(obj.getString("updatedAt"));
+        this.sentAt =  sdf.parse(obj.getString("sentAt"));
 
         if (!obj.isNull("openedAt")) {
             this.dismissedAt = sdf.parse(obj.getString("openedAt"));
@@ -75,9 +82,16 @@ class InAppMessage {
     Date getUpdatedAt() {
         return updatedAt;
     }
+    Date getSentAt() {
+        return sentAt;
+    }
     @Nullable
     JSONObject getInbox() {
         return inbox;
+    }
+    @Nullable
+    Integer getTtlHours() {
+        return ttlHours;
     }
 
     void setInAppId(int id){
