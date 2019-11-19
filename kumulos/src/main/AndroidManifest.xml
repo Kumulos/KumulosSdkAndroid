@@ -3,7 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <application>
+    <application
+        android:fullBackupContent="@xml/kumulos_file_backup_rules">
         <service android:name=".AnalyticsUploadService"
             android:exported="true"
             android:permission="com.google.android.gms.permission.BIND_NETWORK_TASK_SERVICE">

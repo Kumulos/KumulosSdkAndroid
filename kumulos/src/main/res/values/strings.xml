@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Kumulos</string>
+    <string name="uuid_storage_dir">K_UDID</string>
 </resources>

@@ -24,7 +24,7 @@ class InAppDbHelper extends SQLiteOpenHelper {
             + InAppMessageTable.COL_DISMISSED_AT + " DATETIME,"
             + InAppMessageTable.COL_UPDATED_AT + " DATETIME NOT NULL,"
             + InAppMessageTable.COL_TTL_HOURS + " INTEGER,"
-            + InAppMessageTable.COL_SENT_AT + " DATETIME NOT NULL DEFAULT '1970-01-01')";
+            + InAppMessageTable.COL_SENT_AT + " DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00')";
 
     InAppDbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -46,6 +46,7 @@ class InAppDbHelper extends SQLiteOpenHelper {
         switch(newVersion) {
             case 2:
                 this.upgradeToVersion2(db);
+                break;
             default:
                 throw new IllegalStateException("onUpgrade() with unknown newVersion " + newVersion);
         }
@@ -53,6 +54,6 @@ class InAppDbHelper extends SQLiteOpenHelper {
 
     private void upgradeToVersion2(SQLiteDatabase db){
         db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_TTL_HOURS + " INTEGER;");
-        db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_SENT_AT + " DATETIME NOT NULL DEFAULT '1970-01-01';");
+        db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_SENT_AT + " DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00';");
     }
 }
