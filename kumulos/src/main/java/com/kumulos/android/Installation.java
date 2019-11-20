@@ -13,6 +13,7 @@ import java.util.UUID;
  */
 public class Installation {
     private static String sID = null;
+    private static final String INSTALLATION = "K_UDID";
 
     /**
      * Returns the unique Kumulos installation ID, creating it if it doesn't exist
@@ -25,7 +26,7 @@ public class Installation {
             return sID;
         }
 
-        File installation = new File(context.getFilesDir(), context.getResources().getString(R.string.uuid_storage_dir));
+        File installation = new File(context.getFilesDir(), INSTALLATION);
         try {
             if (!installation.exists())
                 writeInstallationFile(installation);
