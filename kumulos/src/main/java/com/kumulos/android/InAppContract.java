@@ -39,8 +39,7 @@ class InAppContract {
         static final String COL_BADGE_CONFIG_JSON = "badgeConfigJson";
         static final String COL_DATA_JSON = "dataJson";
         static final String COL_CONTENT_JSON = "contentJson";
-        static final String COL_SENT_AT = "sentAt";
-        static final String COL_TTL_HOURS = "ttlHours";
+        static final String COL_EXPIRES_AT = "expires";
     }
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
@@ -129,11 +128,10 @@ class InAppContract {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = String.format("%s IS NULL AND (%s IS NULL OR (DATETIME(%s, '+'||%s||' hours') > DATETIME('now')))",
+                String selection = String.format("%s IS NULL AND (%s IS NULL OR (DATETIME(%s) > DATETIME('now')))",
                         InAppMessageTable.COL_DISMISSED_AT,
-                        InAppMessageTable.COL_TTL_HOURS,
-                        InAppMessageTable.COL_SENT_AT,
-                        InAppMessageTable.COL_TTL_HOURS);
+                        InAppMessageTable.COL_EXPIRES_AT,
+                        InAppMessageTable.COL_EXPIRES_AT);
 
                 String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
 
@@ -221,10 +219,9 @@ class InAppContract {
         }
 
         private void deleteRows(SQLiteDatabase db){
-            String messageExpiredCondition = String.format("(%s IS NOT NULL AND (DATETIME(%s, '+'||%s||' hours') <= DATETIME('now'))",
-                    InAppMessageTable.COL_TTL_HOURS,
-                    InAppMessageTable.COL_SENT_AT,
-                    InAppMessageTable.COL_TTL_HOURS);
+            String messageExpiredCondition = String.format("(%s IS NOT NULL AND (DATETIME(%s) <= DATETIME('now'))",
+                    InAppMessageTable.COL_EXPIRES_AT,
+                    InAppMessageTable.COL_EXPIRES_AT);
 
             String noInboxAndMessageDismissed = String.format("(%s IS NULL AND %s IS NOT NULL)", InAppMessageTable.COL_INBOX_CONFIG_JSON,  InAppMessageTable.COL_DISMISSED_AT);
             String noInboxAndMessageExpired = String.format("(%s IS NULL AND %s))", InAppMessageTable.COL_INBOX_CONFIG_JSON, messageExpiredCondition);
@@ -293,7 +290,7 @@ class InAppContract {
                     values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(message.getDismissedAt()));
                 }
 
-                values.put(InAppMessageTable.COL_SENT_AT, dbDateFormat.format(message.getSentAt()));
+                values.put(InAppMessageTable.COL_EXPIRES_AT, dbDateFormat.format(message.getExpiresAt()));
                 values.put(InAppMessageTable.COL_UPDATED_AT, dbDateFormat.format(message.getUpdatedAt()));
                 values.put(InAppMessageTable.COL_PRESENTED_WHEN, message.getPresentedWhen());
 
@@ -312,7 +309,6 @@ class InAppContract {
                     }
                 }
 
-                values.put(InAppMessageTable.COL_TTL_HOURS, message.getTtlHours());
                 values.put(InAppMessageTable.COL_INBOX_CONFIG_JSON, inbox != null ? inbox.toString() : null);
                 values.put(InAppMessageTable.COL_INBOX_FROM, inboxFrom);
                 values.put(InAppMessageTable.COL_INBOX_TO, inboxTo);
