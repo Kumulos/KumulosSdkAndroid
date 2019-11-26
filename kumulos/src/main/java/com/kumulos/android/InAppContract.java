@@ -39,7 +39,7 @@ class InAppContract {
         static final String COL_BADGE_CONFIG_JSON = "badgeConfigJson";
         static final String COL_DATA_JSON = "dataJson";
         static final String COL_CONTENT_JSON = "contentJson";
-        static final String COL_EXPIRES_AT = "expires";
+        static final String COL_EXPIRES_AT = "expiresAt";
     }
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
