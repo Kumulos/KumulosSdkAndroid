@@ -14,4 +14,6 @@ enum PushTokenType {
     public String toString() {
         return String.valueOf(type);
     }
+
+    public int getValue(){ return type;}
 }

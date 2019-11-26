@@ -25,6 +25,8 @@ class InAppMessage {
     private Date dismissedAt = null;
     @Nullable
     private Date updatedAt;
+    @Nullable
+    private Date expiresAt = null;
 
     InAppMessage(){}
 
@@ -42,6 +44,10 @@ class InAppMessage {
 
         if (!obj.isNull("openedAt")) {
             this.dismissedAt = sdf.parse(obj.getString("openedAt"));
+        }
+
+        if (!obj.isNull("expiresAt")) {
+            this.expiresAt =  sdf.parse(obj.getString("expiresAt"));
         }
     }
 
@@ -74,6 +80,10 @@ class InAppMessage {
     @Nullable
     Date getUpdatedAt() {
         return updatedAt;
+    }
+    @Nullable
+    Date getExpiresAt() {
+        return expiresAt;
     }
     @Nullable
     JSONObject getInbox() {
