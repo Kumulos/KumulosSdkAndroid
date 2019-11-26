@@ -542,7 +542,7 @@ public final class Kumulos {
 
         try {
             props.put("token", token);
-            props.put("type", PushTokenType.ANDROID.toString());
+            props.put("type", PushTokenType.ANDROID.getValue());
         } catch (JSONException e) {
             e.printStackTrace();
             return;
