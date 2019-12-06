@@ -21,6 +21,8 @@ class InAppJavaScriptInterface {
     private static final String BUTTON_ACTION_OPEN_URL = "openUrl";
     private static final String BUTTON_ACTION_DEEP_LINK = "deepLink";
     private static final String BUTTON_ACTION_REQUEST_APP_STORE_RATING = "requestAppStoreRating";
+    private static final String BUTTON_ACTION_PUSH_REGISTER = "promptPushPermission";
+
     static final String NAME = "Android";
 
     @JavascriptInterface
@@ -73,15 +75,12 @@ class InAppJavaScriptInterface {
             return;
         }
 
+        // Handle 'secondary' actions
         for(ExecutableAction action : actions){
-            if (action.getType().equals(BUTTON_ACTION_CLOSE_MESSAGE)){
-                InAppMessagePresenter.closeCurrentMessage(currentActivity);
-                break;
-            }
-        }
-
-        for(ExecutableAction action : actions){
-            switch(action.getType()){
+            switch (action.getType()) {
+                case BUTTON_ACTION_CLOSE_MESSAGE:
+                    InAppMessagePresenter.closeCurrentMessage(currentActivity);
+                    break;
                 case BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL:
                     PushSubscriptionManager psm = new PushSubscriptionManager();
                     psm.subscribe(currentActivity, new String[]{action.getChannelUuid()});
@@ -89,6 +88,12 @@ class InAppJavaScriptInterface {
                 case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
                     Kumulos.trackEvent(currentActivity, action.getEventType(), null);
                     break;
+            }
+        }
+
+        // Handle 'terminating' actions
+        for(ExecutableAction action : actions){
+            switch(action.getType()){
                 case BUTTON_ACTION_OPEN_URL:
                     this.openUrl(currentActivity, action.getUrl());
                     return;
@@ -103,8 +108,10 @@ class InAppJavaScriptInterface {
                     return;
                 case BUTTON_ACTION_REQUEST_APP_STORE_RATING:
                     this.openPlayStore(currentActivity);
-
-                    break;
+                    return;
+                case BUTTON_ACTION_PUSH_REGISTER:
+                    Kumulos.pushRegister(currentActivity);
+                    return;
             }
         }
     }
