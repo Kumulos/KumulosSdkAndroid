@@ -21,6 +21,8 @@ class InAppJavaScriptInterface {
     private static final String BUTTON_ACTION_OPEN_URL = "openUrl";
     private static final String BUTTON_ACTION_DEEP_LINK = "deepLink";
     private static final String BUTTON_ACTION_REQUEST_APP_STORE_RATING = "requestAppStoreRating";
+    private static final String BUTTON_ACTION_PUSH_REGISTER = "promptPushPermission";
+
     static final String NAME = "Android";
 
     @JavascriptInterface
@@ -103,7 +105,9 @@ class InAppJavaScriptInterface {
                     return;
                 case BUTTON_ACTION_REQUEST_APP_STORE_RATING:
                     this.openPlayStore(currentActivity);
-
+                    break;
+                case BUTTON_ACTION_PUSH_REGISTER:
+                    Kumulos.pushRegister(currentActivity);
                     break;
             }
         }
