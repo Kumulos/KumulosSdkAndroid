@@ -23,7 +23,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -308,8 +307,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent);
 
-
-        //no pictures, no buttons
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             return notificationBuilder.getNotification();
         }
@@ -338,7 +335,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 String buttonId = button.getInt("id") + "";//TODO: string ids
 
                 Intent clickIntent = new Intent(ACTION_BUTTON_CLICKED);
-                clickIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
                 clickIntent.putExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID, buttonId);
                 clickIntent.setPackage(context.getPackageName());
 
@@ -348,15 +344,14 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                         clickIntent,
                         PendingIntent.FLAG_ONE_SHOT);
 
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M){//[16,23)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
                     notificationBuilder.addAction(R.drawable.kumulos_ic_stat_notifications, label, pendingClickIntent);
                 }
-                else {//[23,...)
+                else {
                     Icon buttonIcon = Icon.createWithResource(context, R.drawable.kumulos_ic_stat_notifications);
                     Notification.Action action = new Notification.Action.Builder(buttonIcon, label, pendingClickIntent).build();
 
                     notificationBuilder.addAction(action);
-
                 }
             }
             catch(JSONException e){
