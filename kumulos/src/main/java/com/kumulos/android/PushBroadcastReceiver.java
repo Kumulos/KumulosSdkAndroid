@@ -15,12 +15,15 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Icon;
 import android.os.AsyncTask;
 import android.os.Build;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +36,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
     public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
+    public static final String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTONCLICKED";
 
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
+    static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
     private static final String DEFAULT_CHANNEL_ID = "general";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
@@ -57,7 +62,24 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             case ACTION_PUSH_OPENED:
                 this.onPushOpened(context, pushMessage);
                 break;
+            case ACTION_BUTTON_CLICKED:
+                String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
+                this.handleButtonClick(context, buttonIdentifier);
+                break;
+
         }
+    }
+
+    /**
+     * Handles handles action button clicks
+     *
+     * @param context
+     * @param buttonIdentifier
+     */
+    protected void handleButtonClick(Context context, String buttonIdentifier) {
+
+
+        Log.d("vlad", buttonIdentifier);
     }
 
     /**
@@ -287,8 +309,14 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setContentIntent(pendingOpenIntent);
 
 
+        //no pictures, no buttons
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             return notificationBuilder.getNotification();
+        }
+
+        JSONArray buttons = pushMessage.getButtons();
+        if (buttons != null){
+            this.attachButtons(context, pushMessage, notificationBuilder, buttons);
         }
 
         String pictureUrl = pushMessage.getPictureUrl();
@@ -298,7 +326,45 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             return null;
         }
+
         return notificationBuilder.build();
+    }
+
+    @TargetApi(16)
+    private void attachButtons(Context context, PushMessage pushMessage, Notification.Builder notificationBuilder, JSONArray buttons){
+        for (int i = 0; i < buttons.length(); i++) {
+            try{
+                JSONObject button = buttons.getJSONObject(i);
+                String label = button.getString("text");
+                String buttonId = button.getInt("id") + "";//TODO: string ids
+
+                Intent clickIntent = new Intent(ACTION_BUTTON_CLICKED);
+                clickIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
+                clickIntent.putExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID, buttonId);
+                clickIntent.setPackage(context.getPackageName());
+
+                PendingIntent pendingClickIntent = PendingIntent.getBroadcast(
+                        context,
+                        ((int) pushMessage.getTimeSent()) + (i+1),//TODO: properly unique request code?
+                        clickIntent,
+                        PendingIntent.FLAG_ONE_SHOT);
+
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M){//[16,23)
+                    notificationBuilder.addAction(R.drawable.kumulos_ic_stat_notifications, label, pendingClickIntent);
+                }
+                else {//[23,...)
+                    Icon buttonIcon = Icon.createWithResource(context, R.drawable.kumulos_ic_stat_notifications);
+                    Notification.Action action = new Notification.Action.Builder(buttonIcon, label, pendingClickIntent).build();//TODO: other options on builder?
+
+                    notificationBuilder.addAction(action);
+
+                }
+            }
+            catch(JSONException e){
+                Kumulos.log(e.toString());
+            }
+
+        }
     }
 
     @TargetApi(16)

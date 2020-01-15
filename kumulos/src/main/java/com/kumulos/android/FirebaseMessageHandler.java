@@ -3,9 +3,11 @@ package com.kumulos.android;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 
 import com.google.firebase.messaging.RemoteMessage;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -43,12 +45,15 @@ public class FirebaseMessageHandler {
         JSONObject custom;
         Uri uri;
         String pictureUrl = bundle.get("bicon");
+        JSONArray buttons;
 
         try {
             custom = new JSONObject(customStr);
             uri = (!custom.isNull("u")) ? Uri.parse(custom.getString("u")) : null;
             data = custom.optJSONObject("a");
             id = data.getJSONObject("k.message").getJSONObject("data").getInt("id");
+            buttons = data.optJSONArray("k.buttons");
+
         } catch (JSONException e) {
             Kumulos.log(TAG, "Push received had no ID/data/uri or was incorrectly formatted, ignoring...");
             return;
@@ -65,7 +70,8 @@ public class FirebaseMessageHandler {
                 remoteMessage.getSentTime(),
                 uri,
                 runBackgroundHandler,
-                pictureUrl
+                pictureUrl,
+                buttons
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);

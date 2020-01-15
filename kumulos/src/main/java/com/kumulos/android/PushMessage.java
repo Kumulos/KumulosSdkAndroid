@@ -5,7 +5,9 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,8 +29,9 @@ public final class PushMessage implements Parcelable {
     private boolean runBackgroundHandler;
     private int tickleId;
     private String pictureUrl;
+    private JSONArray buttons;
 
-    /** package */ PushMessage(int id, @Nullable String title, @Nullable String message, JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler, @Nullable String pictureUrl) {
+    /** package */ PushMessage(int id, @Nullable String title, @Nullable String message, JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler, @Nullable String pictureUrl, @Nullable JSONArray buttons) {
         this.id = id;
         this.title = title;
         this.message = message;
@@ -38,6 +41,7 @@ public final class PushMessage implements Parcelable {
         this.url = url;
         this.runBackgroundHandler = runBackgroundHandler;
         this.pictureUrl = pictureUrl;
+        this.buttons = buttons;
     }
 
     private PushMessage(Parcel in) {
@@ -62,6 +66,15 @@ public final class PushMessage implements Parcelable {
         }
         tickleId = in.readInt();
         pictureUrl = in.readString();
+
+        String buttonsString = in.readString();
+        if (null != dataString) {
+            try {
+                buttons = new JSONArray(buttonsString);
+            } catch (JSONException e) {
+                buttons = null;
+            }
+        }
     }
 
     private Integer getTickleId(JSONObject data){
@@ -107,6 +120,7 @@ public final class PushMessage implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         String dataString = (data != null) ? data.toString() : null;
         String urlString = (url != null) ? url.toString() : null;
+        String buttonsString = (buttons != null) ? buttons.toString() : null;
 
         dest.writeInt(id);
         dest.writeString(title);
@@ -117,6 +131,7 @@ public final class PushMessage implements Parcelable {
         dest.writeString(urlString);
         dest.writeInt(tickleId);
         dest.writeString(pictureUrl);
+        dest.writeString(buttonsString);
     }
 
     public int getId() {
@@ -160,5 +175,10 @@ public final class PushMessage implements Parcelable {
     @Nullable
     public String getPictureUrl(){
         return this.pictureUrl;
+    }
+
+    @Nullable
+    public JSONArray getButtons(){
+        return this.buttons;
     }
 }
