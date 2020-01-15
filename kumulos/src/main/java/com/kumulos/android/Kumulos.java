@@ -63,6 +63,8 @@ public final class Kumulos {
     /** package */ static ExecutorService executorService;
     private static final Object userIdLocker = new Object();
 
+    static PushActionHandlerInterface pushActionHandler = null;
+
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
             e.printStackTrace();
@@ -591,6 +593,14 @@ public final class Kumulos {
         }
 
         return body.build();
+    }
+
+    /**
+     * Allows setting the handler you want to use for push action buttons
+     * @param handler
+     */
+    public static void setPushActionHandler(PushActionHandlerInterface handler) {
+        pushActionHandler = handler;
     }
 
     /**

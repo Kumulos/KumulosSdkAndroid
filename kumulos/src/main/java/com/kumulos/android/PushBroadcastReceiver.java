@@ -36,7 +36,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
     public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
-    public static final String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTONCLICKED";
+    public static final String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTON_CLICKED";
 
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
@@ -71,15 +71,15 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     /**
-     * Handles handles action button clicks
+     * Handles action button clicks
      *
      * @param context
      * @param buttonIdentifier
      */
     protected void handleButtonClick(Context context, String buttonIdentifier) {
-
-
-        Log.d("vlad", buttonIdentifier);
+        if (Kumulos.pushActionHandler != null){
+            Kumulos.pushActionHandler.handle(context, buttonIdentifier);
+        }
     }
 
     /**
@@ -326,7 +326,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             return null;
         }
-
         return notificationBuilder.build();
     }
 
@@ -354,7 +353,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 }
                 else {//[23,...)
                     Icon buttonIcon = Icon.createWithResource(context, R.drawable.kumulos_ic_stat_notifications);
-                    Notification.Action action = new Notification.Action.Builder(buttonIcon, label, pendingClickIntent).build();//TODO: other options on builder?
+                    Notification.Action action = new Notification.Action.Builder(buttonIcon, label, pendingClickIntent).build();
 
                     notificationBuilder.addAction(action);
 
