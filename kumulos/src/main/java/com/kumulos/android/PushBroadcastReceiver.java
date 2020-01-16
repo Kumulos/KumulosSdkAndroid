@@ -63,7 +63,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 break;
             case ACTION_BUTTON_CLICKED:
                 String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
-                this.handleButtonClick(context, buttonIdentifier);
+                this.handleButtonClick(context, pushMessage, buttonIdentifier);
                 break;
 
         }
@@ -75,9 +75,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param context
      * @param buttonIdentifier
      */
-    protected void handleButtonClick(Context context, String buttonIdentifier) {
+    protected void handleButtonClick(Context context, PushMessage pushMessage, String buttonIdentifier) {
         if (Kumulos.pushActionHandler != null){
-            Kumulos.pushActionHandler.handle(context, buttonIdentifier);
+            Kumulos.pushActionHandler.handle(context, pushMessage, buttonIdentifier);
         }
     }
 
@@ -332,15 +332,16 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             try{
                 JSONObject button = buttons.getJSONObject(i);
                 String label = button.getString("text");
-                String buttonId = button.getInt("id") + "";//TODO: string ids
+                String buttonId = button.getString("id");
 
                 Intent clickIntent = new Intent(ACTION_BUTTON_CLICKED);
+                clickIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
                 clickIntent.putExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID, buttonId);
                 clickIntent.setPackage(context.getPackageName());
 
                 PendingIntent pendingClickIntent = PendingIntent.getBroadcast(
                         context,
-                        ((int) pushMessage.getTimeSent()) + (i+1),//TODO: properly unique request code?
+                        ((int) pushMessage.getTimeSent()) + (i+1),
                         clickIntent,
                         PendingIntent.FLAG_ONE_SHOT);
 

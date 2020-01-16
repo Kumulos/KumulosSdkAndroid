@@ -9,5 +9,5 @@ public interface PushActionHandlerInterface {
      * @param buttonIdentifier identifier of the button clicked
      * @return
      */
-    void handle(Context context, String buttonIdentifier);
+    void handle(Context context, PushMessage pushMessage, String buttonIdentifier);
 }
