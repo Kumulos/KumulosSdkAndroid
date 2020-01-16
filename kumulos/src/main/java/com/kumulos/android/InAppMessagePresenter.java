@@ -49,6 +49,7 @@ class InAppMessagePresenter {
     private static int prevStatusBarColor;
     private static boolean prevFlagTranslucentStatus;
     private static boolean prevFlagDrawsSystemBarBackgrounds;
+    private static boolean presentationPendingOnResume = false;
 
     static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
@@ -83,6 +84,10 @@ class InAppMessagePresenter {
         }
 
         maybeRefreshFirstMessageInQueue(oldQueue);
+
+        if (presentationPendingOnResume) {
+            presentMessageToClient();
+        }
     }
 
     private static void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue){
@@ -134,8 +139,12 @@ class InAppMessagePresenter {
     private static void presentMessageToClient(){
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (currentActivity == null){
+            presentationPendingOnResume = true;
+
             return;
         }
+
+        presentationPendingOnResume = false;
 
         if (messageQueue.isEmpty()){
             closeDialog(currentActivity);
