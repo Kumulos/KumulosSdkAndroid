@@ -75,7 +75,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param context
      * @param buttonIdentifier
      */
-    protected void handleButtonClick(Context context, PushMessage pushMessage, String buttonIdentifier) {
+    private void handleButtonClick(Context context, PushMessage pushMessage, String buttonIdentifier) {
         if (Kumulos.pushActionHandler != null){
             Kumulos.pushActionHandler.handle(context, pushMessage, buttonIdentifier);
         }
