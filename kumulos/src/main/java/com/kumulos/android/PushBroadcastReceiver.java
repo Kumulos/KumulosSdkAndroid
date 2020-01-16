@@ -346,11 +346,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                         PendingIntent.FLAG_ONE_SHOT);
 
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-                    notificationBuilder.addAction(R.drawable.kumulos_ic_stat_notifications, label, pendingClickIntent);
+                    notificationBuilder.addAction(0, label, pendingClickIntent);
                 }
                 else {
-                    Icon buttonIcon = Icon.createWithResource(context, R.drawable.kumulos_ic_stat_notifications);
-                    Notification.Action action = new Notification.Action.Builder(buttonIcon, label, pendingClickIntent).build();
+                    Notification.Action action = new Notification.Action.Builder(null, label, pendingClickIntent).build();
 
                     notificationBuilder.addAction(action);
                 }
