@@ -6,8 +6,8 @@ public interface PushActionHandlerInterface {
     /**
      * Override to change the behaviour of push action button deep link. Default none
      *
-     * @param buttonIdentifier identifier of the button clicked
+     * @param actionId identifier of the button clicked
      * @return
      */
-    void handle(Context context, PushMessage pushMessage, String buttonIdentifier);
+    void handle(Context context, PushMessage pushMessage, String actionId);
 }
