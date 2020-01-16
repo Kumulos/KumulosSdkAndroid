@@ -51,17 +51,21 @@ class InAppMessagePresenter {
     private static boolean prevFlagDrawsSystemBarBackgrounds;
 
     static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
-        if (itemsToPresent.isEmpty()){
-            return;
-        }
-
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
 
         if (currentActivity == null) {
             return;
         }
 
-        List<InAppMessage> oldQueue = new ArrayList<InAppMessage>(messageQueue);
+        if (itemsToPresent.isEmpty()) {
+            if (messageQueue.isEmpty()) {
+                maybeCloseDialog(currentActivity);
+            }
+
+            return;
+        }
+
+        List<InAppMessage> oldQueue = new ArrayList<>(messageQueue);
 
         addMessagesToQueue(itemsToPresent);
         moveTicklesToFront(tickleIds);
