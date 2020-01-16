@@ -67,7 +67,7 @@ public final class PushMessage implements Parcelable {
         pictureUrl = in.readString();
 
         String buttonsString = in.readString();
-        if (null != dataString) {
+        if (null != buttonsString) {
             try {
                 buttons = new JSONArray(buttonsString);
             } catch (JSONException e) {
