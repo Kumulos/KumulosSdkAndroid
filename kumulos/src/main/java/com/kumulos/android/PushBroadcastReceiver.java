@@ -76,9 +76,22 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param buttonIdentifier
      */
     private void handleButtonClick(Context context, PushMessage pushMessage, String buttonIdentifier) {
+        try {
+            Kumulos.pushTrackOpen(context, pushMessage.getId());
+        } catch (Kumulos.UninitializedException e) {
+            Kumulos.log(TAG, "Failed to track the push opening won button click -- Kumulos is not initialised.");
+        }
+
         if (Kumulos.pushActionHandler != null){
             Kumulos.pushActionHandler.handle(context, pushMessage, buttonIdentifier);
         }
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (null == notificationManager) {
+            return;
+        }
+
+        notificationManager.cancel(PushBroadcastReceiver.KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage));
     }
 
     /**
