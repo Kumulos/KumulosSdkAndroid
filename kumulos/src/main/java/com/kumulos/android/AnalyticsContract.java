@@ -371,7 +371,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
         @Override
         public void onActivityResumed(Activity activity) {
-            currentActivityRef = new WeakReference<Activity>(activity);
+            currentActivityRef = new WeakReference<>(activity);
 
             Integer tickleId = this.getTickleId(activity);
             if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {

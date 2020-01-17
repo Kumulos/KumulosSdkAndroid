@@ -49,19 +49,24 @@ class InAppMessagePresenter {
     private static int prevStatusBarColor;
     private static boolean prevFlagTranslucentStatus;
     private static boolean prevFlagDrawsSystemBarBackgrounds;
+    private static boolean presentationPendingOnResume = false;
 
     static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
-        if (itemsToPresent.isEmpty()){
-            return;
-        }
-
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
 
         if (currentActivity == null) {
             return;
         }
 
-        List<InAppMessage> oldQueue = new ArrayList<InAppMessage>(messageQueue);
+        if (itemsToPresent.isEmpty()) {
+            if (messageQueue.isEmpty()) {
+                maybeCloseDialog(currentActivity);
+            }
+
+            return;
+        }
+
+        List<InAppMessage> oldQueue = new ArrayList<>(messageQueue);
 
         addMessagesToQueue(itemsToPresent);
         moveTicklesToFront(tickleIds);
@@ -79,6 +84,10 @@ class InAppMessagePresenter {
         }
 
         maybeRefreshFirstMessageInQueue(oldQueue);
+
+        if (presentationPendingOnResume) {
+            presentMessageToClient();
+        }
     }
 
     private static void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue){
@@ -130,8 +139,12 @@ class InAppMessagePresenter {
     private static void presentMessageToClient(){
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (currentActivity == null){
+            presentationPendingOnResume = true;
+
             return;
         }
+
+        presentationPendingOnResume = false;
 
         if (messageQueue.isEmpty()){
             closeDialog(currentActivity);
