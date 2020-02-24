@@ -137,6 +137,8 @@ public class KumulosInApp {
         }
         else if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL){
             updateRemoteInAppEnablementFlag(true);
+
+            fetchMessages();
         }
         else if (strategy == null){
             updateRemoteInAppEnablementFlag(false);
@@ -148,14 +150,18 @@ public class KumulosInApp {
         if (enabled){
             its.startPeriodicFetches(application);
 
-            new Thread(new Runnable() {
-                public void run() {
-                    InAppMessageService.fetch(KumulosInApp.application, true);
-                }
-            }).start();
+            fetchMessages();
         }
         else {
             its.cancelPeriodicFetches(application);
         }
+    }
+
+    private static void fetchMessages(){
+        new Thread(new Runnable() {
+            public void run() {
+                InAppMessageService.fetch(KumulosInApp.application, true);
+            }
+        }).start();
     }
 }
