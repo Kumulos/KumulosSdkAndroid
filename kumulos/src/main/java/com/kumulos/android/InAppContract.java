@@ -276,8 +276,7 @@ class InAppContract {
 
             return itemsToPresent;
         }
-
-
+        
         private List<ContentValues> assembleRows() throws ParseException{
             List<ContentValues> rows = new ArrayList<>();
 
@@ -290,7 +289,10 @@ class InAppContract {
                     values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(message.getDismissedAt()));
                 }
 
-                values.put(InAppMessageTable.COL_EXPIRES_AT, dbDateFormat.format(message.getExpiresAt()));
+                Date expiresAt = message.getExpiresAt();
+                if (expiresAt != null) {
+                    values.put(InAppMessageTable.COL_EXPIRES_AT, dbDateFormat.format(expiresAt));
+                }
                 values.put(InAppMessageTable.COL_UPDATED_AT, dbDateFormat.format(message.getUpdatedAt()));
                 values.put(InAppMessageTable.COL_PRESENTED_WHEN, message.getPresentedWhen());
 
