@@ -319,7 +319,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setContentText(pushMessage.getMessage())
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent);
-
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
              notificationBuilder.setShowWhen(true);
         }
@@ -327,6 +327,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             return notificationBuilder.getNotification();
         }
+
+        notificationBuilder.setStyle(new Notification.BigTextStyle().bigText(pushMessage.getMessage()));
 
         JSONArray buttons = pushMessage.getButtons();
         if (buttons != null){
