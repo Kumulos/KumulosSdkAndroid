@@ -320,6 +320,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+             notificationBuilder.setShowWhen(true);
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             return notificationBuilder.getNotification();
         }
