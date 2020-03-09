@@ -77,10 +77,7 @@ public final class PushMessage implements Parcelable {
             }
         }
 
-        String soundStr = in.readString();
-        if (null != soundStr) {
-            sound = soundStr;
-        }
+        sound = in.readString();
     }
 
     private Integer getTickleId(JSONObject data){
