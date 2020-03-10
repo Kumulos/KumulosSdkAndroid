@@ -170,8 +170,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }).start();
     }
 
-
-
     private int getNotificationId(PushMessage pushMessage){
         int tickleId = pushMessage.getTickleId();
         if (tickleId == -1){
@@ -359,8 +357,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         Uri sound = Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
-
-
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
             notificationBuilder.setSound(sound);
             return;
