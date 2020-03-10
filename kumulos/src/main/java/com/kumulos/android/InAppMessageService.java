@@ -47,6 +47,12 @@ class InAppMessageService {
             return;
         }
 
+        for (InAppMessage message: inAppMessages){
+            if (message.getDismissedAt() != null || message.getInboxDeletedAt() != null){
+                clearNotification(context, message.getInAppId());
+            }
+        }
+
         Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
         final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
 
