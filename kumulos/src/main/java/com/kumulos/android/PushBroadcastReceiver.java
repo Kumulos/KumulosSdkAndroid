@@ -15,8 +15,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Icon;
-import android.media.AudioAttributes;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -27,7 +25,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -372,6 +369,24 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
         //user-defined sound takes precedence
         if (channel.getSound() != null){
+            return;
+        }
+
+        int filter = notificationManager.getCurrentInterruptionFilter();
+        boolean inDnD = false;
+        switch(filter){
+            case NotificationManager.INTERRUPTION_FILTER_ALL:
+                inDnD = false;
+                break;
+            case NotificationManager.INTERRUPTION_FILTER_PRIORITY:
+                inDnD = !channel.canBypassDnd();
+                break;
+            case NotificationManager.INTERRUPTION_FILTER_UNKNOWN:
+            case NotificationManager.INTERRUPTION_FILTER_ALARMS:
+            case NotificationManager.INTERRUPTION_FILTER_NONE:
+                 inDnD = true;
+        }
+        if (inDnD){
             return;
         }
 
