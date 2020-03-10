@@ -42,7 +42,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
-    private static final String DEFAULT_CHANNEL_ID = "generalV2";
+    private static final String DEFAULT_CHANNEL_ID = "kumulos_general";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
