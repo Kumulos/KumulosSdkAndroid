@@ -301,6 +301,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
             if (null == channel) {
+                //channelId was changed to set sound to null on existing installs. Remove old channel if still exists
+                NotificationChannel oldChannel = notificationManager.getNotificationChannel("general");
+                if (oldChannel != null){
+                    notificationManager.deleteNotificationChannel("general");
+                }
+
                 channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
                 channel.setSound(null, null);
                 notificationManager.createNotificationChannel(channel);
