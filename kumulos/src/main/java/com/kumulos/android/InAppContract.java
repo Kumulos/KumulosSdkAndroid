@@ -285,8 +285,11 @@ class InAppContract {
 
                 values.put(InAppMessageTable.COL_ID, message.getInAppId());
 
-                if (message.getDismissedAt() != null){
-                    values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(message.getDismissedAt()));
+                Date inboxDeletedAt = message.getInboxDeletedAt();
+                Date messageDismissedAt = message.getDismissedAt();
+                if (messageDismissedAt != null || inboxDeletedAt != null ){
+                    Date dismissedTime = messageDismissedAt != null ? messageDismissedAt : inboxDeletedAt;
+                    values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(dismissedTime));
                 }
 
                 Date expiresAt = message.getExpiresAt();
@@ -298,7 +301,10 @@ class InAppContract {
 
                 String inboxFrom = null;
                 String inboxTo = null;
-                JSONObject inbox = message.getInbox();
+                JSONObject inbox = null;
+                if (inboxDeletedAt == null){
+                    inbox = message.getInbox();
+                }
 
                 if (inbox != null){
                     inboxFrom = this.getNullableString(inbox, "from");
@@ -461,4 +467,48 @@ class InAppContract {
         }
     }
 
+    static class DeleteInAppInboxMessageCallable implements Callable<Boolean> {
+
+        private static final String TAG = DeleteInAppInboxMessageCallable.class.getName();
+
+        private Context mContext;
+        private int mId;
+
+        DeleteInAppInboxMessageCallable(Context context, int id) {
+            mContext = context.getApplicationContext();
+            mId = id;
+        }
+
+        @Override
+        public Boolean call() {
+            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
+
+            try {
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+                ContentValues values = new ContentValues();
+                values.putNull(InAppMessageTable.COL_INBOX_FROM);
+                values.putNull(InAppMessageTable.COL_INBOX_TO);
+                values.putNull(InAppMessageTable.COL_INBOX_CONFIG_JSON);
+                values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(new Date()));
+
+                String selection = InAppMessageTable.COL_ID + " = ?";
+                String[] selectionArgs = { mId +"" };
+
+                int count = db.update(InAppMessageTable.TABLE_NAME, values, selection, selectionArgs);
+
+                if (count == 0){
+                    return false;
+                }
+                dbHelper.close();
+            }
+            catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed to delete inbox message with inAppID: "+ mId);
+                e.printStackTrace();
+                return false;
+            }
+
+            return true;
+        }
+    }
 }

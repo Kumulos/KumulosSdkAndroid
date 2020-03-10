@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
     static final String EVENT_TYPE_MESSAGE_DELIVERED = "k.message.delivered";
     static final String EVENT_TYPE_ENTERED_BEACON_PROXIMITY = "k.engage.beaconEnteredProximity";
     static final String EVENT_TYPE_LOCATION_UPDATED = "k.engage.locationUpdated";
+    static final String MESSAGE_DELETED_FROM_INBOX = "k.message.inbox.deleted";
     static final int MESSAGE_TYPE_PUSH = 1;
     static final int MESSAGE_TYPE_IN_APP = 2;
 

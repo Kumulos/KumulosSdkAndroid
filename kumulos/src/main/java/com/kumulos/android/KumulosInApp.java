@@ -41,6 +41,10 @@ public class KumulosInApp {
         return InAppMessageService.presentMessage(context, item);
     }
 
+    public static boolean deleteMessageFromInbox(Context context, InAppInboxItem item){
+        return InAppMessageService.deleteMessageFromInbox(context, item.getId());
+    }
+
     /**
      * Used to update in-app consent when enablement strategy is EXPLICIT_BY_USER
      *
