@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import android.support.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -355,7 +356,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         return notificationBuilder.build();
     }
 
-    private void maybeAddSound(Context context, Notification.Builder notificationBuilder, NotificationManager notificationManager, PushMessage pushMessage){
+    private void maybeAddSound(Context context, Notification.Builder notificationBuilder, @Nullable NotificationManager notificationManager, PushMessage pushMessage){
         String soundFileName = pushMessage.getSound();
 
         if (soundFileName == null){
@@ -365,6 +366,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         Uri sound = Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
             notificationBuilder.setSound(sound);
+            return;
+        }
+
+        if (notificationManager == null){
             return;
         }
 
