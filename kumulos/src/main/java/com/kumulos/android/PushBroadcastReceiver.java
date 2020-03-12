@@ -252,17 +252,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         addDeepLinkExtras(pushMessage, launchIntent);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
-            taskStackBuilder.addParentStack(component);
-            taskStackBuilder.addNextIntent(launchIntent);
+        TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
+        taskStackBuilder.addParentStack(component);
+        taskStackBuilder.addNextIntent(launchIntent);
 
-            taskStackBuilder.startActivities();
-            return;
-        }
-
-        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.startActivity(launchIntent);
+        taskStackBuilder.startActivities();
     }
 
 
@@ -335,10 +329,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
              notificationBuilder.setShowWhen(true);
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            return notificationBuilder.getNotification();
-        }
-
         notificationBuilder.setStyle(new Notification.BigTextStyle().bigText(pushMessage.getMessage()));
 
         JSONArray buttons = pushMessage.getButtons();
@@ -405,7 +395,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    @TargetApi(16)
     private void attachButtons(Context context, PushMessage pushMessage, Notification.Builder notificationBuilder, JSONArray buttons){
         for (int i = 0; i < buttons.length(); i++) {
             try{
@@ -440,7 +429,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    @TargetApi(16)
     private class LoadNotificationPicture extends AsyncTask<Void, Void, Bitmap> {
         private Notification.Builder builder;
         private Context context;
