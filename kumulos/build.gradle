@@ -34,8 +34,8 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.10.0'
     implementation "ch.acra:acra-http:5.2.1"
     implementation 'org.codehaus.jackson:jackson-mapper-asl:1.8.5'
-    implementation 'com.google.android.gms:play-services-gcm:16.1.0'
-    implementation 'com.google.firebase:firebase-messaging:17.5.0'
+    implementation 'com.google.android.gms:play-services-gcm:17.0.0'
+    implementation 'com.google.firebase:firebase-messaging:20.1.2'
 }
 
 publishing {

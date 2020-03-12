@@ -2,8 +2,8 @@ package com.kumulos.android;
 
 import android.app.Application;
 import android.os.Bundle;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.NonNull;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
 import android.text.TextUtils;
 
 import org.acra.config.CoreConfigurationBuilder;
