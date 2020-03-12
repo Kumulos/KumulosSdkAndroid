@@ -1,6 +1,6 @@
 package com.kumulos.android;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;

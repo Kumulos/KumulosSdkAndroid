@@ -1,6 +1,5 @@
 package com.kumulos.android;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -31,7 +30,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -195,7 +194,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         Class<? extends Service> cls = null;
         try {
-            cls = (Class<? extends Service>) Class.forName(component.getClassName());
+            cls = Class.forName(component.getClassName()).asSubclass(Service.class);
         } catch (ClassNotFoundException e) {
             Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
         }
@@ -236,7 +235,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         Class<? extends Activity> cls = null;
         try {
-            cls = (Class<? extends Activity>) Class.forName(component.getClassName());
+            cls = Class.forName(component.getClassName()).asSubclass(Activity.class);
         } catch (ClassNotFoundException e) {
             Kumulos.log(TAG, "Activity intent to handle a content push open was provided, but it is not for an Activity, check: " + component.getClassName());
         }
@@ -252,17 +251,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         addDeepLinkExtras(pushMessage, launchIntent);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
-            taskStackBuilder.addParentStack(component);
-            taskStackBuilder.addNextIntent(launchIntent);
+        TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
+        taskStackBuilder.addParentStack(component);
+        taskStackBuilder.addNextIntent(launchIntent);
 
-            taskStackBuilder.startActivities();
-            return;
-        }
-
-        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.startActivity(launchIntent);
+        taskStackBuilder.startActivities();
     }
 
 
@@ -335,10 +328,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
              notificationBuilder.setShowWhen(true);
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-            return notificationBuilder.getNotification();
-        }
-
         notificationBuilder.setStyle(new Notification.BigTextStyle().bigText(pushMessage.getMessage()));
 
         JSONArray buttons = pushMessage.getButtons();
@@ -405,7 +394,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    @TargetApi(16)
     private void attachButtons(Context context, PushMessage pushMessage, Notification.Builder notificationBuilder, JSONArray buttons){
         for (int i = 0; i < buttons.length(); i++) {
             try{
@@ -440,7 +428,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    @TargetApi(16)
     private class LoadNotificationPicture extends AsyncTask<Void, Void, Bitmap> {
         private Notification.Builder builder;
         private Context context;
