@@ -1,6 +1,5 @@
 package com.kumulos.android;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
