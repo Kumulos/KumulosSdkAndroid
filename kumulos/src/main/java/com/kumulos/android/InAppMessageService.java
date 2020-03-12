@@ -47,6 +47,12 @@ class InAppMessageService {
             return;
         }
 
+        for (InAppMessage message: inAppMessages){
+            if (message.getDismissedAt() != null || message.getInboxDeletedAt() != null){
+                clearNotification(context, message.getInAppId());
+            }
+        }
+
         Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
         final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
 
@@ -247,7 +253,6 @@ class InAppMessageService {
         return inboxItems;
     }
 
-
     static KumulosInApp.InboxMessagePresentationResult presentMessage(Context context, InAppInboxItem item){
         Callable<InAppMessage> task = new InAppContract.ReadInAppInboxMessageCallable(context, item.getId());
         final Future<InAppMessage> future = Kumulos.executorService.submit(task);
@@ -273,5 +278,32 @@ class InAppMessageService {
         InAppMessagePresenter.presentMessages(itemsToPresent, null);
 
         return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
+    }
+
+    static boolean deleteMessageFromInbox(Context context, int id){
+        JSONObject params = new JSONObject();
+        try {
+            params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
+            params.put("id", id);
+
+            Kumulos.trackEvent(context, AnalyticsContract.MESSAGE_DELETED_FROM_INBOX, params);
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        clearNotification(context, id);
+
+        Callable<Boolean> task = new InAppContract.DeleteInAppInboxMessageCallable(context, id);
+        final Future<Boolean> future = Kumulos.executorService.submit(task);
+
+        Boolean result = false;
+        try {
+            result = future.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            Kumulos.log(TAG, ex.getMessage());
+        }
+
+        return result;
     }
 }
