@@ -45,6 +45,7 @@ public class FirebaseMessageHandler {
         Uri uri;
         String pictureUrl = bundle.get("bicon");
         JSONArray buttons;
+        String sound = bundle.get("sound");
 
         try {
             custom = new JSONObject(customStr);
@@ -70,7 +71,8 @@ public class FirebaseMessageHandler {
                 uri,
                 runBackgroundHandler,
                 pictureUrl,
-                buttons
+                buttons,
+                sound
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);

@@ -1,6 +1,7 @@
 package com.kumulos.android;
 
 import android.content.Context;
+import android.net.Uri;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,7 +40,8 @@ class InAppRequestService {
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             params= "?after="+ sdf.format(lastSyncTime);
         }
-        String url = Kumulos.PUSH_BASE_URL + "/v1/users/"+userIdentifier+"/messages"+params;
+        String encodedIdentifier = Uri.encode(userIdentifier);
+        String url = Kumulos.PUSH_BASE_URL + "/v1/users/"+encodedIdentifier+"/messages"+params;
 
         final Request request = new Request.Builder()
                 .url(url)

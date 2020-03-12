@@ -29,8 +29,9 @@ public final class PushMessage implements Parcelable {
     private int tickleId;
     private String pictureUrl;
     private JSONArray buttons;
+    private String sound;
 
-    /** package */ PushMessage(int id, @Nullable String title, @Nullable String message, JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler, @Nullable String pictureUrl, @Nullable JSONArray buttons) {
+    /** package */ PushMessage(int id, @Nullable String title, @Nullable String message, JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler, @Nullable String pictureUrl, @Nullable JSONArray buttons, @Nullable String sound) {
         this.id = id;
         this.title = title;
         this.message = message;
@@ -41,6 +42,7 @@ public final class PushMessage implements Parcelable {
         this.runBackgroundHandler = runBackgroundHandler;
         this.pictureUrl = pictureUrl;
         this.buttons = buttons;
+        this.sound = sound;
     }
 
     private PushMessage(Parcel in) {
@@ -74,6 +76,8 @@ public final class PushMessage implements Parcelable {
                 buttons = null;
             }
         }
+
+        sound = in.readString();
     }
 
     private Integer getTickleId(JSONObject data){
@@ -131,6 +135,7 @@ public final class PushMessage implements Parcelable {
         dest.writeInt(tickleId);
         dest.writeString(pictureUrl);
         dest.writeString(buttonsString);
+        dest.writeString(sound);
     }
 
     public int getId() {
@@ -180,4 +185,10 @@ public final class PushMessage implements Parcelable {
     public JSONArray getButtons(){
         return this.buttons;
     }
+
+    @Nullable
+    public String getSound(){
+        return this.sound;
+    }
+
 }

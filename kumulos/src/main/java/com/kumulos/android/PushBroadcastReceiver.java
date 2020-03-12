@@ -15,7 +15,9 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Icon;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 
@@ -29,6 +31,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import android.support.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -40,7 +43,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
-    private static final String DEFAULT_CHANNEL_ID = "general";
+    private static final String DEFAULT_CHANNEL_ID = "kumulos_general";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
@@ -168,8 +171,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }).start();
     }
 
-
-
     private int getNotificationId(PushMessage pushMessage){
         int tickleId = pushMessage.getTickleId();
         if (tickleId == -1){
@@ -290,8 +291,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         Notification.Builder notificationBuilder;
 
+        NotificationManager notificationManager = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager notificationManager =
+            notificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
             if (null == notificationManager) {
@@ -300,11 +302,18 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
             if (null == channel) {
+                //channelId was changed to set sound to null on existing installs. Remove old channel if still exists
+                NotificationChannel oldChannel = notificationManager.getNotificationChannel("general");
+                if (oldChannel != null){
+                    notificationManager.deleteNotificationChannel("general");
+                }
+
                 channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
+                channel.setSound(null, null);
                 notificationManager.createNotificationChannel(channel);
             }
 
-            notificationBuilder = new Notification.Builder(context, "general");
+            notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
         }
         else {
             notificationBuilder = new Notification.Builder(context);
@@ -320,9 +329,17 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent);
 
+        this.maybeAddSound(context, notificationBuilder, notificationManager, pushMessage);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+             notificationBuilder.setShowWhen(true);
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
             return notificationBuilder.getNotification();
         }
+
+        notificationBuilder.setStyle(new Notification.BigTextStyle().bigText(pushMessage.getMessage()));
 
         JSONArray buttons = pushMessage.getButtons();
         if (buttons != null){
@@ -337,6 +354,55 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return null;
         }
         return notificationBuilder.build();
+    }
+
+    private void maybeAddSound(Context context, Notification.Builder notificationBuilder, @Nullable NotificationManager notificationManager, PushMessage pushMessage){
+        String soundFileName = pushMessage.getSound();
+
+        if (soundFileName == null){
+            return;
+        }
+
+        Uri sound = Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+            notificationBuilder.setSound(sound);
+            return;
+        }
+
+        if (notificationManager == null){
+            return;
+        }
+
+        NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
+        //user-defined sound takes precedence
+        if (channel.getSound() != null){
+            return;
+        }
+
+        int filter = notificationManager.getCurrentInterruptionFilter();
+        boolean inDnD = false;
+        switch(filter){
+            case NotificationManager.INTERRUPTION_FILTER_ALL:
+                inDnD = false;
+                break;
+            case NotificationManager.INTERRUPTION_FILTER_PRIORITY:
+                inDnD = !channel.canBypassDnd();
+                break;
+            case NotificationManager.INTERRUPTION_FILTER_UNKNOWN:
+            case NotificationManager.INTERRUPTION_FILTER_ALARMS:
+            case NotificationManager.INTERRUPTION_FILTER_NONE:
+                 inDnD = true;
+        }
+        if (inDnD){
+            return;
+        }
+
+        try {
+            Ringtone r = RingtoneManager.getRingtone(context, sound);
+            r.play();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @TargetApi(16)

@@ -43,9 +43,7 @@ public class PushSubscriptionManager {
     /**
      * Subscribes the current installation to the push channels specified by their unique identifiers.
      *
-     * Note that channels must exist prior to subscription requests.
-     *
-     * Duplicate subscription requests will be ignored.
+     * Channels that don't exist will be created.
      *
      * @param c
      * @param uuids The unique push channel identifiers to subscribe to
@@ -62,9 +60,7 @@ public class PushSubscriptionManager {
     /**
      * Subscribes the current installation to the push channels specified by their unique identifiers.
      *
-     * Note that channels must exist prior to subscription requests.
-     *
-     * Duplicate subscription requests will be ignored.
+     * Channels that don't exist will be created.
      *
      * @param c
      * @param uuids The unique push channel identifiers to subscribe to
