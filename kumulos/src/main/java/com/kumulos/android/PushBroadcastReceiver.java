@@ -194,7 +194,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         Class<? extends Service> cls = null;
         try {
-            cls = (Class<? extends Service>) Class.forName(component.getClassName());
+            cls = Class.forName(component.getClassName()).asSubclass(Service.class);
         } catch (ClassNotFoundException e) {
             Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
         }
@@ -235,7 +235,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         Class<? extends Activity> cls = null;
         try {
-            cls = (Class<? extends Activity>) Class.forName(component.getClassName());
+            cls = Class.forName(component.getClassName()).asSubclass(Activity.class);
         } catch (ClassNotFoundException e) {
             Kumulos.log(TAG, "Activity intent to handle a content push open was provided, but it is not for an Activity, check: " + component.getClassName());
         }
