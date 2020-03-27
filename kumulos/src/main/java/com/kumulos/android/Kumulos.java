@@ -302,7 +302,7 @@ public final class Kumulos {
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_LOCATION_UPDATED, props, true);
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_LOCATION_UPDATED, props, location.getTime(), true);
     }
 
     /**
@@ -327,7 +327,7 @@ public final class Kumulos {
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_ENTERED_BEACON_PROXIMITY, properties, true);
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_ENTERED_BEACON_PROXIMITY, properties, System.currentTimeMillis(), true);
     }
 
     //==============================================================================================
@@ -349,12 +349,12 @@ public final class Kumulos {
     //==============================================================================================
     //-- Analytics APIs
 
-    /** package */ static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties, boolean immediateFlush) {
+    /** package */ static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties, final long timestamp, boolean immediateFlush) {
         if (TextUtils.isEmpty(eventType)) {
             throw new IllegalArgumentException("Kumulos.trackEvent expects a non-empty event type");
         }
 
-        Runnable trackingTask = new AnalyticsContract.TrackEventRunnable(context, eventType, System.currentTimeMillis(), properties, immediateFlush);
+        Runnable trackingTask = new AnalyticsContract.TrackEventRunnable(context, eventType, timestamp, properties, immediateFlush);
         executorService.submit(trackingTask);
     }
 
@@ -368,10 +368,10 @@ public final class Kumulos {
      * @param properties Additional information about the event
      */
     public static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties) {
-        trackEvent(context, eventType, properties, false);
+        trackEvent(context, eventType, properties, System.currentTimeMillis(), false);
     }
 
-    /**
+     /**
      * Tracks a custom analytics event with Kumulos.
      *
      * After being recorded locally, all stored events will be flushed to the server.
@@ -381,7 +381,7 @@ public final class Kumulos {
      * @param properties Additional information about the event
      */
     public static void trackEventImmediately(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties) {
-        trackEvent(context, eventType, properties, true);
+        trackEvent(context, eventType, properties, System.currentTimeMillis(), true);
     }
 
     /**
@@ -483,21 +483,12 @@ public final class Kumulos {
 
     /**
      * Used to register the device installation with FCM to receive push notifications
-     * <p/>
-     * Will store a flag when successful so repeated calls won't make noise on the network
      *
      * @param context
      */
     public static void pushRegister(Context context) {
-        Intent regIntent = new Intent(context, PushRegistrationIntentService.class);
-        regIntent.setAction(PushRegistrationIntentService.ACTION_REGISTER);
-
-        try {
-            context.startService(regIntent);
-        }
-        catch (IllegalStateException e) {
-            // Noop - API26+ doesn't allow starting a service in the background
-        }
+        PushRegistration.RegisterTask task = new PushRegistration.RegisterTask(context);
+        executorService.submit(task);
     }
 
     /**
@@ -506,15 +497,8 @@ public final class Kumulos {
      * @param context
      */
     public static void pushUnregister(Context context) {
-        Intent regIntent = new Intent(context, PushRegistrationIntentService.class);
-        regIntent.setAction(PushRegistrationIntentService.ACTION_UNREGISTER);
-
-        try {
-            context.startService(regIntent);
-        }
-        catch (IllegalStateException e) {
-            // Noop - API26+ doesn't allow starting a service in the background
-        }
+        PushRegistration.UnregisterTask task = new PushRegistration.UnregisterTask(context);
+        executorService.submit(task);
     }
 
     /**
@@ -554,31 +538,7 @@ public final class Kumulos {
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, true);
-    }
-
-    /** package */ static void pushTokenDelete(Callback resultHandler) {
-        String url = PUSH_BASE_URL + "/v1/app-installs/" + installId + "/push-token";
-
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader(KEY_AUTH_HEADER, authHeader)
-                .delete()
-                .build();
-
-        try {
-            Response response = httpClient.newCall(request).execute();
-            if (response.isSuccessful()) {
-                resultHandler.onSuccess();
-            }
-            else {
-                resultHandler.onFailure(new Exception(response.message()));
-            }
-
-            response.close();
-        } catch (IOException e) {
-            resultHandler.onFailure(e);
-        }
+        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, System.currentTimeMillis(), true);
     }
 
     //==============================================================================================
