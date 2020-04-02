@@ -35,7 +35,7 @@ dependencies {
     implementation "ch.acra:acra-http:5.2.1"
     implementation 'org.codehaus.jackson:jackson-mapper-asl:1.8.5'
     implementation 'com.google.android.gms:play-services-gcm:15.0.0'
-    implementation 'com.google.firebase:firebase-messaging:17.5.0'
+    implementation 'com.google.firebase:firebase-messaging:15.0.0'
 }
 
 publishing {
