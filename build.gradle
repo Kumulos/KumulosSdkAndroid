@@ -21,6 +21,9 @@ allprojects {
     repositories {
         jcenter()
         google()
+        maven {
+            url 'http://developer.huawei.com/repo/'
+        }
     }
 }
 
