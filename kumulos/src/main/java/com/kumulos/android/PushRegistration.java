@@ -1,6 +1,7 @@
 package com.kumulos.android;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -31,10 +32,31 @@ final class PushRegistration {
                 return;
             }
 
+            ImplementationUtil.MessagingApi api = ImplementationUtil.getInstance(context).getAvailableMessagingApi();
+
+            switch (api) {
+                case FCM:
+                    this.registerFcm(context);
+                    break;
+                case HMS:
+                    this.registerHms(context);
+                    break;
+                default:
+                    Log.e(TAG, "No messaging implementation found, please ensure FCM or HMS libraries are loaded and available");
+                    break;
+            }
+        }
+
+        private void registerFcm(Context context) {
             Task<InstanceIdResult> result = FirebaseInstanceId.getInstance().getInstanceId();
 
+            // TODO need to have a new token type
             result.addOnSuccessListener(Kumulos.executorService, instanceIdResult ->
                     Kumulos.pushTokenStore(context, instanceIdResult.getToken()));
+        }
+
+        private void registerHms(Context context) {
+            // TODO
         }
     }
 
@@ -57,6 +79,22 @@ final class PushRegistration {
                 return;
             }
 
+            ImplementationUtil.MessagingApi api = ImplementationUtil.getInstance(context).getAvailableMessagingApi();
+
+            switch (api) {
+                case FCM:
+                    this.unregisterFcm(context);
+                    break;
+                case HMS:
+                    this.unregisterHms(context);
+                    break;
+                default:
+                    Log.e(TAG, "No messaging implementation found, please ensure FCM or HMS libraries are loaded and available");
+                    break;
+            }
+        }
+
+        private void unregisterFcm(Context context) {
             Task<InstanceIdResult> result = FirebaseInstanceId.getInstance().getInstanceId();
 
             result.addOnSuccessListener(Kumulos.executorService, instanceIdResult -> {
@@ -68,6 +106,10 @@ final class PushRegistration {
                     e.printStackTrace();
                 }
             });
+        }
+
+        private void unregisterHms(Context context) {
+            // TODO
         }
     }
 
