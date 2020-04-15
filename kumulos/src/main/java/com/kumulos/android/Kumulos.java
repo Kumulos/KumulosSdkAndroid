@@ -548,7 +548,7 @@ public final class Kumulos {
      * @param context
      * @param token
      */
-    public static void pushTokenStore(Context context, final PushTokenType type, final String token) {
+    public static void pushTokenStore(@NonNull Context context, @NonNull final PushTokenType type, @NonNull final String token) {
 
         JSONObject props = new JSONObject();
 

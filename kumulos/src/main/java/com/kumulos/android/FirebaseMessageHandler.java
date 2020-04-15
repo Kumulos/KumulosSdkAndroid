@@ -12,6 +12,9 @@ import org.json.JSONObject;
 
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 /**
  * FirebaseMessageHandler provides helpers for handling FirebaseMessagingService events
  *
@@ -27,7 +30,11 @@ public class FirebaseMessageHandler {
      * @param context
      * @param remoteMessage
      */
-    public static void onMessageReceived(Context context, RemoteMessage remoteMessage) {
+    public static void onMessageReceived(@NonNull Context context, @Nullable RemoteMessage remoteMessage) {
+        if (null == remoteMessage) {
+            return;
+        }
+
         Kumulos.log(TAG, "Received a push message");
 
         Map<String, String> bundle = remoteMessage.getData();
