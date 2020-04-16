@@ -123,11 +123,6 @@ import androidx.work.WorkManager;
             }
 
             // Schedule a sync
-            // TODO inputs?
-//            KumulosConfig config = Kumulos.getConfig();
-//            Bundle bundle = new Bundle();
-//            bundle.putBundle(AnalyticsUploadWorker.KEY_CONFIG, config.toBundle());
-
             Constraints taskConstraints = new Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.CONNECTED)
                     .build();
@@ -135,9 +130,8 @@ import androidx.work.WorkManager;
             OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsUploadWorker.class)
                     .setConstraints(taskConstraints);
 
-            // TODO - revisit, if workmanager doesn't enforce, maybe 20s delay for all is fine?
             if (BuildConfig.DEBUG) {
-                taskBuilder.setInitialDelay(20, TimeUnit.SECONDS);
+                taskBuilder.setInitialDelay(10, TimeUnit.SECONDS);
             }
             else {
                 taskBuilder.setInitialDelay(5, TimeUnit.MINUTES);
@@ -145,29 +139,6 @@ import androidx.work.WorkManager;
 
             WorkManager.getInstance(mContext).enqueueUniqueWork(AnalyticsUploadWorker.TAG,
                     ExistingWorkPolicy.REPLACE, taskBuilder.build());
-//
-//            OneoffTask.Builder uploadTaskBuilder = new OneoffTask.Builder()
-//                    .setService(AnalyticsUploadService.class)
-//                    .setTag(AnalyticsUploadService.TAG)
-//                    .setUpdateCurrent(true)
-//                    .setExtras(bundle)
-//                    .setRequiredNetwork(OneoffTask.NETWORK_STATE_CONNECTED);
-//
-//            if (BuildConfig.DEBUG) {
-//                uploadTaskBuilder.setExecutionWindow(20, 40);
-//            }
-//            else {
-//                uploadTaskBuilder.setExecutionWindow(5 * 60, 15 * 60);
-//            }
-//
-//            try {
-//                OneoffTask uploadTask = uploadTaskBuilder.build();
-//                GcmNetworkManager.getInstance(mContext).schedule(uploadTask);
-//            }
-//            catch (Throwable e) {
-//                e.printStackTrace();
-//            }
-
         }
     }
 
@@ -409,7 +380,6 @@ import androidx.work.WorkManager;
                 @Override
                 public void run() {
                     WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
-//                    GcmNetworkManager.getInstance(context).cancelAllTasks(AnalyticsBackgroundEventService.class);
                 }
             });
         }
@@ -425,12 +395,6 @@ import androidx.work.WorkManager;
             }
 
             final KumulosConfig config = Kumulos.getConfig();
-//            final Bundle bundle = new Bundle();
-//
-//            bundle.putLong(AnalyticsBackgroundEventService.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis());
-//            bundle.putBundle(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, config.toBundle());
-
-            // TODO keys?
             final Data input = new Data.Builder()
                     .putLong(AnalyticsBackgroundEventWorker.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis())
                     .build();
@@ -444,15 +408,6 @@ import androidx.work.WorkManager;
 
                     WorkManager.getInstance(context).enqueueUniqueWork(AnalyticsBackgroundEventWorker.TAG,
                             ExistingWorkPolicy.REPLACE, taskBuilder.build());
-//                    Task task = new OneoffTask.Builder()
-//                            .setExecutionWindow(config.getSessionIdleTimeoutSeconds(), config.getSessionIdleTimeoutSeconds() + 10)
-//                            .setService(AnalyticsBackgroundEventService.class)
-//                            .setTag(AnalyticsBackgroundEventService.TAG)
-//                            .setExtras(bundle)
-//                            .setRequiredNetwork(Task.NETWORK_STATE_ANY)
-//                            .build();
-//
-//                    GcmNetworkManager.getInstance(context).schedule(task);
                 }
             });
         }

@@ -70,19 +70,6 @@ public class InAppSyncWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        // TODO init?
-//        if (!Kumulos.isInitialized()) {
-//            Bundle bundle = params.getExtras();
-//            Bundle configBundle = bundle.getBundle(KEY_CONFIG);
-//
-//            if (null == configBundle) {
-//                return GcmNetworkManager.RESULT_FAILURE;
-//            }
-//
-//            KumulosConfig config = KumulosConfig.fromBundle(configBundle);
-//            Kumulos.initialize(this.getApplication(), config);
-//        }
-
         boolean success = InAppMessageService.fetch(getApplicationContext(), false);
 
         if (!success) {
