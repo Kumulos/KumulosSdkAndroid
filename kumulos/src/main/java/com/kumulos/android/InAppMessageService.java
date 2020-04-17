@@ -3,18 +3,18 @@ package com.kumulos.android;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Pair;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import android.util.Pair;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-import java.util.Calendar;
 
 class InAppMessageService {
     private static final String TAG = InAppMessageService.class.getName();

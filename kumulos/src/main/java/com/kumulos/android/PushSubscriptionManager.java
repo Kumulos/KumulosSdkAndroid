@@ -1,7 +1,6 @@
 package com.kumulos.android;
 
 import android.content.Context;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.json.JSONArray;
@@ -13,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import androidx.annotation.Nullable;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;

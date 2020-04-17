@@ -2,13 +2,14 @@ package com.kumulos.android;
 
 import android.app.Application;
 import android.os.Bundle;
-import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
 import android.text.TextUtils;
 
 import org.acra.config.CoreConfigurationBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
 
 /**
  * Represents the configuration for the Kumulos client

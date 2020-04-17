@@ -19,17 +19,18 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.util.DisplayMetrics;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import android.util.DisplayMetrics;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+
 import androidx.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
