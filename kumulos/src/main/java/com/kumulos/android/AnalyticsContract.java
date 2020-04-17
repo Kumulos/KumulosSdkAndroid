@@ -394,7 +394,6 @@ import androidx.work.WorkManager;
                 return;
             }
 
-            final KumulosConfig config = Kumulos.getConfig();
             final Data input = new Data.Builder()
                     .putLong(AnalyticsBackgroundEventWorker.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis())
                     .build();
@@ -402,6 +401,8 @@ import androidx.work.WorkManager;
             Kumulos.executorService.submit(new Runnable() {
                 @Override
                 public void run() {
+                    KumulosConfig config = Kumulos.getConfig();
+
                     OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsBackgroundEventWorker.class)
                             .setInitialDelay(config.getSessionIdleTimeoutSeconds(), TimeUnit.SECONDS)
                             .setInputData(input);
