@@ -23,30 +23,11 @@ public class InAppSyncWorker extends Worker {
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
 
-        final PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(InAppSyncWorker.class, 1, TimeUnit.HOURS, 1, TimeUnit.HOURS)
+        final PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(InAppSyncWorker.class,
+                1, TimeUnit.HOURS,
+                1, TimeUnit.HOURS)
                 .setConstraints(taskConstraints)
                 .build();
-
-        // TODO debug frequency?
-//        long periodSecs = DESIRED_TASK_FREQUENCY;
-//        long flexSecs = ACCEPTED_FREQUENCY_DEVIATION;
-//        if (BuildConfig.DEBUG){
-//            periodSecs = 30L;
-//            flexSecs = 15L;
-//        }
-//
-//        KumulosConfig config = Kumulos.getConfig();
-//        Bundle bundle = new Bundle();
-//        bundle.putBundle(KEY_CONFIG, config.toBundle());
-//
-//        PeriodicTask periodic = new PeriodicTask.Builder()
-//                .setService(InAppTaskService.class)
-//                .setPeriod(periodSecs)
-//                .setFlex(flexSecs)
-//                .setTag(TAG)
-//                .setUpdateCurrent(true)
-//                .setExtras(bundle)
-//                .build();
 
         new Thread(new Runnable() {
             public void run() {

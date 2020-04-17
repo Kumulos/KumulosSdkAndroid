@@ -134,7 +134,7 @@ import androidx.work.WorkManager;
                 taskBuilder.setInitialDelay(10, TimeUnit.SECONDS);
             }
             else {
-                taskBuilder.setInitialDelay(5, TimeUnit.MINUTES);
+                taskBuilder.setInitialDelay(1, TimeUnit.MINUTES);
             }
 
             WorkManager.getInstance(mContext).enqueueUniqueWork(AnalyticsUploadWorker.TAG,
