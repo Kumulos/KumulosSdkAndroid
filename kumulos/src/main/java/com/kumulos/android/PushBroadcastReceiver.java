@@ -164,11 +164,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        new Thread(new Runnable() {
+        Kumulos.executorService.submit(new Runnable() {
+            @Override
             public void run() {
                 InAppMessageService.fetch(context, false);
             }
-        }).start();
+        });
     }
 
     private int getNotificationId(PushMessage pushMessage){

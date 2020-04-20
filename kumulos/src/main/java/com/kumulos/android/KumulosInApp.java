@@ -161,10 +161,11 @@ public class KumulosInApp {
     }
 
     private static void fetchMessages(){
-        new Thread(new Runnable() {
+        Kumulos.executorService.submit(new Runnable() {
+            @Override
             public void run() {
                 InAppMessageService.fetch(KumulosInApp.application, true);
             }
-        }).start();
+        });
     }
 }

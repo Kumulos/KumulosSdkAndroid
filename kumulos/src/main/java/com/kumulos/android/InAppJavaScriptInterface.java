@@ -100,6 +100,7 @@ class InAppJavaScriptInterface {
                 case BUTTON_ACTION_DEEP_LINK:
                     if (KumulosInApp.inAppDeepLinkHandler != null){
                         currentActivity.runOnUiThread(new Runnable() {
+                            @Override
                             public void run() {
                                 KumulosInApp.inAppDeepLinkHandler.handle(KumulosInApp.application, action.getDeepLink());
                             }
