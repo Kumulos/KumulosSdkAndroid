@@ -10,8 +10,6 @@ import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Pair;
@@ -36,6 +34,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.AnyThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.UiThread;
+
 class InAppMessagePresenter {
 
     private static final String TAG = InAppMessagePresenter.class.getName();
@@ -55,6 +58,7 @@ class InAppMessagePresenter {
     private static boolean prevFlagDrawsSystemBarBackgrounds;
     private static boolean presentationPendingOnResume = false;
 
+    @AnyThread
     static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
 
@@ -345,6 +349,7 @@ class InAppMessagePresenter {
         spinner = null;
     }
 
+    @UiThread
     private static void setStatusBarColorForDialog(Activity currentActivity){
         if (currentActivity == null){
             return;
@@ -375,6 +380,7 @@ class InAppMessagePresenter {
         window.setStatusBarColor(statusBarColor);
     }
 
+    @AnyThread
     private static void unsetStatusBarColorForDialog(Activity dialogActivity){
         if (dialogActivity == null){
             return;
@@ -384,22 +390,27 @@ class InAppMessagePresenter {
             return;
         }
 
-        Window window = dialogActivity.getWindow();
-        window.setStatusBarColor(prevStatusBarColor);
+        dialogActivity.runOnUiThread(new Runnable() {
+            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+            @Override
+            public void run() {
+                Window window = dialogActivity.getWindow();
+                window.setStatusBarColor(prevStatusBarColor);
 
-        if (prevFlagTranslucentStatus){
-            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        }
+                if (prevFlagTranslucentStatus){
+                    window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                }
 
-        if (!prevFlagDrawsSystemBarBackgrounds){
-            window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        }
+                if (!prevFlagDrawsSystemBarBackgrounds){
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                }
+            }
+        });
     }
 
 
-    private static void showWebView(Activity currentActivity){
-        Handler mHandler = new Handler(Looper.getMainLooper());
-        mHandler.post(new Runnable() {
+    private static void showWebView(@NonNull Activity currentActivity){
+        currentActivity.runOnUiThread(new Runnable() {
             @SuppressLint("SetJavaScriptEnabled")
             @Override
             public void run() {
