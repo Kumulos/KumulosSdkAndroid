@@ -112,13 +112,13 @@ public final class Kumulos {
 
         initialized = true;
 
+        KumulosInApp.initializeInApp(application, currentConfig);
+
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
-
-        KumulosInApp.initializeInApp(application, currentConfig);
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
