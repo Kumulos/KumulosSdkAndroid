@@ -59,7 +59,7 @@ public class HmsMessageHandler {
         try {
             custom = new JSONObject(bundle.getString("custom"));
             uri = (!custom.isNull("u")) ? Uri.parse(custom.getString("u")) : null;
-            data = custom.optJSONObject("a");
+            data = custom.getJSONObject("a");
             id = data.getJSONObject("k.message").getJSONObject("data").getInt("id");
             buttons = data.optJSONArray("k.buttons");
         } catch (JSONException e) {
