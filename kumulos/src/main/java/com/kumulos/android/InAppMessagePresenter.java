@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
@@ -44,8 +45,10 @@ class InAppMessagePresenter {
     private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
 
     private static List<InAppMessage> messageQueue = new ArrayList<>();
+    @SuppressLint("StaticFieldLeak")
     private static WebView wv = null;
     private static Dialog dialog = null;
+    @SuppressLint("StaticFieldLeak")
     private static ProgressBar spinner = null;
     private static int prevStatusBarColor;
     private static boolean prevFlagTranslucentStatus;
@@ -397,6 +400,7 @@ class InAppMessagePresenter {
     private static void showWebView(Activity currentActivity){
         Handler mHandler = new Handler(Looper.getMainLooper());
         mHandler.post(new Runnable() {
+            @SuppressLint("SetJavaScriptEnabled")
             @Override
             public void run() {
                 if (dialog != null){
@@ -433,7 +437,7 @@ class InAppMessagePresenter {
                     });
                     dialog.show();
 
-                    wv = (WebView) dialog.findViewById(R.id.webview);
+                    wv = dialog.findViewById(R.id.webview);
                     spinner = dialog.findViewById(R.id.progressBar);
 
                     int cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK;
@@ -469,9 +473,7 @@ class InAppMessagePresenter {
                         @SuppressWarnings("deprecation")
                         @Override
                         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                            if (BuildConfig.DEBUG){
-                                Kumulos.log(TAG, "Error code: "+errorCode+". "+description);
-                            }
+                            Kumulos.log(TAG, "Error code: "+errorCode+". "+description);
 
                             closeDialog(currentActivity);
                         }
