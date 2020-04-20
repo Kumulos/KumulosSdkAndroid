@@ -3,12 +3,13 @@ package com.kumulos.android;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
-import androidx.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import androidx.annotation.Nullable;
 
 /**
  * Represents the push notification sent by Kumulos

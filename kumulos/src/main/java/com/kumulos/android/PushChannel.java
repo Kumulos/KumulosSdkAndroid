@@ -2,10 +2,11 @@ package com.kumulos.android;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import androidx.annotation.Nullable;
 
 public class PushChannel implements Parcelable {
 

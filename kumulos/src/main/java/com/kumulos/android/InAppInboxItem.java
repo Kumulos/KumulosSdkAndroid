@@ -1,8 +1,8 @@
 package com.kumulos.android;
 
-import androidx.annotation.Nullable;
-
 import java.util.Date;
+
+import androidx.annotation.Nullable;
 
 public class InAppInboxItem {
 

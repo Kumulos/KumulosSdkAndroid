@@ -1,14 +1,13 @@
 package com.kumulos.android;
 
 import android.app.Application;
-import android.os.Bundle;
-import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
 import android.text.TextUtils;
 
 import org.acra.config.CoreConfigurationBuilder;
-import org.json.JSONException;
 import org.json.JSONObject;
+
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
 
 /**
  * Represents the configuration for the Kumulos client
@@ -119,53 +118,6 @@ public final class KumulosConfig {
 
     InAppConsentStrategy getInAppConsentStrategy() {
         return inAppConsentStrategy;
-    }
-
-    /** package */ Bundle toBundle() {
-        Bundle bundle = new Bundle();
-        bundle.putString(KEY_API_KEY, apiKey);
-        bundle.putString(KEY_SECRET_KEY, secretKey);
-        bundle.putInt(KEY_NOTIFICATION_SMALL_ICON_ID, notificationSmallIconId);
-        bundle.putBoolean(KEY_CRASH_REPORTING_ENABLED, crashReportingEnabled);
-        bundle.putInt(KEY_SESSION_IDLE_TIMEOUT, sessionIdleTimeoutSeconds);
-
-        if (null != runtimeInfo) {
-            bundle.putString(KEY_RUNTIME_INFO, runtimeInfo.toString());
-        }
-
-        if (null != sdkInfo) {
-            bundle.putString(KEY_SDK_INFO, sdkInfo.toString());
-        }
-
-        if (null != inAppConsentStrategy){
-            bundle.putString(KEY_IN_APP_CONSENT_STRATEGY, inAppConsentStrategy.name());
-        }
-
-        return bundle;
-    }
-
-    /** package */ static KumulosConfig fromBundle(Bundle bundle) {
-        KumulosConfig config = new KumulosConfig();
-        config.apiKey = bundle.getString(KEY_API_KEY);
-        config.secretKey = bundle.getString(KEY_SECRET_KEY);
-        config.notificationSmallIconId = bundle.getInt(KEY_NOTIFICATION_SMALL_ICON_ID, DEFAULT_NOTIFICATION_ICON_ID);
-        config.crashReportingEnabled = bundle.getBoolean(KEY_CRASH_REPORTING_ENABLED);
-        config.sessionIdleTimeoutSeconds = bundle.getInt(KEY_SESSION_IDLE_TIMEOUT, DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS);
-
-        String runtimeInfoStr = bundle.getString(KEY_RUNTIME_INFO, null);
-        String sdkInfoStr = bundle.getString(KEY_SDK_INFO, null);
-
-        try {
-            config.runtimeInfo = (null == runtimeInfoStr) ? null : new JSONObject(runtimeInfoStr);
-            config.sdkInfo = (null == sdkInfoStr) ? null : new JSONObject(sdkInfoStr);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        String strategy = bundle.getString(KEY_IN_APP_CONSENT_STRATEGY);
-        config.inAppConsentStrategy = strategy == null ? null : InAppConsentStrategy.valueOf(strategy);
-
-        return config;
     }
 
     /**

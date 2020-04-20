@@ -1,11 +1,10 @@
 
 package com.kumulos.android;
 
-import androidx.annotation.Nullable;
-
 import java.io.IOException;
 import java.util.Map;
 
+import androidx.annotation.Nullable;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;

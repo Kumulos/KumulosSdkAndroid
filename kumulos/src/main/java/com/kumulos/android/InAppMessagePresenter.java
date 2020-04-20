@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
@@ -30,9 +31,9 @@ import android.widget.RelativeLayout;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
-import android.util.Pair;
 
 class InAppMessagePresenter {
 

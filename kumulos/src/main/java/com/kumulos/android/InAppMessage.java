@@ -1,7 +1,5 @@
 package com.kumulos.android;
 
-import androidx.annotation.Nullable;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -10,6 +8,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import androidx.annotation.Nullable;
 
 class InAppMessage {
     private String presentedWhen;

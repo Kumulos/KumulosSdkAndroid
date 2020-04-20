@@ -150,14 +150,13 @@ public class KumulosInApp {
     }
 
     private static void toggleInAppMessageMonitoring(boolean enabled){
-        InAppTaskService its = new InAppTaskService();
         if (enabled){
-            its.startPeriodicFetches(application);
+            InAppSyncWorker.startPeriodicFetches(application);
 
             fetchMessages();
         }
         else {
-            its.cancelPeriodicFetches(application);
+            InAppSyncWorker.cancelPeriodicFetches(application);
         }
     }
 

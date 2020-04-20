@@ -12,14 +12,6 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.gcm.GcmNetworkManager;
-import com.google.android.gms.gcm.OneoffTask;
-import com.google.android.gms.gcm.Task;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,7 +20,17 @@ import java.lang.ref.WeakReference;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.work.Constraints;
+import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 /** package */ final class AnalyticsContract {
 
@@ -121,38 +123,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
             }
 
             // Schedule a sync
-            int playServicesCheck = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(mContext);
-            if (ConnectionResult.SUCCESS != playServicesCheck) {
-                Kumulos.log(TAG, "Failed to schedule a sync, play services availability check resulted in: " + playServicesCheck);
-                return;
-            }
+            Constraints taskConstraints = new Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build();
 
-            KumulosConfig config = Kumulos.getConfig();
-            Bundle bundle = new Bundle();
-            bundle.putBundle(AnalyticsUploadService.KEY_CONFIG, config.toBundle());
-
-            OneoffTask.Builder uploadTaskBuilder = new OneoffTask.Builder()
-                    .setService(AnalyticsUploadService.class)
-                    .setTag(AnalyticsUploadService.TAG)
-                    .setUpdateCurrent(true)
-                    .setExtras(bundle)
-                    .setRequiredNetwork(OneoffTask.NETWORK_STATE_CONNECTED);
+            OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsUploadWorker.class)
+                    .setConstraints(taskConstraints);
 
             if (BuildConfig.DEBUG) {
-                uploadTaskBuilder.setExecutionWindow(20, 40);
+                taskBuilder.setInitialDelay(10, TimeUnit.SECONDS);
             }
             else {
-                uploadTaskBuilder.setExecutionWindow(5 * 60, 15 * 60);
+                taskBuilder.setInitialDelay(1, TimeUnit.MINUTES);
             }
 
-            try {
-                OneoffTask uploadTask = uploadTaskBuilder.build();
-                GcmNetworkManager.getInstance(mContext).schedule(uploadTask);
-            }
-            catch (Throwable e) {
-                e.printStackTrace();
-            }
-
+            WorkManager.getInstance(mContext).enqueueUniqueWork(AnalyticsUploadWorker.TAG,
+                    ExistingWorkPolicy.REPLACE, taskBuilder.build());
         }
     }
 
@@ -393,7 +379,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
             Kumulos.executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    GcmNetworkManager.getInstance(context).cancelAllTasks(AnalyticsBackgroundEventService.class);
+                    WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
                 }
             });
         }
@@ -408,24 +394,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
                 return;
             }
 
-            final KumulosConfig config = Kumulos.getConfig();
-            final Bundle bundle = new Bundle();
-
-            bundle.putLong(AnalyticsBackgroundEventService.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis());
-            bundle.putBundle(AnalyticsBackgroundEventService.EXTRAS_KEY_CONFIG, config.toBundle());
+            final Data input = new Data.Builder()
+                    .putLong(AnalyticsBackgroundEventWorker.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis())
+                    .build();
 
             Kumulos.executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    Task task = new OneoffTask.Builder()
-                            .setExecutionWindow(config.getSessionIdleTimeoutSeconds(), config.getSessionIdleTimeoutSeconds() + 10)
-                            .setService(AnalyticsBackgroundEventService.class)
-                            .setTag(AnalyticsBackgroundEventService.TAG)
-                            .setExtras(bundle)
-                            .setRequiredNetwork(Task.NETWORK_STATE_ANY)
-                            .build();
+                    KumulosConfig config = Kumulos.getConfig();
 
-                    GcmNetworkManager.getInstance(context).schedule(task);
+                    OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsBackgroundEventWorker.class)
+                            .setInitialDelay(config.getSessionIdleTimeoutSeconds(), TimeUnit.SECONDS)
+                            .setInputData(input);
+
+                    WorkManager.getInstance(context).enqueueUniqueWork(AnalyticsBackgroundEventWorker.TAG,
+                            ExistingWorkPolicy.REPLACE, taskBuilder.build());
                 }
             });
         }
