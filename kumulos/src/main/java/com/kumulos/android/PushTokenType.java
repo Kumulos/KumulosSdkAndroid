@@ -1,8 +1,8 @@
-
 package com.kumulos.android;
 
-enum PushTokenType {
-    ANDROID(2);
+public enum PushTokenType {
+    FCM(2),
+    HCM(5);
 
     private final int type;
 
@@ -15,5 +15,7 @@ enum PushTokenType {
         return String.valueOf(type);
     }
 
-    public int getValue(){ return type;}
+    public int getValue() {
+        return type;
+    }
 }
