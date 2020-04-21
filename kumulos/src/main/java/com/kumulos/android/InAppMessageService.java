@@ -60,15 +60,16 @@ class InAppMessageService {
         }
 
         Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
-        final Future<Pair<List<InAppMessage>, List<Integer>>> future = Kumulos.executorService.submit(task);
 
         List<InAppMessage> unreadMessages;
         List<Integer> deliveredIds;
+
         try {
-            Pair<List<InAppMessage>, List<Integer>> p = future.get();
+            Pair<List<InAppMessage>, List<Integer>> p = task.call();
             unreadMessages = p.first;
             deliveredIds = p.second;
-        } catch (InterruptedException | ExecutionException ex) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return;
         }
 
