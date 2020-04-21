@@ -75,7 +75,7 @@ public class KumulosInApp {
     //==============================================================================================
     //-- Internal Helpers
 
-    static void initializeInApp(Application application, KumulosConfig currentConfig){
+    static void initialize(Application application, KumulosConfig currentConfig){
         KumulosInApp.application = application;
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();

@@ -112,7 +112,7 @@ public final class Kumulos {
 
         initialized = true;
 
-        KumulosInApp.initializeInApp(application, currentConfig);
+        KumulosInApp.initialize(application, currentConfig);
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
