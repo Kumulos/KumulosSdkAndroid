@@ -52,9 +52,9 @@ public class HmsMessageHandler {
         JSONObject data;
         JSONObject custom;
         Uri uri;
-        String pictureUrl = bundle.optString("bicon", null);
+        String pictureUrl = optNullableString(bundle, "bicon");
         JSONArray buttons;
-        String sound = bundle.optString("sound", null);
+        String sound = optNullableString(bundle, "sound");
 
         try {
             custom = new JSONObject(bundle.getString("custom"));
@@ -67,13 +67,13 @@ public class HmsMessageHandler {
             return;
         }
 
-        String bgn = bundle.optString("bgn", null);
+        String bgn = optNullableString(bundle, "bgn");
         boolean runBackgroundHandler = (null != bgn && bgn.equals("1"));
 
         PushMessage pushMessage = new PushMessage(
                 id,
-                bundle.optString("title", null),
-                bundle.optString("alert", null),
+                optNullableString(bundle, "title"),
+                optNullableString(bundle, "alert"),
                 data,
                 remoteMessage.getSentTime(),
                 uri,
@@ -88,6 +88,14 @@ public class HmsMessageHandler {
         intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
 
         context.sendBroadcast(intent);
+    }
+
+    private static String optNullableString(@NonNull JSONObject object, @NonNull String name) {
+        if (!object.has(name) || object.isNull(name)) {
+            return null;
+        }
+
+        return object.optString(name);
     }
 
 }

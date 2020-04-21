@@ -341,7 +341,7 @@ class InAppContract {
                 return null;
             }
 
-            return json.optString(key, null);
+            return json.optString(key);
         }
     }
 
