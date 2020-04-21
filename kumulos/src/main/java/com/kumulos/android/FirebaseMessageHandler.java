@@ -39,11 +39,11 @@ public class FirebaseMessageHandler {
 
         Map<String, String> bundle = remoteMessage.getData();
 
-        if (!bundle.containsKey("custom")) {
+        String customStr = bundle.get("custom");
+
+        if (null == customStr) {
             return;
         }
-
-        String customStr = bundle.get("custom");
 
         // Extract bundle
         int id;
@@ -57,7 +57,7 @@ public class FirebaseMessageHandler {
         try {
             custom = new JSONObject(customStr);
             uri = (!custom.isNull("u")) ? Uri.parse(custom.getString("u")) : null;
-            data = custom.optJSONObject("a");
+            data = custom.getJSONObject("a");
             id = data.getJSONObject("k.message").getJSONObject("data").getInt("id");
             buttons = data.optJSONArray("k.buttons");
 

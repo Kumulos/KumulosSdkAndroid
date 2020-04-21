@@ -140,6 +140,7 @@ final class PushRegistration {
                 }
 
                 HmsInstanceId.getInstance(context).deleteToken(appId, HCM_SCOPE);
+                Kumulos.trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_UNSUBSCRIBED, null);
             } catch (ApiException e) {
                 e.printStackTrace();
             }
