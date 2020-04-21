@@ -143,7 +143,7 @@ class InAppJavaScriptInterface {
         for (int i=0; i< rawActions.length(); i++){
             JSONObject rawAction = rawActions.optJSONObject(i);
 
-            String actionType = rawAction.optString("type", null);
+            String actionType = rawAction.optString("type");
             JSONObject rawActionData = rawAction.optJSONObject("data");
 
             ExecutableAction action = new ExecutableAction();
