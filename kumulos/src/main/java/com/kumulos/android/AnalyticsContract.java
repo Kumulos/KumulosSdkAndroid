@@ -362,7 +362,7 @@ import androidx.work.WorkManager;
 
             Integer tickleId = this.getTickleId(activity);
             if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
-                InAppMessageService.readMessages(activity, isBackground(), tickleId);
+                InAppMessageService.readAndPresentMessages(activity, isBackground(), tickleId);
             }
             numStarted++;
 
