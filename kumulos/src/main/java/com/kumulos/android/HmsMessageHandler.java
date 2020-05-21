@@ -4,28 +4,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
-import com.google.firebase.messaging.RemoteMessage;
+import com.huawei.hms.push.RemoteMessage;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Map;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * FirebaseMessageHandler provides helpers for handling FirebaseMessagingService events
+ * HmsMessageHandler provides helpers for handling HmsMessageService events
  *
- * This can allow interoperating Kumulos push with your own FCM service
+ * This can allow interoperating Kumulos push with your own HCM service
  */
-public class FirebaseMessageHandler {
+public class HmsMessageHandler {
 
-    private static final String TAG = FirebaseMessagingService.class.getName();
+    private static final String TAG = HmsMessageHandler.class.getName();
 
     /**
-     * Handles the received notification from FCM, creating a PushMessage model and broadcasting
+     * Handles the received notification from HCM, creating a PushMessage model and broadcasting
      * the appropriate com.kumulos.push Intent
      * @param context
      * @param remoteMessage
@@ -37,42 +35,45 @@ public class FirebaseMessageHandler {
 
         Kumulos.log(TAG, "Received a push message");
 
-        Map<String, String> bundle = remoteMessage.getData();
+        JSONObject bundle;
 
-        String customStr = bundle.get("custom");
-
-        if (null == customStr) {
+        try {
+            bundle = new JSONObject(remoteMessage.getData());
+        } catch (JSONException e) {
+            e.printStackTrace();
             return;
         }
 
-        // Extract bundle
+        if (!bundle.has("custom") || bundle.isNull("custom")) {
+            return;
+        }
+
         int id;
         JSONObject data;
         JSONObject custom;
         Uri uri;
-        String pictureUrl = bundle.get("bicon");
+        String pictureUrl = optNullableString(bundle, "bicon");
         JSONArray buttons;
-        String sound = bundle.get("sound");
+        String sound = optNullableString(bundle, "sound");
 
         try {
-            custom = new JSONObject(customStr);
+            custom = new JSONObject(bundle.getString("custom"));
             uri = (!custom.isNull("u")) ? Uri.parse(custom.getString("u")) : null;
             data = custom.getJSONObject("a");
             id = data.getJSONObject("k.message").getJSONObject("data").getInt("id");
             buttons = data.optJSONArray("k.buttons");
-
         } catch (JSONException e) {
             Kumulos.log(TAG, "Push received had no ID/data/uri or was incorrectly formatted, ignoring...");
             return;
         }
 
-        String bgn = bundle.get("bgn");
+        String bgn = optNullableString(bundle, "bgn");
         boolean runBackgroundHandler = (null != bgn && bgn.equals("1"));
 
         PushMessage pushMessage = new PushMessage(
                 id,
-                bundle.get("title"),
-                bundle.get("alert"),
+                optNullableString(bundle, "title"),
+                optNullableString(bundle, "alert"),
                 data,
                 remoteMessage.getSentTime(),
                 uri,
@@ -88,4 +89,13 @@ public class FirebaseMessageHandler {
 
         context.sendBroadcast(intent);
     }
+
+    private static String optNullableString(@NonNull JSONObject object, @NonNull String name) {
+        if (!object.has(name) || object.isNull(name)) {
+            return null;
+        }
+
+        return object.optString(name);
+    }
+
 }

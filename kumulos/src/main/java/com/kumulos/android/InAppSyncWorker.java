@@ -29,19 +29,21 @@ public class InAppSyncWorker extends Worker {
                 .setConstraints(taskConstraints)
                 .build();
 
-        new Thread(new Runnable() {
+        Kumulos.executorService.submit(new Runnable() {
+            @Override
             public void run() {
                 WorkManager.getInstance(context).enqueueUniquePeriodicWork(TAG, ExistingPeriodicWorkPolicy.REPLACE, workRequest);
             }
-        }).start();
+        });
     }
 
     static void cancelPeriodicFetches(Application application) {
-        new Thread(new Runnable() {
+        Kumulos.executorService.submit(new Runnable() {
+            @Override
             public void run() {
                 WorkManager.getInstance(application).cancelUniqueWork(TAG);
             }
-        }).start();
+        });
     }
 
     public InAppSyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {

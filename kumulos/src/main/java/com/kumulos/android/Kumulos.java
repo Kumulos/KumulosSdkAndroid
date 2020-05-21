@@ -112,13 +112,13 @@ public final class Kumulos {
 
         initialized = true;
 
+        KumulosInApp.initialize(application, currentConfig);
+
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
-
-        KumulosInApp.initializeInApp(application, currentConfig);
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
@@ -535,16 +535,26 @@ public final class Kumulos {
 
     /**
      * Registers the push token with Kumulos to allow sending push notifications to this install
+     * @deprecated See {@link #pushTokenStore(Context, PushTokenType, String)}
      * @param context
      * @param token
      */
     public static void pushTokenStore(Context context, final String token) {
+        pushTokenStore(context, PushTokenType.FCM, token);
+    }
+
+    /**
+     * Registers the push token with Kumulos to allow sending push notifications to this install
+     * @param context
+     * @param token
+     */
+    public static void pushTokenStore(@NonNull Context context, @NonNull final PushTokenType type, @NonNull final String token) {
 
         JSONObject props = new JSONObject();
 
         try {
             props.put("token", token);
-            props.put("type", PushTokenType.ANDROID.getValue());
+            props.put("type", type.getValue());
         } catch (JSONException e) {
             e.printStackTrace();
             return;

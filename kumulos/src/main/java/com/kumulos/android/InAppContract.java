@@ -108,59 +108,6 @@ class InAppContract {
         }
     }
 
-    static class ReadInAppMessagesCallable implements Callable<List<InAppMessage>> {
-
-        private static final String TAG = ReadInAppMessagesCallable.class.getName();
-
-        private Context mContext;
-
-        ReadInAppMessagesCallable(Context context) {
-            mContext = context.getApplicationContext();
-        }
-
-        @Override
-        public List<InAppMessage> call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
-            List<InAppMessage> itemsToPresent = new ArrayList<>();
-            try {
-                SQLiteDatabase db = dbHelper.getReadableDatabase();
-
-                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = String.format("%s IS NULL AND (%s IS NULL OR (DATETIME(%s) > DATETIME('now')))",
-                        InAppMessageTable.COL_DISMISSED_AT,
-                        InAppMessageTable.COL_EXPIRES_AT,
-                        InAppMessageTable.COL_EXPIRES_AT);
-
-                String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
-
-                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
-
-                while(cursor.moveToNext()) {
-                    int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
-                    String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
-                    String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_PRESENTED_WHEN));
-                    InAppMessage m = new InAppMessage();
-                    m.setInAppId(inAppId);
-                    m.setContent(new JSONObject(content));
-                    m.setPresentedWhen(presentedWhen);
-                    itemsToPresent.add(m);
-                }
-                cursor.close();
-
-                dbHelper.close();
-            }
-            catch (SQLiteException e) {
-                e.printStackTrace();
-            }
-            catch(Exception e){
-                Kumulos.log(TAG, e.getMessage());
-            }
-
-            return itemsToPresent;
-        }
-    }
-
     static class SaveInAppMessagesCallable implements Callable<Pair<List<InAppMessage>, List<Integer>>> {
 
         private static final String TAG = SaveInAppMessagesCallable.class.getName();
@@ -341,7 +288,7 @@ class InAppContract {
                 return null;
             }
 
-            return json.optString(key, null);
+            return json.optString(key);
         }
     }
 

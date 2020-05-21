@@ -100,6 +100,7 @@ class InAppJavaScriptInterface {
                 case BUTTON_ACTION_DEEP_LINK:
                     if (KumulosInApp.inAppDeepLinkHandler != null){
                         currentActivity.runOnUiThread(new Runnable() {
+                            @Override
                             public void run() {
                                 KumulosInApp.inAppDeepLinkHandler.handle(KumulosInApp.application, action.getDeepLink());
                             }
@@ -142,7 +143,7 @@ class InAppJavaScriptInterface {
         for (int i=0; i< rawActions.length(); i++){
             JSONObject rawAction = rawActions.optJSONObject(i);
 
-            String actionType = rawAction.optString("type", null);
+            String actionType = rawAction.optString("type");
             JSONObject rawActionData = rawAction.optJSONObject("data");
 
             ExecutableAction action = new ExecutableAction();

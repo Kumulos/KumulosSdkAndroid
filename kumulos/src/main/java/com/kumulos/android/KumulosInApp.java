@@ -75,7 +75,7 @@ public class KumulosInApp {
     //==============================================================================================
     //-- Internal Helpers
 
-    static void initializeInApp(Application application, KumulosConfig currentConfig){
+    static void initialize(Application application, KumulosConfig currentConfig){
         KumulosInApp.application = application;
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
@@ -161,10 +161,11 @@ public class KumulosInApp {
     }
 
     private static void fetchMessages(){
-        new Thread(new Runnable() {
+        Kumulos.executorService.submit(new Runnable() {
+            @Override
             public void run() {
                 InAppMessageService.fetch(KumulosInApp.application, true);
             }
-        }).start();
+        });
     }
 }
