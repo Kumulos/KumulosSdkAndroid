@@ -482,7 +482,7 @@ public final class Kumulos {
             }
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+        trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
 
         if (isNewUserIdentifier){
             KumulosInApp.handleInAppUserChange(context, currentConfig);
