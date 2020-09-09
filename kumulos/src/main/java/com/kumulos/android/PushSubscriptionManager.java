@@ -26,8 +26,6 @@ import okhttp3.Response;
  */
 public class PushSubscriptionManager {
 
-    private static final MediaType MEDIA_TYPE_JSON = MediaType.parse("application/json; charset=utf-8");
-
     private static class ChannelNotFoundException extends Exception {
         ChannelNotFoundException() {
             super("One or more of the specified channels were not found");
@@ -42,7 +40,7 @@ public class PushSubscriptionManager {
 
     /**
      * Subscribes the current installation to the push channels specified by their unique identifiers.
-     *
+     * <p>
      * Channels that don't exist will be created.
      *
      * @param c
@@ -59,11 +57,11 @@ public class PushSubscriptionManager {
 
     /**
      * Subscribes the current installation to the push channels specified by their unique identifiers.
-     *
+     * <p>
      * Channels that don't exist will be created.
      *
      * @param c
-     * @param uuids The unique push channel identifiers to subscribe to
+     * @param uuids    The unique push channel identifiers to subscribe to
      * @param callback
      */
     public void subscribe(Context c, String[] uuids, final Kumulos.Callback callback) {
@@ -72,16 +70,8 @@ public class PushSubscriptionManager {
             return;
         }
 
-        OkHttpClient httpClient;
-        String installId;
-
-        try {
-            httpClient = Kumulos.getHttpClient();
-            installId = Kumulos.getInstallId();
-        } catch (Kumulos.UninitializedException e) {
-            callback.onFailure(e);
-            return;
-        }
+        OkHttpClient httpClient = Kumulos.getHttpClient();
+        String installId = Kumulos.getInstallId();
 
         String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels/subscriptions";
 
@@ -93,13 +83,8 @@ public class PushSubscriptionManager {
             return;
         }
 
-        RequestBody body = RequestBody.create(MEDIA_TYPE_JSON, params.toString());
-
-        final Request request = new Request.Builder()
-                .url(url)
-                .addHeader(Kumulos.KEY_AUTH_HEADER, Kumulos.authHeader)
-                .addHeader("Accept", "application/json")
-                .post(body)
+        final Request request = HttpUtils.authedJsonRequest(url)
+                .post(HttpUtils.jsonBody(params))
                 .build();
 
         httpClient.newCall(request).enqueue(new Callback() {
@@ -124,7 +109,7 @@ public class PushSubscriptionManager {
                     case 422:
                         try {
                             callback.onFailure(new ValidationException(response.body().string()));
-                        } catch (NullPointerException|IOException e) {
+                        } catch (NullPointerException | IOException e) {
                             callback.onFailure(e);
                         }
                         break;
@@ -156,7 +141,7 @@ public class PushSubscriptionManager {
      * Unsubscribes the current installation from the push channels specified by their unique identifiers.
      *
      * @param c
-     * @param uuids The unique push channel identifiers to unsubscribe from
+     * @param uuids    The unique push channel identifiers to unsubscribe from
      * @param callback
      */
     public void unsubscribe(Context c, String[] uuids, final Kumulos.Callback callback) {
@@ -165,16 +150,8 @@ public class PushSubscriptionManager {
             return;
         }
 
-        OkHttpClient httpClient;
-        String installId;
-
-        try {
-            httpClient = Kumulos.getHttpClient();
-            installId = Kumulos.getInstallId();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
+        OkHttpClient httpClient = Kumulos.getHttpClient();
+        String installId = Kumulos.getInstallId();
 
         JSONObject params;
         try {
@@ -187,13 +164,8 @@ public class PushSubscriptionManager {
 
         String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels/subscriptions";
 
-        RequestBody body = RequestBody.create(MEDIA_TYPE_JSON, params.toString());
-
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader(Kumulos.KEY_AUTH_HEADER, Kumulos.authHeader)
-                .addHeader("Accept", "application/json")
-                .delete(body)
+        Request request = HttpUtils.authedJsonRequest(url)
+                .delete(HttpUtils.jsonBody(params))
                 .build();
 
         httpClient.newCall(request).enqueue(new Callback() {
@@ -214,7 +186,7 @@ public class PushSubscriptionManager {
                     case 422:
                         try {
                             callback.onFailure(new ValidationException(response.body().string()));
-                        } catch (NullPointerException|IOException e) {
+                        } catch (NullPointerException | IOException e) {
                             callback.onFailure(e);
                         }
                         break;
@@ -229,7 +201,7 @@ public class PushSubscriptionManager {
 
     /**
      * Subscribe the current installation to the given push channels.
-     *
+     * <p>
      * Any other existing channel subscriptions will be removed.
      *
      * @param c
@@ -246,24 +218,16 @@ public class PushSubscriptionManager {
 
     /**
      * Subscribe the current installation to the given push channels.
-     *
+     * <p>
      * Any other existing channel subscriptions will be removed.
      *
      * @param c
-     * @param uuids The unique push channel identifiers to subscribe to
+     * @param uuids    The unique push channel identifiers to subscribe to
      * @param callback
      */
     public void setSubscriptions(Context c, String[] uuids, final Kumulos.Callback callback) {
-        OkHttpClient httpClient;
-        String installId;
-
-        try {
-            httpClient = Kumulos.getHttpClient();
-            installId = Kumulos.getInstallId();
-        } catch (Kumulos.UninitializedException e) {
-            callback.onFailure(e);
-            return;
-        }
+        OkHttpClient httpClient = Kumulos.getHttpClient();
+        String installId = Kumulos.getInstallId();
 
         JSONObject params;
         try {
@@ -276,13 +240,8 @@ public class PushSubscriptionManager {
 
         String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels/subscriptions";
 
-        RequestBody body = RequestBody.create(MEDIA_TYPE_JSON, params.toString());
-
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader(Kumulos.KEY_AUTH_HEADER, Kumulos.authHeader)
-                .addHeader("Accept", "application/json")
-                .put(body)
+        Request request = HttpUtils.authedJsonRequest(url)
+                .put(HttpUtils.jsonBody(params))
                 .build();
 
         httpClient.newCall(request).enqueue(new Callback() {
@@ -308,11 +267,10 @@ public class PushSubscriptionManager {
                         try {
                             try {
                                 callback.onFailure(new ValidationException(response.body().string()));
-                            } catch (NullPointerException|IOException e) {
+                            } catch (NullPointerException | IOException e) {
                                 callback.onFailure(e);
                             }
-                        }
-                        catch (NullPointerException e) {
+                        } catch (NullPointerException e) {
                             callback.onFailure(e);
                         }
                         break;
@@ -346,7 +304,7 @@ public class PushSubscriptionManager {
      * @param callback
      */
     public void clearSubscriptions(Context c, final Kumulos.Callback callback) {
-        this.setSubscriptions(c, new String[] {}, callback);
+        this.setSubscriptions(c, new String[]{}, callback);
     }
 
     /**
@@ -357,16 +315,8 @@ public class PushSubscriptionManager {
      * @param callback
      */
     public void listChannels(Context c, final Kumulos.ResultCallback<List<PushChannel>> callback) {
-        OkHttpClient httpClient;
-        String installId;
-
-        try {
-            httpClient = Kumulos.getHttpClient();
-            installId = Kumulos.getInstallId();
-        } catch (Kumulos.UninitializedException e) {
-            callback.onFailure(e);
-            return;
-        }
+        OkHttpClient httpClient = Kumulos.getHttpClient();
+        String installId = Kumulos.getInstallId();
 
         String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels";
 
@@ -401,8 +351,7 @@ public class PushSubscriptionManager {
                     }
 
                     callback.onSuccess(channels);
-                }
-                catch (NullPointerException|JSONException|IOException e) {
+                } catch (NullPointerException | JSONException | IOException e) {
                     callback.onFailure(e);
                 }
             }
@@ -411,11 +360,11 @@ public class PushSubscriptionManager {
 
     /**
      * Create a push channel for subscribing to.
-     *
+     * <p>
      * The channel will only be listed for subscribers.
      *
      * @param c
-     * @param uuid Unique identifier for the channel
+     * @param uuid      Unique identifier for the channel
      * @param subscribe Subscribe the current installation as part of creation
      * @param callback
      */
@@ -425,13 +374,13 @@ public class PushSubscriptionManager {
 
     /**
      * Create a push channel for subscribing to.
-     *
+     * <p>
      * The channel will only be listed for subscribers.
      *
      * @param c
-     * @param uuid Unique identifier for the channel
+     * @param uuid      Unique identifier for the channel
      * @param subscribe Subscribe the current installation as part of creation
-     * @param meta Optional custom meta-data to associate with this push channel
+     * @param meta      Optional custom meta-data to associate with this push channel
      * @param callback
      */
     public void createChannel(Context c, String uuid, boolean subscribe, @Nullable JSONObject meta, final Kumulos.ResultCallback<PushChannel> callback) {
@@ -440,22 +389,22 @@ public class PushSubscriptionManager {
 
     /**
      * Create a push channel for subscribing to.
-     *
+     * <p>
      * If no name is given, the channel will be listed to subscribers who subscribed directly by using
      * the uuid.
-     *
+     * <p>
      * If a name is given, the channel will show up in listings to all installations, even if not
      * subscribed.
-     *
+     * <p>
      * If the showInPortal flag is set, users of the Push Dashboard will be able to target this channel
      * directly from the UI.
      *
      * @param c
-     * @param uuid Unique identifier for the channel
-     * @param subscribe Subscribe the current installation as part of creation
-     * @param name Optional descriptive name for the channel (required if showing in the portal)
+     * @param uuid         Unique identifier for the channel
+     * @param subscribe    Subscribe the current installation as part of creation
+     * @param name         Optional descriptive name for the channel (required if showing in the portal)
      * @param showInPortal Should the channel show up in the portal for targeting?
-     * @param meta Optional custom meta-data to associate with this push channel
+     * @param meta         Optional custom meta-data to associate with this push channel
      * @param callback
      */
     public void createChannel(Context c, String uuid, boolean subscribe, @Nullable String name, boolean showInPortal, @Nullable JSONObject meta, final Kumulos.ResultCallback<PushChannel> callback) {
@@ -469,17 +418,8 @@ public class PushSubscriptionManager {
             return;
         }
 
-        OkHttpClient httpClient;
-        String installId;
-
-        try {
-            httpClient = Kumulos.getHttpClient();
-            installId = Kumulos.getInstallId();
-        }
-        catch (Kumulos.UninitializedException e) {
-            callback.onFailure(e);
-            return;
-        }
+        OkHttpClient httpClient = Kumulos.getHttpClient();
+        String installId = Kumulos.getInstallId();
 
         String url = Kumulos.PUSH_BASE_URL + "/v1/channels";
 
@@ -498,13 +438,8 @@ public class PushSubscriptionManager {
             return;
         }
 
-        RequestBody body = RequestBody.create(MEDIA_TYPE_JSON, params.toString());
-
-        Request request = new Request.Builder()
-                .url(url)
-                .addHeader(Kumulos.KEY_AUTH_HEADER, Kumulos.authHeader)
-                .addHeader("Accept", "application/json")
-                .post(body)
+        Request request = HttpUtils.authedJsonRequest(url)
+                .post(HttpUtils.jsonBody(params))
                 .build();
 
         httpClient.newCall(request).enqueue(new Callback() {
@@ -524,7 +459,7 @@ public class PushSubscriptionManager {
                     case 422:
                         try {
                             callback.onFailure(new ValidationException(response.body().string()));
-                        } catch (NullPointerException|IOException e) {
+                        } catch (NullPointerException | IOException e) {
                             callback.onFailure(e);
                         }
                         break;
@@ -541,7 +476,7 @@ public class PushSubscriptionManager {
                     PushChannel channel = PushChannel.fromJsonObject(obj);
 
                     callback.onSuccess(channel);
-                } catch (NullPointerException|IOException|JSONException e) {
+                } catch (NullPointerException | IOException | JSONException e) {
                     callback.onFailure(e);
                 }
             }
