@@ -44,7 +44,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
-    private static final String DEFAULT_CHANNEL_ID = "kumulos_general";
     private static final String DEFAULT_CHANNEL_ID_v3 = "kumulos_general_v3";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
@@ -349,14 +348,13 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     @TargetApi(android.os.Build.VERSION_CODES.O)
     private void clearOldChannels(NotificationManager notificationManager){
         //Initial setup of channels changed multiple times. Remove old channels
-        NotificationChannel oldChannel = notificationManager.getNotificationChannel("general");
-        if (oldChannel != null){
-            notificationManager.deleteNotificationChannel("general");
-        }
+        String[] oldChannelIds = {"general","kumulos_general"};
 
-        NotificationChannel oldChannel2 = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
-        if (oldChannel2 != null){
-            notificationManager.deleteNotificationChannel(DEFAULT_CHANNEL_ID);
+        for(String channelId : oldChannelIds){
+            NotificationChannel oldChannel = notificationManager.getNotificationChannel(channelId);
+            if (oldChannel != null){
+                notificationManager.deleteNotificationChannel(channelId);
+            }
         }
     }
 
