@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -43,7 +44,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
-    private static final String DEFAULT_CHANNEL_ID = "kumulos_general";
+    private static final String DEFAULT_CHANNEL_ID = "kumulos_general_v3";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
@@ -297,14 +298,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
             if (null == channel) {
-                //channelId was changed to set sound to null on existing installs. Remove old channel if still exists
-                NotificationChannel oldChannel = notificationManager.getNotificationChannel("general");
-                if (oldChannel != null){
-                    notificationManager.deleteNotificationChannel("general");
-                }
+                this.clearOldChannels(notificationManager);
 
                 channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
                 channel.setSound(null, null);
+                channel.setVibrationPattern(new long[]{0, 250, 250, 250});
                 notificationManager.createNotificationChannel(channel);
             }
 
@@ -347,16 +345,29 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         return notificationBuilder.build();
     }
 
+    @TargetApi(android.os.Build.VERSION_CODES.O)
+    private void clearOldChannels(NotificationManager notificationManager){
+        //Initial setup of channels changed multiple times. Remove old channels
+        String[] oldChannelIds = {"general","kumulos_general"};
+
+        for(String channelId : oldChannelIds){
+            NotificationChannel oldChannel = notificationManager.getNotificationChannel(channelId);
+            if (oldChannel != null){
+                notificationManager.deleteNotificationChannel(channelId);
+            }
+        }
+    }
+
     private void maybeAddSound(Context context, Notification.Builder notificationBuilder, @Nullable NotificationManager notificationManager, PushMessage pushMessage){
         String soundFileName = pushMessage.getSound();
 
-        if (soundFileName == null){
-            return;
+        Uri ringtoneSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        if (soundFileName != null){
+            ringtoneSound =  Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
         }
 
-        Uri sound = Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
-            notificationBuilder.setSound(sound);
+            notificationBuilder.setSound(ringtoneSound);
             return;
         }
 
@@ -365,8 +376,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
-        //user-defined sound takes precedence
         if (channel.getSound() != null){
+            return;
+        }
+
+        if (channel.getImportance() <= NotificationManager.IMPORTANCE_LOW) {
             return;
         }
 
@@ -384,12 +398,13 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             case NotificationManager.INTERRUPTION_FILTER_NONE:
                  inDnD = true;
         }
+
         if (inDnD){
             return;
         }
 
         try {
-            Ringtone r = RingtoneManager.getRingtone(context, sound);
+            Ringtone r = RingtoneManager.getRingtone(context, ringtoneSound);
             r.play();
         } catch (Exception e) {
             e.printStackTrace();
