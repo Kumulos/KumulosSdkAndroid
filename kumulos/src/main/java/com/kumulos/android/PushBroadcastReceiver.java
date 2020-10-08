@@ -44,7 +44,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
-    private static final String DEFAULT_CHANNEL_ID_v3 = "kumulos_general_v3";
+    private static final String DEFAULT_CHANNEL_ID = "kumulos_general_v3";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
@@ -296,17 +296,17 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 return null;
             }
 
-            NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID_v3);
+            NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
             if (null == channel) {
                 this.clearOldChannels(notificationManager);
 
-                channel = new NotificationChannel(DEFAULT_CHANNEL_ID_v3, "General", NotificationManager.IMPORTANCE_DEFAULT);
+                channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
                 channel.setSound(null, null);
                 channel.setVibrationPattern(new long[]{0, 250, 250, 250});
                 notificationManager.createNotificationChannel(channel);
             }
 
-            notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID_v3);
+            notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
         }
         else {
             notificationBuilder = new Notification.Builder(context);
@@ -375,7 +375,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID_v3);
+        NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
         if (channel.getSound() != null){
             return;
         }
