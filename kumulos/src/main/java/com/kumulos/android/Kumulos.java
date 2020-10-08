@@ -49,6 +49,7 @@ public final class Kumulos {
     private static final String CRASH_BASE_URL = "https://crash.kumulos.com";
     /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
     /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
+    /** package */ static final String CRM_BASE_URL = "https://crm.kumulos.com";
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
     private static boolean initialized;
 
@@ -79,7 +80,7 @@ public final class Kumulos {
         public abstract void onSuccess(S result);
     }
 
-    public static class UninitializedException extends Exception {
+    public static class UninitializedException extends RuntimeException {
         UninitializedException() {
             super("The Kumulos has not been correctly initialized. Please ensure you have followed the integration guide before invoking SDK methods");
         }
@@ -482,7 +483,7 @@ public final class Kumulos {
             }
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
+        trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
 
         if (isNewUserIdentifier){
             KumulosInApp.handleInAppUserChange(context, currentConfig);
