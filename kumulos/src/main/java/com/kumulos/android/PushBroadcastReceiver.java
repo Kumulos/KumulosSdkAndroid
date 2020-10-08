@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -20,6 +21,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,6 +46,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
     private static final String DEFAULT_CHANNEL_ID = "kumulos_general";
+    private static final String DEFAULT_CHANNEL_ID_v3 = "kumulos_general_v3";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
@@ -295,20 +298,17 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 return null;
             }
 
-            NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
+            NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID_v3);
             if (null == channel) {
-                //channelId was changed to set sound to null on existing installs. Remove old channel if still exists
-                NotificationChannel oldChannel = notificationManager.getNotificationChannel("general");
-                if (oldChannel != null){
-                    notificationManager.deleteNotificationChannel("general");
-                }
+                this.clearOldChannels(notificationManager);
 
-                channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
+                channel = new NotificationChannel(DEFAULT_CHANNEL_ID_v3, "General", NotificationManager.IMPORTANCE_DEFAULT);
                 channel.setSound(null, null);
+                channel.setVibrationPattern(new long[]{0, 250, 250, 250});
                 notificationManager.createNotificationChannel(channel);
             }
 
-            notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
+            notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID_v3);
         }
         else {
             notificationBuilder = new Notification.Builder(context);
@@ -347,16 +347,30 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         return notificationBuilder.build();
     }
 
+    @TargetApi(android.os.Build.VERSION_CODES.O)
+    private void clearOldChannels(NotificationManager notificationManager){
+        //Initial setup of channels changed multiple times. Remove old channels
+        NotificationChannel oldChannel = notificationManager.getNotificationChannel("general");
+        if (oldChannel != null){
+            notificationManager.deleteNotificationChannel("general");
+        }
+
+        NotificationChannel oldChannel2 = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
+        if (oldChannel2 != null){
+            notificationManager.deleteNotificationChannel(DEFAULT_CHANNEL_ID);
+        }
+    }
+
     private void maybeAddSound(Context context, Notification.Builder notificationBuilder, @Nullable NotificationManager notificationManager, PushMessage pushMessage){
         String soundFileName = pushMessage.getSound();
 
-        if (soundFileName == null){
-            return;
+        Uri ringtoneSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        if (soundFileName != null){
+            ringtoneSound =  Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
         }
 
-        Uri sound = Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
-            notificationBuilder.setSound(sound);
+            notificationBuilder.setSound(ringtoneSound);
             return;
         }
 
@@ -364,9 +378,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
-        //user-defined sound takes precedence
+        NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID_v3);
         if (channel.getSound() != null){
+            return;
+        }
+
+        if (channel.getImportance() <= NotificationManager.IMPORTANCE_LOW) {
             return;
         }
 
@@ -384,12 +401,13 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             case NotificationManager.INTERRUPTION_FILTER_NONE:
                  inDnD = true;
         }
+
         if (inDnD){
             return;
         }
 
         try {
-            Ringtone r = RingtoneManager.getRingtone(context, sound);
+            Ringtone r = RingtoneManager.getRingtone(context, ringtoneSound);
             r.play();
         } catch (Exception e) {
             e.printStackTrace();
