@@ -8,6 +8,7 @@ import org.json.JSONObject;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
  * Represents the configuration for the Kumulos client
@@ -38,6 +39,9 @@ public final class KumulosConfig {
     private JSONObject sdkInfo;
 
     private CoreConfigurationBuilder acraConfigBuilder;
+
+    private String cname;
+    private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
 
     public enum InAppConsentStrategy{
         AUTO_ENROLL,
@@ -80,6 +84,13 @@ public final class KumulosConfig {
         this.inAppConsentStrategy = strategy;
     }
 
+    private void setCname(@Nullable String cname) {
+        this.cname = cname;
+    }
+    private void setDeferredDeepLinkHandler(DeferredDeepLinkHandlerInterface deferredHandler) {
+        this.deferredDeepLinkHandler = deferredHandler;
+    }
+
     public String getApiKey() {
         return apiKey;
     }
@@ -120,6 +131,14 @@ public final class KumulosConfig {
         return inAppConsentStrategy;
     }
 
+    public @Nullable String getCname() {
+        return this.cname;
+    }
+
+    public DeferredDeepLinkHandlerInterface getDeferredDeepLinkHandler() {
+        return this.deferredDeepLinkHandler;
+    }
+
     /**
      * Config builder for the Kumulos client
      */
@@ -135,6 +154,9 @@ public final class KumulosConfig {
 
         private JSONObject runtimeInfo;
         private JSONObject sdkInfo;
+
+        private @Nullable String cname;
+        private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
 
         public Builder(@NonNull String apiKey, @NonNull String secretKey) {
             this.apiKey = apiKey;
@@ -159,6 +181,18 @@ public final class KumulosConfig {
 
         public Builder enableInAppMessaging(InAppConsentStrategy strategy) {
             this.consentStrategy = strategy;
+            return this;
+        }
+
+        public Builder enableDeepLinking(String cname, DeferredDeepLinkHandlerInterface handler) {
+            this.deferredDeepLinkHandler = handler;
+            this.cname = cname;
+            return this;
+        }
+
+        public Builder enableDeepLinking(DeferredDeepLinkHandlerInterface handler) {
+            this.deferredDeepLinkHandler = handler;
+            this.cname = null;
             return this;
         }
 
@@ -205,6 +239,9 @@ public final class KumulosConfig {
             newConfig.setSdkInfo(this.sdkInfo);
 
             newConfig.setInAppConsentStrategy(consentStrategy);
+
+            newConfig.setCname(this.cname);
+            newConfig.setDeferredDeepLinkHandler(this.deferredDeepLinkHandler);
 
             return newConfig;
         }
