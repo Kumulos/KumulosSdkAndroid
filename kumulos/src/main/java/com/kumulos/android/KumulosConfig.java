@@ -10,6 +10,9 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 /**
  * Represents the configuration for the Kumulos client
  */
@@ -40,7 +43,7 @@ public final class KumulosConfig {
 
     private CoreConfigurationBuilder acraConfigBuilder;
 
-    private String cname;
+    private URL deepLinkCname;
     private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
 
     public enum InAppConsentStrategy{
@@ -84,8 +87,8 @@ public final class KumulosConfig {
         this.inAppConsentStrategy = strategy;
     }
 
-    private void setCname(@Nullable String cname) {
-        this.cname = cname;
+    private void setCname(@Nullable URL deepLinkCname) {
+        this.deepLinkCname = deepLinkCname;
     }
     private void setDeferredDeepLinkHandler(DeferredDeepLinkHandlerInterface deferredHandler) {
         this.deferredDeepLinkHandler = deferredHandler;
@@ -131,8 +134,8 @@ public final class KumulosConfig {
         return inAppConsentStrategy;
     }
 
-    public @Nullable String getCname() {
-        return this.cname;
+    public @Nullable URL getDeepLinkCname() {
+        return this.deepLinkCname;
     }
 
     public DeferredDeepLinkHandlerInterface getDeferredDeepLinkHandler() {
@@ -155,7 +158,9 @@ public final class KumulosConfig {
         private JSONObject runtimeInfo;
         private JSONObject sdkInfo;
 
-        private @Nullable String cname;
+        private static final String TAG = KumulosConfig.class.getName();
+
+        private @Nullable URL deepLinkCname;
         private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
 
         public Builder(@NonNull String apiKey, @NonNull String secretKey) {
@@ -186,13 +191,20 @@ public final class KumulosConfig {
 
         public Builder enableDeepLinking(String cname, DeferredDeepLinkHandlerInterface handler) {
             this.deferredDeepLinkHandler = handler;
-            this.cname = cname;
+            try{
+                this.deepLinkCname = new URL(cname);
+            }
+            catch(MalformedURLException e){
+                Kumulos.log(TAG, e.getMessage());
+                this.deepLinkCname = null;
+            }
+
             return this;
         }
 
         public Builder enableDeepLinking(DeferredDeepLinkHandlerInterface handler) {
             this.deferredDeepLinkHandler = handler;
-            this.cname = null;
+            this.deepLinkCname = null;
             return this;
         }
 
@@ -240,7 +252,7 @@ public final class KumulosConfig {
 
             newConfig.setInAppConsentStrategy(consentStrategy);
 
-            newConfig.setCname(this.cname);
+            newConfig.setCname(this.deepLinkCname);
             newConfig.setDeferredDeepLinkHandler(this.deferredDeepLinkHandler);
 
             return newConfig;
