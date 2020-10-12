@@ -1,25 +1,78 @@
 package com.kumulos.android;
 
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.webkit.URLUtil;
 
 import androidx.annotation.Nullable;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import static android.content.Context.CLIPBOARD_SERVICE;
 
 public class DeferredDeepLinkHelper {
+    private static final String TAG = DeferredDeepLinkHelper.class.getName();
+    private static final String BASE_URL = "https://links.kumulos.com";
+
+    public class DeepLinkContent {
+        DeepLinkContent(@Nullable String title, @Nullable String message) {
+            this.title = title;
+            this.message = message;
+        }
+
+        public @Nullable
+        String title;
+        public @Nullable
+        String message;
+    }
+
+    public class DeepLink {
+        public String url;
+        public DeepLinkContent content;
+        public JSONObject data;
+
+        DeepLink(URL url, JSONObject obj) throws JSONException {
+            this.url = url.toString();
+            this.data = obj.getJSONObject("linkData");
+
+            JSONObject content = obj.getJSONObject("content");
+            String title = null;
+            String message = null;
+            if (content.has("title")) {
+                title = content.getString("title");
+            }
+            if (content.has("message")) {
+                message = content.getString("message");
+            }
+            this.content = new DeepLinkContent(title, message);
+        }
+    }
+
+    public enum DeepLinkResolution {
+        LOOKUP_FAILED,
+        LINK_NOT_FOUND,
+        LINK_EXPIRED,
+        LINK_LIMIT_EXCEEDED,
+        LINK_MATCHED
+    }
 
     public void checkForDeferredLink(Context context) {//TODO: modifier
-
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         boolean checked = preferences.getBoolean(SharedPrefs.DEFERRED_LINK_CHECKED_KEY, false);
         if (checked) {
@@ -40,8 +93,7 @@ public class DeferredDeepLinkHelper {
             return;
         }
 
-        this.handleDeepLink(url);
-
+        this.handleDeepLink(context, url);
 
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(SharedPrefs.DEFERRED_LINK_CHECKED_KEY, true);
@@ -98,11 +150,97 @@ public class DeferredDeepLinkHelper {
         return host.endsWith("lnk.click") || (cname != null && host.equals(cname.getHost()));
     }
 
-    private void handleDeepLink(URL url) {
+    private void handleDeepLink(Context context, URL url) {
+
+        OkHttpClient httpClient;
+
+        try {
+            httpClient = Kumulos.getHttpClient();
+        } catch (Kumulos.UninitializedException e) {
+            Kumulos.log(TAG, e.getMessage());
+            return;
+        }
+
+        String slug = Uri.encode(url.getPath().replaceAll("/$|^/", ""));
+        String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug;
+
+        final Request request = new Request.Builder()
+                .url(requestUrl)
+                .addHeader(Kumulos.KEY_AUTH_HEADER, Kumulos.authHeader)
+                .addHeader("Accept", "application/json")
+                .addHeader("Content-Type", "application/json")
+                .get()
+                .build();
+
+        this.makeNetworkRequest(context, httpClient, request, url);
 
     }
 
+    private void makeNetworkRequest(Context context, OkHttpClient httpClient, Request request, URL url) {
+        Kumulos.executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (response.isSuccessful()) {
+                        DeferredDeepLinkHelper.this.handledSuccessResponse(context, url, response);
+                    } else {
+                        DeferredDeepLinkHelper.this.handleFailedResponse(context, url, response);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    DeferredDeepLinkHelper.this.invokeDeepLinkHandler(context, DeepLinkResolution.LOOKUP_FAILED, url, null);
+                }
+            }
+        });
+    }
 
+    private void handledSuccessResponse(Context context, URL url, Response response) throws IOException {
+        if (response.code() != 200) {
+            this.invokeDeepLinkHandler(context, DeepLinkResolution.LOOKUP_FAILED, url, null);
+            return;
+        }
+
+        try {
+            JSONObject data = new JSONObject(response.body().string());
+            DeepLink deepLink = new DeepLink(url, data);
+
+            this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_MATCHED, url, deepLink);
+        } catch (NullPointerException | JSONException e) {
+            this.invokeDeepLinkHandler(context, DeepLinkResolution.LOOKUP_FAILED, url, null);
+        }
+    }
+
+    private void handleFailedResponse(Context context, URL url, Response response) {
+        switch (response.code()) {
+            case 404:
+                this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_NOT_FOUND, url, null);
+                break;
+            case 410:
+                this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_EXPIRED, url, null);
+                break;
+            case 429:
+                this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_LIMIT_EXCEEDED, url, null);
+                break;
+            default:
+                this.invokeDeepLinkHandler(context, DeepLinkResolution.LOOKUP_FAILED, url, null);
+                break;
+        }
+    }
+
+    private void invokeDeepLinkHandler(Context context, DeepLinkResolution resolution, URL url, @Nullable DeepLink data) {
+        KumulosConfig config = Kumulos.getConfig();
+        DeferredDeepLinkHandlerInterface handler = config.getDeferredDeepLinkHandler();
+        if (handler == null) {
+            return;
+        }
+
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                handler.handle(context, resolution, url.toString(), data);
+            }
+        });
+    }
 }
 
 

@@ -158,7 +158,7 @@ public final class KumulosConfig {
         private JSONObject runtimeInfo;
         private JSONObject sdkInfo;
 
-        private static final String TAG = KumulosConfig.class.getName();
+        private static final String TAG = Builder.class.getName();
 
         private @Nullable URL deepLinkCname;
         private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;

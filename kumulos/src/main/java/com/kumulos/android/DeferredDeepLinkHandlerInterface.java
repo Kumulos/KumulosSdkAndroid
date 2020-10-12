@@ -2,7 +2,9 @@ package com.kumulos.android;
 
 import android.content.Context;
 
-import org.json.JSONObject;
+import androidx.annotation.Nullable;
+
+import java.net.URL;
 
 public interface DeferredDeepLinkHandlerInterface {
     /**
@@ -11,5 +13,5 @@ public interface DeferredDeepLinkHandlerInterface {
      * @param data deep link
      * @return
      */
-    void handle(Context context, JSONObject data);//TODO: params
+    void handle(Context context, DeferredDeepLinkHelper.DeepLinkResolution resolution, String link, @Nullable DeferredDeepLinkHelper.DeepLink data);
 }
