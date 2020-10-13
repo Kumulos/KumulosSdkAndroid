@@ -106,14 +106,14 @@ public class DeferredDeepLinkHelper {
     }
 
     private @Nullable
-    String getClipText(Context context) {//TODO: can ensure no need to check MIME type, wtf is  MIMETYPE_TEXT_URILIST. Can happen multiple items?
+    String getClipText(Context context) {
         ClipboardManager clipboard = (ClipboardManager) context.getSystemService(CLIPBOARD_SERVICE);
         if (clipboard == null) {
             return null;
         }
 
         ClipData clip = clipboard.getPrimaryClip();
-        if (clip == null) {//TODO: when app starts this is null
+        if (clip == null) {
             return null;
         }
 

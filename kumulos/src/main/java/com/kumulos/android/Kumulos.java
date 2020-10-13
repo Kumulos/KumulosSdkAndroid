@@ -101,7 +101,6 @@ public final class Kumulos {
      * @param config
      */
     public static synchronized void initialize(final Application application, KumulosConfig config) {
-        Log.d("vlad", "initials");
         if (initialized) {
             log("Kumulos is already initialized, aborting...");
             return;
@@ -122,22 +121,6 @@ public final class Kumulos {
         KumulosInApp.initialize(application, currentConfig);
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
-
-        // Deferred deep link
-        if (config.getDeferredDeepLinkHandler() != null){
-            DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
-
-            Log.d("vlad", "initials real");
-
-
-//            final Handler handler = new Handler(Looper.getMainLooper());
-//            handler.postDelayed(new Runnable() {
-//                @Override
-//                public void run() {
-//                    helper.checkForDeferredLink(application);
-//                }
-//            }, 1000);//TODO:
-        }
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
@@ -613,11 +596,25 @@ public final class Kumulos {
             return;
         }
 
+        if (currentConfig.getDeferredDeepLinkHandler() == null){
+            return;
+        }
+
         DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
         helper.maybeProcessUrl(context, uri.toString());
+    }
 
-        Log.d("vlad", "here is clicked link: "+uri.toString());
+    public static void seeInputFocus(Context context, boolean hasFocus) {
+        if (!hasFocus){
+            return;
+        }
 
+        if (currentConfig.getDeferredDeepLinkHandler() == null){
+            return;
+        }
+
+        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
+        helper.checkForDeferredLink(context);
     }
 
 
