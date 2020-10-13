@@ -1,11 +1,15 @@
 
 package com.kumulos.android;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Debug;
+import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -23,6 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -96,6 +101,7 @@ public final class Kumulos {
      * @param config
      */
     public static synchronized void initialize(final Application application, KumulosConfig config) {
+        Log.d("vlad", "initials");
         if (initialized) {
             log("Kumulos is already initialized, aborting...");
             return;
@@ -116,6 +122,22 @@ public final class Kumulos {
         KumulosInApp.initialize(application, currentConfig);
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
+
+        // Deferred deep link
+        if (config.getDeferredDeepLinkHandler() != null){
+            DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
+
+            Log.d("vlad", "initials real");
+
+
+//            final Handler handler = new Handler(Looper.getMainLooper());
+//            handler.postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//                    helper.checkForDeferredLink(application);
+//                }
+//            }, 1000);//TODO:
+        }
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
@@ -565,6 +587,45 @@ public final class Kumulos {
     }
 
     /**
+     * Allows setting the handler you want to use for push action buttons
+     * @param handler
+     */
+    public static void setPushActionHandler(PushActionHandlerInterface handler) {
+        pushActionHandler = handler;
+    }
+
+    //==============================================================================================
+    //-- DEFERRED DEEP LINKING
+
+
+    public static void seeIntent(Context context, Intent intent) {
+        String action = intent.getAction();
+        if (action == null){
+            return;
+        }
+
+        if (!action.equals(Intent.ACTION_VIEW)){
+            return;
+        }
+
+        Uri uri = intent.getData();
+        if (uri == null){
+            return;
+        }
+
+        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
+        helper.maybeProcessUrl(context, uri.toString());
+
+        Log.d("vlad", "here is clicked link: "+uri.toString());
+
+    }
+
+
+
+    //==============================================================================================
+    //-- OTHER
+
+    /**
      * Generates the correct Authorization header value for HTTP Basic auth with the API key & secret
      * @return Authorization header value
      */
@@ -606,13 +667,6 @@ public final class Kumulos {
         return body.build();
     }
 
-    /**
-     * Allows setting the handler you want to use for push action buttons
-     * @param handler
-     */
-    public static void setPushActionHandler(PushActionHandlerInterface handler) {
-        pushActionHandler = handler;
-    }
 
     /**
      * Logging

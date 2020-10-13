@@ -72,19 +72,28 @@ public class DeferredDeepLinkHelper {
         LINK_MATCHED
     }
 
-    public void checkForDeferredLink(Context context) {//TODO: modifier
+    /* package */ void checkForDeferredLink(Context context) {
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         boolean checked = preferences.getBoolean(SharedPrefs.DEFERRED_LINK_CHECKED_KEY, false);
         if (checked) {
             return;
         }
 
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(SharedPrefs.DEFERRED_LINK_CHECKED_KEY, true);
+        editor.apply();
+
         String text = this.getClipText(context);
         if (text == null) {
             return;
         }
 
-        URL url = this.getURL(text);
+        this.maybeProcessUrl(context, text);
+    }
+
+
+    /* package */ void maybeProcessUrl(Context context, String urlStr) {
+        URL url = this.getURL(urlStr);
         if (url == null) {
             return;
         }
@@ -94,10 +103,6 @@ public class DeferredDeepLinkHelper {
         }
 
         this.handleDeepLink(context, url);
-
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean(SharedPrefs.DEFERRED_LINK_CHECKED_KEY, true);
-        editor.apply();
     }
 
     private @Nullable
@@ -108,7 +113,7 @@ public class DeferredDeepLinkHelper {
         }
 
         ClipData clip = clipboard.getPrimaryClip();
-        if (clip == null) {
+        if (clip == null) {//TODO: when app starts this is null
             return null;
         }
 
@@ -131,15 +136,12 @@ public class DeferredDeepLinkHelper {
             return null;
         }
 
-
         try {
             return new URL(text);
 
         } catch (MalformedURLException e) {
             return null;
         }
-
-
     }
 
     private boolean urlShouldBeHandled(URL url) {
@@ -151,7 +153,6 @@ public class DeferredDeepLinkHelper {
     }
 
     private void handleDeepLink(Context context, URL url) {
-
         OkHttpClient httpClient;
 
         try {
