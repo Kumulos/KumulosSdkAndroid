@@ -8,6 +8,7 @@ import android.net.Uri;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.webkit.URLUtil;
 
 import androidx.annotation.Nullable;
@@ -121,7 +122,7 @@ public class DeferredDeepLinkHelper {
         }
 
         CharSequence text = clip.getItemAt(0).getText();
-        if (text == null) {
+        if (TextUtils.isEmpty(text)) {
             return null;
         }
 
