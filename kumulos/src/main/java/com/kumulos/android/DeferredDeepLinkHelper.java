@@ -29,6 +29,8 @@ import static android.content.Context.CLIPBOARD_SERVICE;
 public class DeferredDeepLinkHelper {
     private static final String BASE_URL = "https://links.kumulos.com";
 
+    /* package */ DeferredDeepLinkHelper(){}
+
     public class DeepLinkContent {
         DeepLinkContent(@Nullable String title, @Nullable String message) {
             this.title = title;
