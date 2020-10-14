@@ -601,7 +601,7 @@ public final class Kumulos {
         }
 
         DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
-        helper.maybeProcessUrl(context, uri.toString());
+        helper.maybeProcessUrl(context, uri.toString(), false);
     }
 
     public static void seeInputFocus(Context context, boolean hasFocus) {

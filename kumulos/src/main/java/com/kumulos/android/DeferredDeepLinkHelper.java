@@ -88,11 +88,11 @@ public class DeferredDeepLinkHelper {
             return;
         }
 
-        this.maybeProcessUrl(context, text);
+        this.maybeProcessUrl(context, text, true);
     }
 
 
-    /* package */ void maybeProcessUrl(Context context, String urlStr) {
+    /* package */ void maybeProcessUrl(Context context, String urlStr, boolean wasDeferred) {
         URL url = this.getURL(urlStr);
         if (url == null) {
             return;
@@ -102,7 +102,7 @@ public class DeferredDeepLinkHelper {
             return;
         }
 
-        this.handleDeepLink(context, url);
+        this.handleDeepLink(context, url, wasDeferred);
     }
 
     private @Nullable
@@ -152,7 +152,7 @@ public class DeferredDeepLinkHelper {
         return host.endsWith("lnk.click") || (cname != null && host.equals(cname.getHost()));
     }
 
-    private void handleDeepLink(Context context, URL url) {
+    private void handleDeepLink(Context context, URL url, boolean wasDeferred) {
         OkHttpClient httpClient;
 
         try {
@@ -165,6 +165,8 @@ public class DeferredDeepLinkHelper {
         String slug = Uri.encode(url.getPath().replaceAll("/$|^/", ""));
         String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug;
 
+        //TODO: ?wasDeferred=true/false
+
         final Request request = new Request.Builder()
                 .url(requestUrl)
                 .addHeader(Kumulos.KEY_AUTH_HEADER, Kumulos.authHeader)
@@ -173,17 +175,17 @@ public class DeferredDeepLinkHelper {
                 .get()
                 .build();
 
-        this.makeNetworkRequest(context, httpClient, request, url);
+        this.makeNetworkRequest(context, httpClient, request, url, wasDeferred);
 
     }
 
-    private void makeNetworkRequest(Context context, OkHttpClient httpClient, Request request, URL url) {
+    private void makeNetworkRequest(Context context, OkHttpClient httpClient, Request request, URL url, boolean wasDeferred) {
         Kumulos.executorService.submit(new Runnable() {
             @Override
             public void run() {
                 try (Response response = httpClient.newCall(request).execute()) {
                     if (response.isSuccessful()) {
-                        DeferredDeepLinkHelper.this.handledSuccessResponse(context, url, response);
+                        DeferredDeepLinkHelper.this.handledSuccessResponse(context, url, wasDeferred, response);
                     } else {
                         DeferredDeepLinkHelper.this.handleFailedResponse(context, url, response);
                     }
@@ -195,7 +197,7 @@ public class DeferredDeepLinkHelper {
         });
     }
 
-    private void handledSuccessResponse(Context context, URL url, Response response) throws IOException {
+    private void handledSuccessResponse(Context context, URL url, boolean wasDeferred, Response response) throws IOException {
         if (response.code() != 200) {
             this.invokeDeepLinkHandler(context, DeepLinkResolution.LOOKUP_FAILED, url, null);
             return;
@@ -206,8 +208,23 @@ public class DeferredDeepLinkHelper {
             DeepLink deepLink = new DeepLink(url, data);
 
             this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_MATCHED, url, deepLink);
+
+            this.trackLinkMatched(context, url, wasDeferred);
+
         } catch (NullPointerException | JSONException e) {
             this.invokeDeepLinkHandler(context, DeepLinkResolution.LOOKUP_FAILED, url, null);
+        }
+    }
+
+    private void trackLinkMatched(Context context, URL url, boolean wasDeferred) {
+        JSONObject params = new JSONObject();
+        try {
+            params.put("url", url.toString());
+            params.put("wasDeferred", wasDeferred);
+
+            Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_DEEP_LINK_MATCHED, params);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
