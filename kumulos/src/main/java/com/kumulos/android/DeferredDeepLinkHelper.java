@@ -141,6 +141,7 @@ public class DeferredDeepLinkHelper {
             return new URL(text);
 
         } catch (MalformedURLException e) {
+            e.printStackTrace();
             return null;
         }
     }

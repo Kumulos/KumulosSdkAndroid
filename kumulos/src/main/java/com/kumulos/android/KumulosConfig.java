@@ -158,8 +158,6 @@ public final class KumulosConfig {
         private JSONObject runtimeInfo;
         private JSONObject sdkInfo;
 
-        private static final String TAG = Builder.class.getName();
-
         private @Nullable URL deepLinkCname;
         private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
 
@@ -189,13 +187,13 @@ public final class KumulosConfig {
             return this;
         }
 
-        public Builder enableDeepLinking(String cname, DeferredDeepLinkHandlerInterface handler) {
+        public Builder enableDeepLinking(@NonNull String cname, DeferredDeepLinkHandlerInterface handler) {
             this.deferredDeepLinkHandler = handler;
             try{
                 this.deepLinkCname = new URL(cname);
             }
             catch(MalformedURLException e){
-                Kumulos.log(TAG, e.getMessage());
+                e.printStackTrace();
                 this.deepLinkCname = null;
             }
 
