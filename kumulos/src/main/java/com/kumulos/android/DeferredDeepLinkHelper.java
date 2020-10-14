@@ -8,7 +8,6 @@ import android.net.Uri;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.webkit.URLUtil;
 
 import androidx.annotation.Nullable;
@@ -163,9 +162,8 @@ public class DeferredDeepLinkHelper {
         }
 
         String slug = Uri.encode(url.getPath().replaceAll("/$|^/", ""));
-        String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug;
-
-        //TODO: ?wasDeferred=true/false
+        String params = "?wasDeferred=" + (wasDeferred ? 1 : 0);
+        String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug + params;
 
         final Request request = new Request.Builder()
                 .url(requestUrl)
