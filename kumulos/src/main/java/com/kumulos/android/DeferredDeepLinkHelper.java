@@ -32,15 +32,15 @@ public class DeferredDeepLinkHelper {
     /* package */ DeferredDeepLinkHelper(){}
 
     public class DeepLinkContent {
-        DeepLinkContent(@Nullable String title, @Nullable String message) {
+        DeepLinkContent(@Nullable String title, @Nullable String description) {
             this.title = title;
-            this.message = message;
+            this.description = description;
         }
 
         public @Nullable
         String title;
         public @Nullable
-        String message;
+        String description;
     }
 
     public class DeepLink {
@@ -54,14 +54,14 @@ public class DeferredDeepLinkHelper {
 
             JSONObject content = obj.getJSONObject("content");
             String title = null;
-            String message = null;
+            String description = null;
             if (content.has("title")) {
                 title = content.getString("title");
             }
-            if (content.has("message")) {
-                message = content.getString("message");
+            if (content.has("description")) {
+                description = content.getString("description");
             }
-            this.content = new DeepLinkContent(title, message);
+            this.content = new DeepLinkContent(title, description);
         }
     }
 
