@@ -484,7 +484,19 @@ class InAppMessagePresenter {
                         @SuppressWarnings("deprecation")
                         @Override
                         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                            Kumulos.log(TAG, "Error code: "+errorCode+". "+description);
+                            Kumulos.log(TAG, "Error code: " + errorCode + ". " + description + " " + failingUrl);
+
+                            String extension = failingUrl.substring(failingUrl.length() - 4);
+                            boolean isVideo = extension.matches(".mp4|.m4a|.m4p|.m4b|.m4r|.m4v");
+                            if (errorCode == -1 && "net::ERR_FAILED".equals(description) && isVideo) {
+                                // This is a workaround for a bug in the WebView.
+                                // See these chromium issues for more context:
+                                // https://bugs.chromium.org/p/chromium/issues/detail?id=1023678
+                                // https://bugs.chromium.org/p/chromium/issues/detail?id=1050635
+
+                                //We encountered the issue only with some (and not other) videos, but possibly not limited to other file types
+                                return;
+                            }
 
                             closeDialog(currentActivity);
                         }
