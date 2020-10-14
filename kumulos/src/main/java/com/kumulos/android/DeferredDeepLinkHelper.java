@@ -27,7 +27,6 @@ import okhttp3.Response;
 import static android.content.Context.CLIPBOARD_SERVICE;
 
 public class DeferredDeepLinkHelper {
-    private static final String TAG = DeferredDeepLinkHelper.class.getName();
     private static final String BASE_URL = "https://links.kumulos.com";
 
     public class DeepLinkContent {
@@ -153,14 +152,7 @@ public class DeferredDeepLinkHelper {
     }
 
     private void handleDeepLink(Context context, URL url, boolean wasDeferred) {
-        OkHttpClient httpClient;
-
-        try {
-            httpClient = Kumulos.getHttpClient();
-        } catch (Kumulos.UninitializedException e) {
-            Kumulos.log(TAG, e.getMessage());
-            return;
-        }
+        OkHttpClient  httpClient = Kumulos.getHttpClient();
 
         String slug = Uri.encode(url.getPath().replaceAll("/$|^/", ""));
         String params = "?wasDeferred=" + (wasDeferred ? 1 : 0);
