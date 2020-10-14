@@ -583,11 +583,7 @@ public final class Kumulos {
 
     public static void seeIntent(Context context, Intent intent) {
         String action = intent.getAction();
-        if (action == null){
-            return;
-        }
-
-        if (!action.equals(Intent.ACTION_VIEW)){
+        if (!Intent.ACTION_VIEW.equals(action)){
             return;
         }
 
