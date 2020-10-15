@@ -155,7 +155,7 @@ public final class Kumulos {
     }
 
     private static OkHttpClient buildOkHttpClient(){
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
             return new OkHttpClient();
         }
 
