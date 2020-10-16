@@ -1,11 +1,16 @@
 
 package com.kumulos.android;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Debug;
+import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -23,6 +28,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -31,11 +39,13 @@ import java.util.concurrent.Executors;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import okhttp3.Call;
+import okhttp3.ConnectionSpec;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.TlsVersion;
 
 /**
  * The Kumulos class is the main public API for calling Kumulos RPC methods and handling push registration
@@ -108,7 +118,8 @@ public final class Kumulos {
 
         authHeader = buildBasicAuthHeader(config.getApiKey(), config.getSecretKey());
 
-        httpClient = new OkHttpClient();
+        httpClient = buildOkHttpClient();
+
         executorService = Executors.newSingleThreadExecutor();
 
         initialized = true;
@@ -141,6 +152,22 @@ public final class Kumulos {
                 log(TAG, "Not attaching crash reporting whilst on the debugger");
             }
         }
+    }
+
+    private static OkHttpClient buildOkHttpClient(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            return new OkHttpClient();
+        }
+
+        //ciphers available on Android 4.4 have intersections with the approved ones in MODERN_TLS, but the intersections are on bad cipher list, so,
+        //perhaps not supported by CloudFlare. On older devices allow all ciphers
+        ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+            .allEnabledCipherSuites()
+            .build();
+
+        return new OkHttpClient.Builder()
+            .connectionSpecs(Collections.singletonList(spec))
+            .build();
     }
 
     //==============================================================================================
@@ -565,6 +592,55 @@ public final class Kumulos {
     }
 
     /**
+     * Allows setting the handler you want to use for push action buttons
+     * @param handler
+     */
+    public static void setPushActionHandler(PushActionHandlerInterface handler) {
+        pushActionHandler = handler;
+    }
+
+    //==============================================================================================
+    //-- DEFERRED DEEP LINKING
+
+
+    public static void seeIntent(Context context, Intent intent) {
+        String action = intent.getAction();
+        if (!Intent.ACTION_VIEW.equals(action)){
+            return;
+        }
+
+        Uri uri = intent.getData();
+        if (uri == null){
+            return;
+        }
+
+        if (currentConfig.getDeferredDeepLinkHandler() == null){
+            return;
+        }
+
+        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
+        helper.maybeProcessUrl(context, uri.toString(), false);
+    }
+
+    public static void seeInputFocus(Context context, boolean hasFocus) {
+        if (!hasFocus){
+            return;
+        }
+
+        if (currentConfig.getDeferredDeepLinkHandler() == null){
+            return;
+        }
+
+        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
+        helper.checkForDeferredLink(context);
+    }
+
+
+
+    //==============================================================================================
+    //-- OTHER
+
+    /**
      * Generates the correct Authorization header value for HTTP Basic auth with the API key & secret
      * @return Authorization header value
      */
@@ -606,13 +682,6 @@ public final class Kumulos {
         return body.build();
     }
 
-    /**
-     * Allows setting the handler you want to use for push action buttons
-     * @param handler
-     */
-    public static void setPushActionHandler(PushActionHandlerInterface handler) {
-        pushActionHandler = handler;
-    }
 
     /**
      * Logging

@@ -47,6 +47,7 @@ import androidx.work.WorkManager;
     static final String EVENT_TYPE_ENTERED_BEACON_PROXIMITY = "k.engage.beaconEnteredProximity";
     static final String EVENT_TYPE_LOCATION_UPDATED = "k.engage.locationUpdated";
     static final String MESSAGE_DELETED_FROM_INBOX = "k.message.inbox.deleted";
+    static final String EVENT_TYPE_DEEP_LINK_MATCHED = "k.deepLink.matched";
     static final int MESSAGE_TYPE_PUSH = 1;
     static final int MESSAGE_TYPE_IN_APP = 2;
 
