@@ -60,6 +60,7 @@ public final class Kumulos {
     /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
     /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
     /** package */ static final String CRM_BASE_URL = "https://crm.kumulos.com";
+    /** package */ static final String CORE_BASE_URL = "https://stats.kumulos.com";
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
     private static boolean initialized;
 

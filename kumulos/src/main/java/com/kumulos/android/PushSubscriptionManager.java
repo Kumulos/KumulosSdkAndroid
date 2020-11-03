@@ -71,9 +71,9 @@ public class PushSubscriptionManager {
         }
 
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String installId = Kumulos.getInstallId();
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels/subscriptions";
+        String url = Kumulos.CORE_BASE_URL + "/v1/app-users/" + userIdentifier + "/channels/subscriptions";
 
         JSONObject params = new JSONObject();
         try {
@@ -151,7 +151,7 @@ public class PushSubscriptionManager {
         }
 
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String installId = Kumulos.getInstallId();
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
         JSONObject params;
         try {
@@ -162,7 +162,7 @@ public class PushSubscriptionManager {
             return;
         }
 
-        String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels/subscriptions";
+        String url = Kumulos.CORE_BASE_URL + "/v1/app-users/" + userIdentifier + "/channels/subscriptions";
 
         Request request = HttpUtils.authedJsonRequest(url)
                 .delete(HttpUtils.jsonBody(params))
@@ -227,7 +227,7 @@ public class PushSubscriptionManager {
      */
     public void setSubscriptions(Context c, String[] uuids, final Kumulos.Callback callback) {
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String installId = Kumulos.getInstallId();
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
         JSONObject params;
         try {
@@ -238,7 +238,7 @@ public class PushSubscriptionManager {
             return;
         }
 
-        String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels/subscriptions";
+        String url = Kumulos.CORE_BASE_URL + "/v1/app-users/" + userIdentifier + "/channels/subscriptions";
 
         Request request = HttpUtils.authedJsonRequest(url)
                 .put(HttpUtils.jsonBody(params))
@@ -316,9 +316,9 @@ public class PushSubscriptionManager {
      */
     public void listChannels(Context c, final Kumulos.ResultCallback<List<PushChannel>> callback) {
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String installId = Kumulos.getInstallId();
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.PUSH_BASE_URL + "/v1/app-installs/" + installId + "/channels";
+        String url = Kumulos.CORE_BASE_URL + "/v1/app-users/" + userIdentifier + "/channels";
 
         Request request = new Request.Builder()
                 .url(url)
@@ -419,9 +419,9 @@ public class PushSubscriptionManager {
         }
 
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String installId = Kumulos.getInstallId();
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.PUSH_BASE_URL + "/v1/channels";
+        String url = Kumulos.CORE_BASE_URL + "/v1/channels";
 
         JSONObject params = new JSONObject();
         try {
@@ -431,7 +431,7 @@ public class PushSubscriptionManager {
             params.put("meta", meta);
 
             if (subscribe) {
-                params.put("installId", installId);
+                params.put("userIdentifier", userIdentifier);
             }
         } catch (JSONException e) {
             callback.onFailure(e);
