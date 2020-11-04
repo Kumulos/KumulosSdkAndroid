@@ -483,7 +483,7 @@ public class PushSubscriptionManager {
     private String getSubscriptionRequestBaseUrl(Context c){
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        return Kumulos.CRM_BASE_URL + "/v1/app-users/" + Uri.encode(userIdentifier);
+        return Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier);
     }
 
 }
