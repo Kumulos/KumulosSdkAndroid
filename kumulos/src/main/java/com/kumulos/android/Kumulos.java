@@ -1,7 +1,6 @@
 
 package com.kumulos.android;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +9,6 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Debug;
-import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -28,8 +26,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -45,7 +41,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.TlsVersion;
 
 /**
  * The Kumulos class is the main public API for calling Kumulos RPC methods and handling push registration
@@ -60,7 +55,6 @@ public final class Kumulos {
     /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
     /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
     /** package */ static final String CRM_BASE_URL = "https://crm.kumulos.com";
-    /** package */ static final String CORE_BASE_URL = "https://stats.kumulos.com";
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
     private static boolean initialized;
 

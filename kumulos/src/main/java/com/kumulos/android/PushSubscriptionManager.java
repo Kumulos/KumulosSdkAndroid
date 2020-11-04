@@ -74,7 +74,7 @@ public class PushSubscriptionManager {
         OkHttpClient httpClient = Kumulos.getHttpClient();
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.CORE_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
+        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
 
         JSONObject params = new JSONObject();
         try {
@@ -163,7 +163,7 @@ public class PushSubscriptionManager {
             return;
         }
 
-        String url = Kumulos.CORE_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
+        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
 
         Request request = HttpUtils.authedJsonRequest(url)
                 .delete(HttpUtils.jsonBody(params))
@@ -239,7 +239,7 @@ public class PushSubscriptionManager {
             return;
         }
 
-        String url = Kumulos.CORE_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
+        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
 
         Request request = HttpUtils.authedJsonRequest(url)
                 .put(HttpUtils.jsonBody(params))
@@ -319,7 +319,7 @@ public class PushSubscriptionManager {
         OkHttpClient httpClient = Kumulos.getHttpClient();
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.CORE_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier)  + "/channels";
+        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier)  + "/channels";
 
         Request request = new Request.Builder()
                 .url(url)
@@ -422,7 +422,7 @@ public class PushSubscriptionManager {
         OkHttpClient httpClient = Kumulos.getHttpClient();
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.CORE_BASE_URL + "/v1/channels";
+        String url = Kumulos.CRM_BASE_URL + "/v1/channels";
 
         JSONObject params = new JSONObject();
         try {
