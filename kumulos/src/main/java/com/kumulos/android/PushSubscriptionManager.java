@@ -72,9 +72,8 @@ public class PushSubscriptionManager {
         }
 
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
+        String url = this.getSubscriptionRequestBaseUrl(c) + "/channels/subscriptions";
 
         JSONObject params = new JSONObject();
         try {
@@ -152,7 +151,6 @@ public class PushSubscriptionManager {
         }
 
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
         JSONObject params;
         try {
@@ -163,7 +161,7 @@ public class PushSubscriptionManager {
             return;
         }
 
-        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
+        String url = this.getSubscriptionRequestBaseUrl(c) + "/channels/subscriptions";
 
         Request request = HttpUtils.authedJsonRequest(url)
                 .delete(HttpUtils.jsonBody(params))
@@ -228,7 +226,6 @@ public class PushSubscriptionManager {
      */
     public void setSubscriptions(Context c, String[] uuids, final Kumulos.Callback callback) {
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
         JSONObject params;
         try {
@@ -239,7 +236,7 @@ public class PushSubscriptionManager {
             return;
         }
 
-        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier) + "/channels/subscriptions";
+        String url = this.getSubscriptionRequestBaseUrl(c) + "/channels/subscriptions";
 
         Request request = HttpUtils.authedJsonRequest(url)
                 .put(HttpUtils.jsonBody(params))
@@ -317,9 +314,8 @@ public class PushSubscriptionManager {
      */
     public void listChannels(Context c, final Kumulos.ResultCallback<List<PushChannel>> callback) {
         OkHttpClient httpClient = Kumulos.getHttpClient();
-        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier)  + "/channels";
+        String url = this.getSubscriptionRequestBaseUrl(c) + "/channels";
 
         Request request = new Request.Builder()
                 .url(url)
@@ -482,6 +478,12 @@ public class PushSubscriptionManager {
                 }
             }
         });
+    }
+
+    private String getSubscriptionRequestBaseUrl(Context c){
+        String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
+
+        return Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier);
     }
 
 }
