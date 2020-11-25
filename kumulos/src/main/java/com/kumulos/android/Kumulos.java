@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Debug;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -597,6 +598,13 @@ public final class Kumulos {
     //==============================================================================================
     //-- DEFERRED DEEP LINKING
 
+    public static void seeIntent(Context context, Intent intent, @Nullable Bundle savedInstanceState) {
+        if (savedInstanceState != null){
+            return;
+        }
+
+        Kumulos.seeIntent(context, intent);
+    }
 
     public static void seeIntent(Context context, Intent intent) {
         String action = intent.getAction();
