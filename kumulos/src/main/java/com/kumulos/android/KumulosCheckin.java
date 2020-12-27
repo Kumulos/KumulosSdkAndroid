@@ -27,7 +27,7 @@ import androidx.annotation.Nullable;
  */
 public final class KumulosCheckin {
     @SuppressLint("ConstantLocale")
-    private static final SimpleDateFormat ISO8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
+    private static final SimpleDateFormat ISO8601_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
 
     private static final String FIELD_ID = "id";
     private static final String FIELD_LOCATION = "location";
