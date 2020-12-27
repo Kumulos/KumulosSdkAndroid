@@ -323,7 +323,7 @@ class InAppContract {
 
                 Cursor cursor = db.rawQuery(selectSql, new String[]{});
 
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
                 sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 
                 while(cursor.moveToNext()) {
