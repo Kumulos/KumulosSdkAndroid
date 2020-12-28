@@ -36,7 +36,7 @@ class InAppRequestService {
 
         String params = "";
         if (lastSyncTime != null){
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             params= "?after="+ sdf.format(lastSyncTime);
         }

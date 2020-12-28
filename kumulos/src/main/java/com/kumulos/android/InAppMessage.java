@@ -40,7 +40,7 @@ class InAppMessage {
         this.content = obj.getJSONObject("content");
         this.inbox = obj.optJSONObject("inbox");
 
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.updatedAt =  sdf.parse(obj.getString("updatedAt"));
 
