@@ -40,6 +40,13 @@ if (secretPropsFile.exists()) {
     ext['sonatypeStagingProfileId'] = System.getenv('SONATYPE_STAGING_PROFILE_ID')
 }
 
+nexusStaging {
+    packageGroup = PUBLISH_GROUP_ID
+    stagingProfileId = sonatypeStagingProfileId
+    username = sonatypeUsername
+    password = sonatypePassword
+}
+
 publishing {
     publications {
         debug(MavenPublication) {
