@@ -1,8 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
 
-def releaseVersion = System.getenv("TRAVIS_TAG") as String ?: "0.0.0"
+def releaseVersion = System.getenv("RELEASE_VERSION") as String ?: "0.0.0"
 
 android {
     compileSdkVersion 29
@@ -11,10 +10,11 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 29
-        versionCode System.getenv("TRAVIS_BUILD_NUMBER") as Integer ?: 0
-        versionName releaseVersion
 
-        setProperty("archivesBaseName", "${archivesBaseName}-$versionName")
+        // https://issuetracker.google.com/issues/158695880
+        buildConfigField 'String', 'VERSION_NAME', "\"$releaseVersion\""
+
+        setProperty("archivesBaseName", "$archivesBaseName-$releaseVersion")
     }
     buildTypes {
         release {
@@ -31,69 +31,18 @@ android {
 
 dependencies {
     testImplementation 'junit:junit:4.12'
-    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.12'
     implementation 'ch.acra:acra-http:5.5.0'
     implementation 'org.codehaus.jackson:jackson-mapper-asl:1.8.5'
-    implementation 'androidx.work:work-runtime:2.4.0'
-    implementation 'com.google.firebase:firebase-messaging:20.2.4'
+    implementation 'androidx.work:work-runtime:2.5.0'
+    implementation 'com.google.firebase:firebase-messaging:21.0.1'
     compileOnly 'com.huawei.hms:push:4.0.3.300'
 }
 
-publishing {
-    publications {
-        Debug(MavenPublication) {
-            artifact "$buildDir/outputs/aar/kumulos-$releaseVersion-debug.aar"
-            groupId 'com.kumulos.android'
-            artifactId 'kumulos-android-debug'
-            version releaseVersion
-
-            pom.withXml {
-                def dependenciesNode = asNode().appendNode('dependencies')
-                configurations.implementation.allDependencies.each {
-                    def dependencyNode = dependenciesNode.appendNode('dependency')
-                    dependencyNode.appendNode('groupId', it.group)
-                    dependencyNode.appendNode('artifactId', it.name)
-                    dependencyNode.appendNode('version', it.version)
-                }
-            }
-        }
-
-        Release(MavenPublication) {
-            artifact "$buildDir/outputs/aar/kumulos-$releaseVersion-release.aar"
-            groupId 'com.kumulos.android'
-            artifactId 'kumulos-android-release'
-            version releaseVersion
-
-            pom.withXml {
-                def dependenciesNode = asNode().appendNode('dependencies')
-                configurations.implementation.allDependencies.each {
-                    def dependencyNode = dependenciesNode.appendNode('dependency')
-                    dependencyNode.appendNode('groupId', it.group)
-                    dependencyNode.appendNode('artifactId', it.name)
-                    dependencyNode.appendNode('version', it.version)
-                }
-            }
-        }
-    }
+ext {
+    PUBLISH_GROUP_ID = 'com.kumulos.android'
+    PUBLISH_VERSION = releaseVersion
+    PUBLISH_ARTIFACT_ID = 'kumulos-android'
 }
 
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    publications = [ 'Debug', 'Release' ]
-
-    publish = true
-
-    pkg {
-        repo = 'maven'
-        name = 'kumulos-android-sdk'
-        userOrg = 'kumulos'
-        licenses = ['MIT']
-
-        version {
-            name = releaseVersion
-            vcsTag = releaseVersion
-        }
-    }
-
-}
+apply from: "${rootProject.projectDir}/publishing.gradle"
