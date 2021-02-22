@@ -22,3 +22,4 @@ Release:
 - [ ] Squash and merge to master
 - [ ] Delete branch once merged
 - [ ] Create tag from master matching chosen version
+- [ ] Verify & Publish release from [OSS Nexus UI](https://oss.sonatype.org/#stagingRepositories)
