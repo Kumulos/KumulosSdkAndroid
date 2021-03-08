@@ -357,14 +357,14 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     private PendingIntent getPushIntent(Context context, PushMessage pushMessage, String action){
-        Intent openIntent = new Intent(action);
-        openIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
-        openIntent.setPackage(context.getPackageName());
+        Intent intent = new Intent(action);
+        intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
+        intent.setPackage(context.getPackageName());
 
         return PendingIntent.getBroadcast(
                 context,
                 (int) pushMessage.getTimeSent(),
-                openIntent,
+                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
 
     }
