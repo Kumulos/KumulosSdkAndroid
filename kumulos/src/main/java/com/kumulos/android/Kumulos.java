@@ -558,6 +558,27 @@ public final class Kumulos {
     }
 
     /**
+     * Used to track a dismissal of a push notification
+     *
+     * @param context
+     * @param id
+     */
+    public static void pushTrackDismissed(Context context, final int id) throws UninitializedException {
+        log("PUSH: Tracking dismissal for " + id);
+
+        JSONObject props = new JSONObject();
+        try {
+            props.put("type", AnalyticsContract.MESSAGE_TYPE_PUSH);
+            props.put("id", id);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_DISMISSED, props);
+    }
+
+    /**
      * Registers the push token with Kumulos to allow sending push notifications to this install
      * @deprecated See {@link #pushTokenStore(Context, PushTokenType, String)}
      * @param context

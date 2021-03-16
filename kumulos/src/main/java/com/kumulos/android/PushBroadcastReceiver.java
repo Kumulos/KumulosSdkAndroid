@@ -39,6 +39,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
     public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
     public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
+    public static final String ACTION_PUSH_DISMISSED = "com.kumulos.push.DISMISSED";
     public static final String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTON_CLICKED";
 
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
@@ -64,6 +65,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 break;
             case ACTION_PUSH_OPENED:
                 this.onPushOpened(context, pushMessage);
+                break;
+            case ACTION_PUSH_DISMISSED:
+                this.onPushDismissed(context, pushMessage);
                 break;
             case ACTION_BUTTON_CLICKED:
                 String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
@@ -207,6 +211,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
+
+
     /**
      * Handles launching the Activity specified by the {#getPushOpenActivityIntent} method when a push
      * notification is opened from the notifications drawer.
@@ -261,6 +267,16 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         taskStackBuilder.startActivities();
     }
 
+    protected void onPushDismissed(Context context, PushMessage pushMessage) {
+        Kumulos.log(TAG, "Push dismissed");
+
+        try {
+            Kumulos.pushTrackDismissed(context, pushMessage.getId());
+        } catch (Kumulos.UninitializedException e) {
+            Kumulos.log(TAG, "Failed to track the push dismissal -- Kumulos is not initialised.");
+        }
+
+    }
 
     /**
      * Builds the notification shown in the notification drawer when a content push is received.
@@ -275,15 +291,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @see Kumulos#pushTrackOpen(Context,int) for correctly tracking conversions if you customize the content intent
      */
     protected Notification buildNotification(Context context, PushMessage pushMessage) {
-        Intent openIntent = new Intent(ACTION_PUSH_OPENED);
-        openIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
-        openIntent.setPackage(context.getPackageName());
 
-        PendingIntent pendingOpenIntent = PendingIntent.getBroadcast(
-                context,
-                (int) pushMessage.getTimeSent(),
-                openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pendingOpenIntent = this.getPushIntent(context, pushMessage, ACTION_PUSH_OPENED);
+        PendingIntent pendingDismissedIntent = this.getPushIntent(context, pushMessage, ACTION_PUSH_DISMISSED);
 
         Notification.Builder notificationBuilder;
 
@@ -320,7 +330,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setContentTitle(pushMessage.getTitle())
                 .setContentText(pushMessage.getMessage())
                 .setAutoCancel(true)
-                .setContentIntent(pendingOpenIntent);
+                .setContentIntent(pendingOpenIntent)
+                .setDeleteIntent(pendingDismissedIntent);
 
         this.maybeAddSound(context, notificationBuilder, notificationManager, pushMessage);
 
@@ -343,6 +354,19 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return null;
         }
         return notificationBuilder.build();
+    }
+
+    private PendingIntent getPushIntent(Context context, PushMessage pushMessage, String action){
+        Intent intent = new Intent(action);
+        intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
+        intent.setPackage(context.getPackageName());
+
+        return PendingIntent.getBroadcast(
+                context,
+                (int) pushMessage.getTimeSent(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
+
     }
 
     @TargetApi(android.os.Build.VERSION_CODES.O)
