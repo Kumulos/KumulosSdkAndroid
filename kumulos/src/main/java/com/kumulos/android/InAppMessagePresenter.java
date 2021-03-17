@@ -47,7 +47,7 @@ class InAppMessagePresenter {
     private static final String HOST_MESSAGE_TYPE_SET_NOTCH_INSETS = "SET_NOTCH_INSETS";
     private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
 
-    private static List<InAppMessage> messageQueue = new ArrayList<>();
+    private static final List<InAppMessage> messageQueue = new ArrayList<>();
     @SuppressLint("StaticFieldLeak")
     private static WebView wv = null;
     private static Dialog dialog = null;
@@ -284,15 +284,23 @@ class InAppMessagePresenter {
     }
 
     private static void setSpinnerVisibility(int visibility){
+        if (wv == null){
+            return;
+        }
         wv.post(new Runnable() {
             @Override
             public void run() {
-                spinner.setVisibility(visibility);
+                if (spinner != null){
+                    spinner.setVisibility(visibility);
+                }
             }
         });
     }
 
     private static void sendToClient(String type, JSONObject data){
+        if (wv == null){
+            return;
+        }
         wv.post(new Runnable() {
             @Override
             public void run() {
@@ -471,7 +479,7 @@ class InAppMessagePresenter {
                         @Override
                         public void onPageStarted(WebView view, String url, Bitmap favicon) {
                             super.onPageStarted(view, url, favicon);
-                            spinner.setVisibility(View.VISIBLE);
+                            InAppMessagePresenter.setSpinnerVisibility(View.VISIBLE);
                         }
 
                         @Override
