@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 import android.util.Pair;
 
 import org.json.JSONException;
@@ -268,6 +269,36 @@ class InAppMessageService {
         } catch (InterruptedException | ExecutionException ex) {
             Kumulos.log(TAG, ex.getMessage());
         }
+
+        return result;
+    }
+
+    static boolean markInboxItemRead(Context context, int id) {
+        Callable<Boolean> task = new InAppContract.MarkInAppInboxMessageAsReadCallable(context, id);
+        final Future<Boolean> future = Kumulos.executorService.submit(task);
+
+        Boolean result = false;
+        try {
+            result = future.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            Kumulos.log(TAG, ex.getMessage());
+        }
+
+        if (!result){
+            return result;
+        }
+
+        JSONObject params = new JSONObject();
+        try {
+            params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
+            params.put("id", id);
+
+            Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_READ, params);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        clearNotification(context, id);
 
         return result;
     }

@@ -17,6 +17,8 @@ public class InAppInboxItem {
     private Date availableTo;
     @Nullable
     private Date dismissedAt;
+    @Nullable
+    private Date readAt;
 
     public int getId() {
         return id;
@@ -67,5 +69,13 @@ public class InAppInboxItem {
 
     void setDismissedAt(@Nullable Date dismissedAt) {
         this.dismissedAt = dismissedAt;
+    }
+
+    public boolean isRead() {
+        return readAt != null;
+    }
+
+    void setReadAt(@Nullable Date readAt) {
+        this.readAt = readAt;
     }
 }

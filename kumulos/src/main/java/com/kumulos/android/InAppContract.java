@@ -39,6 +39,7 @@ class InAppContract {
         static final String COL_DATA_JSON = "dataJson";
         static final String COL_CONTENT_JSON = "contentJson";
         static final String COL_EXPIRES_AT = "expiresAt";
+        static final String COL_READ_AT = "readAt";
     }
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
@@ -87,17 +88,16 @@ class InAppContract {
         @Override
         public void run() {
             SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             try {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
+                String datetime = dbDateFormat.format(mInAppMessage.getDismissedAt());
+                String sql = "UPDATE "+InAppMessageTable.TABLE_NAME
+                        +" SET "+InAppMessageTable.COL_DISMISSED_AT+" = ?, "+InAppMessageTable.COL_READ_AT+" = IFNULL(readAt, ?)"
+                        +" WHERE "+InAppMessageTable.COL_ID+" = ?;";
 
-                ContentValues values = new ContentValues();
-                values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(mInAppMessage.getDismissedAt()));
-
-                String selection = InAppMessageTable.COL_ID + " = ?";
-                String[] selectionArgs = { mInAppMessage.getInAppId()+"" };
-
-                int count = db.update(InAppMessageTable.TABLE_NAME, values, selection, selectionArgs);
+                Cursor c = db.rawQuery(sql, new String[] {datetime, datetime, mInAppMessage.getInAppId()+""});
+                c.moveToFirst();
+                c.close();
 
                 dbHelper.close();
             }
@@ -195,7 +195,7 @@ class InAppContract {
 
             String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
             String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
-            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";
+            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";//TODO:
 
             Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
 
@@ -244,6 +244,11 @@ class InAppContract {
                 }
                 values.put(InAppMessageTable.COL_UPDATED_AT, dbDateFormat.format(message.getUpdatedAt()));
                 values.put(InAppMessageTable.COL_PRESENTED_WHEN, message.getPresentedWhen());
+
+                Date readAt = message.getReadAt();
+                if (readAt != null) {
+                    values.put(InAppMessageTable.COL_READ_AT, dbDateFormat.format(readAt));
+                }
 
                 String inboxFrom = null;
                 String inboxTo = null;
@@ -312,6 +317,7 @@ class InAppContract {
 
                 String columnList = InAppMessageTable.COL_ID + ", "
                         + InAppMessageTable.COL_DISMISSED_AT + ", "
+                        + InAppMessageTable.COL_READ_AT + ", "
                         + InAppMessageTable.COL_INBOX_FROM + ", "
                         + InAppMessageTable.COL_INBOX_TO + ", "
                         + InAppMessageTable.COL_INBOX_CONFIG_JSON;
@@ -333,10 +339,12 @@ class InAppContract {
                     Date availableFrom = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_FROM);
                     Date availableTo = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_TO);
                     Date dismissedAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_DISMISSED_AT);
+                    Date readAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_READ_AT);
 
                     InAppInboxItem i = new InAppInboxItem();
                     i.setId(inAppId);
                     i.setDismissedAt(dismissedAt);
+                    i.setReadAt(readAt);
                     i.setAvailableTo(availableTo);
                     i.setAvailableFrom(availableFrom);
 
@@ -450,6 +458,48 @@ class InAppContract {
             }
             catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to delete inbox message with inAppID: "+ mId);
+                e.printStackTrace();
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    static class MarkInAppInboxMessageAsReadCallable implements Callable<Boolean> {
+
+        private static final String TAG = MarkInAppInboxMessageAsReadCallable.class.getName();
+
+        private Context mContext;
+        private int mId;
+
+        MarkInAppInboxMessageAsReadCallable(Context context, int id) {
+            mContext = context.getApplicationContext();
+            mId = id;
+        }
+
+        @Override
+        public Boolean call() {
+            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
+
+            try {
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+                ContentValues values = new ContentValues();
+                values.put(InAppMessageTable.COL_READ_AT, dbDateFormat.format(new Date()));
+
+                String selection = InAppMessageTable.COL_ID + " = ? AND " + InAppMessageTable.COL_READ_AT + " IS NULL";
+                String[] selectionArgs = { mId +"" };
+
+                int count = db.update(InAppMessageTable.TABLE_NAME, values, selection, selectionArgs);
+
+                if (count == 0){
+                    return false;
+                }
+                dbHelper.close();
+            }
+            catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed to set readAt of inbox message with inAppID: "+ mId);
                 e.printStackTrace();
                 return false;
             }
