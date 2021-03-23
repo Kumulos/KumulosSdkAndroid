@@ -303,6 +303,22 @@ class InAppMessageService {
         return result;
     }
 
+    static boolean markAllInboxItemsAsRead(Context context) {
+        List<InAppInboxItem> inboxItems = readInboxItems(context);
+        boolean result = true;
+        for(InAppInboxItem item: inboxItems){
+            if (item.isRead()){
+                continue;
+            }
+
+            if (!markInboxItemRead(context, item.getId())){
+                result = false;
+            }
+        }
+
+        return result;
+    }
+
     private static class ReadAndPresentMessagesRunnable implements Runnable {
         private static final String TAG = ReadAndPresentMessagesRunnable.class.getName();
 
