@@ -7,8 +7,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
-import android.util.Pair;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -60,18 +58,23 @@ class InAppMessageService {
             }
         }
 
-        Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
+        Callable<InAppSaveResult> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
 
         List<InAppMessage> unreadMessages;
         List<Integer> deliveredIds;
-
+        List<Integer> deletedIds;
         try {
-            Pair<List<InAppMessage>, List<Integer>> p = task.call();
-            unreadMessages = p.first;
-            deliveredIds = p.second;
+            InAppSaveResult result = task.call();
+            unreadMessages = result.getItemsToPresent();
+            deliveredIds = result.getDeliveredIds();
+            deletedIds = result.getDeletedIds();
         } catch (Exception e) {
             e.printStackTrace();
             return;
+        }
+
+        for (int inAppId : deletedIds) {
+            clearNotification(context, inAppId);
         }
 
         InAppMessageService.storeLastSyncTime(context, inAppMessages);

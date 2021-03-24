@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Pair;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,7 +23,8 @@ import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 
 class InAppContract {
 
-    private InAppContract() {}
+    private InAppContract() {
+    }
 
     static class InAppMessageTable {
         static final String TABLE_NAME = "in_app_messages";
@@ -45,8 +45,10 @@ class InAppContract {
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
     private static SimpleDateFormat incomingDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+    private static final String SORT_ORDER = InAppMessageTable.COL_SENT_AT + " DESC, " + InAppMessageTable.COL_UPDATED_AT + " DESC, " + InAppMessageTable.COL_ID + " DESC";
+    private static final Integer STORED_IN_APP_LIMIT = 50;
 
-    static{
+    static {
         dbDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
@@ -64,11 +66,10 @@ class InAppContract {
             try {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-                db.execSQL("delete from "+ InAppMessageTable.TABLE_NAME);
+                db.execSQL("delete from " + InAppMessageTable.TABLE_NAME);
 
                 dbHelper.close();
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed clearing in-app db ");
                 e.printStackTrace();
             }
@@ -92,24 +93,23 @@ class InAppContract {
             try {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 String datetime = dbDateFormat.format(mInAppMessage.getDismissedAt());
-                String sql = "UPDATE "+InAppMessageTable.TABLE_NAME
-                        +" SET "+InAppMessageTable.COL_DISMISSED_AT+" = ?, "+InAppMessageTable.COL_READ_AT+" = IFNULL(readAt, ?)"
-                        +" WHERE "+InAppMessageTable.COL_ID+" = ?;";
+                String sql = "UPDATE " + InAppMessageTable.TABLE_NAME
+                        + " SET " + InAppMessageTable.COL_DISMISSED_AT + " = ?, " + InAppMessageTable.COL_READ_AT + " = IFNULL(readAt, ?)"
+                        + " WHERE " + InAppMessageTable.COL_ID + " = ?;";
 
-                Cursor c = db.rawQuery(sql, new String[] {datetime, datetime, mInAppMessage.getInAppId()+""});
+                Cursor c = db.rawQuery(sql, new String[]{datetime, datetime, mInAppMessage.getInAppId() + ""});
                 c.moveToFirst();
                 c.close();
 
                 dbHelper.close();
-            }
-            catch (SQLiteException e) {
-                Kumulos.log(TAG, "Failed to track open for inAppID: "+ mInAppMessage.getInAppId());
+            } catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed to track open for inAppID: " + mInAppMessage.getInAppId());
                 e.printStackTrace();
             }
         }
     }
 
-    static class SaveInAppMessagesCallable implements Callable<Pair<List<InAppMessage>, List<Integer>>> {
+    static class SaveInAppMessagesCallable implements Callable<InAppSaveResult> {
 
         private static final String TAG = SaveInAppMessagesCallable.class.getName();
 
@@ -122,41 +122,40 @@ class InAppContract {
         }
 
         @Override
-        public Pair<List<InAppMessage>, List<Integer>> call() {
+        public InAppSaveResult call() {
             SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             List<Integer> deliveredIds = new ArrayList<>();
+            List<Integer> deletedIds = new ArrayList<>();
             try {
                 List<ContentValues> rows = this.assembleRows();
 
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 deliveredIds = this.insertRows(db, rows);
-                this.deleteRows(db);
+                deletedIds = this.deleteRows(db);
                 itemsToPresent = this.readRows(db);
 
                 dbHelper.close();
-                Kumulos.log(TAG, "Saved messages: "+mInAppMessages.size());
-            }
-            catch (SQLiteException e) {
-                Kumulos.log(TAG, "Failed to save messages: "+mInAppMessages.size());
+                Kumulos.log(TAG, "Saved messages: " + mInAppMessages.size());
+            } catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed to save messages: " + mInAppMessages.size());
                 e.printStackTrace();
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 Kumulos.log(TAG, e.getMessage());
             }
 
-            return new Pair<>(itemsToPresent, deliveredIds);
+            return new InAppSaveResult(itemsToPresent, deliveredIds, deletedIds);
         }
 
-        private List<Integer> insertRows(SQLiteDatabase db, List<ContentValues> rows){
+        private List<Integer> insertRows(SQLiteDatabase db, List<ContentValues> rows) {
             List<Integer> deliveredIds = new ArrayList<>();
 
-            for(ContentValues row : rows){
+            for (ContentValues row : rows) {
                 int id = (int) db.insertWithOnConflict(InAppMessageTable.TABLE_NAME, null, row, CONFLICT_IGNORE);
                 if (id == -1) {
-                    db.update(InAppMessageTable.TABLE_NAME, row, InAppMessageTable.COL_ID+"=?", new String[] {""+row.getAsInteger(InAppMessageTable.COL_ID)});
+                    db.update(InAppMessageTable.TABLE_NAME, row, InAppMessageTable.COL_ID + "=?", new String[]{"" + row.getAsInteger(InAppMessageTable.COL_ID)});
                 }
                 //tracks all messages, which were received and saved/updated
                 deliveredIds.add(row.getAsInteger(InAppMessageTable.COL_ID));
@@ -165,12 +164,12 @@ class InAppContract {
             return deliveredIds;
         }
 
-        private void deleteRows(SQLiteDatabase db){
+        private List<Integer> deleteRows(SQLiteDatabase db) {
             String messageExpiredCondition = String.format("(%s IS NOT NULL AND (DATETIME(%s) <= DATETIME('now'))",
                     InAppMessageTable.COL_EXPIRES_AT,
                     InAppMessageTable.COL_EXPIRES_AT);
 
-            String noInboxAndMessageDismissed = String.format("(%s IS NULL AND %s IS NOT NULL)", InAppMessageTable.COL_INBOX_CONFIG_JSON,  InAppMessageTable.COL_DISMISSED_AT);
+            String noInboxAndMessageDismissed = String.format("(%s IS NULL AND %s IS NOT NULL)", InAppMessageTable.COL_INBOX_CONFIG_JSON, InAppMessageTable.COL_DISMISSED_AT);
             String noInboxAndMessageExpired = String.format("(%s IS NULL AND %s))", InAppMessageTable.COL_INBOX_CONFIG_JSON, messageExpiredCondition);
             String inboxExpiredAndMessageDismissedOrExpired = String.format("(%s IS NOT NULL AND (DATETIME('now') > IFNULL(%s, '3970-01-01')) AND (%s IS NOT NULL OR %s)))",
                     InAppMessageTable.COL_INBOX_CONFIG_JSON,
@@ -178,16 +177,35 @@ class InAppContract {
                     InAppMessageTable.COL_DISMISSED_AT,
                     messageExpiredCondition);
 
+            String notConditions = "(NOT " + noInboxAndMessageDismissed + " AND NOT " + noInboxAndMessageExpired + " AND NOT " + inboxExpiredAndMessageDismissedOrExpired + ")";
+            String inAppsExceedingLimitSql = "select * from (SELECT " + InAppMessageTable.COL_ID +
+                    " FROM " + InAppMessageTable.TABLE_NAME +
+                    " WHERE " + notConditions +
+                    " ORDER BY " + SORT_ORDER +
+                    " LIMIT -1 OFFSET " + STORED_IN_APP_LIMIT + ")";
 
-            String deleteSql ="DELETE FROM " + InAppMessageTable.TABLE_NAME +
-                    " WHERE "+
+            String readSql = "SELECT inAppId FROM " + InAppMessageTable.TABLE_NAME +
+                    " WHERE " +
                     noInboxAndMessageDismissed +
                     " OR " +
                     noInboxAndMessageExpired +
                     " OR " +
-                    inboxExpiredAndMessageDismissedOrExpired;
+                    inboxExpiredAndMessageDismissedOrExpired +
+                    " UNION " +
+                    inAppsExceedingLimitSql;
 
-            db.execSQL(deleteSql);
+            Cursor c = db.rawQuery(readSql, new String[]{});
+            List<Integer> deletedIds = new ArrayList<>();
+            while (c.moveToNext()) {
+                deletedIds.add(c.getInt(c.getColumnIndexOrThrow(InAppMessageTable.COL_ID)));
+            }
+            c.close();
+
+            String placeholders = new String(new char[deletedIds.size() - 1]).replace("\0", "?,") + "?";
+            String deleteSql = "DELETE FROM " + InAppMessageTable.TABLE_NAME + " WHERE " + InAppMessageTable.COL_ID + " IN (" + placeholders + ")";
+            db.execSQL(deleteSql, deletedIds.toArray(new Integer[0]));
+
+            return deletedIds;
         }
 
         private List<InAppMessage> readRows(SQLiteDatabase db) {
@@ -195,12 +213,11 @@ class InAppContract {
             List<InAppMessage> itemsToPresent = new ArrayList<>();
 
             String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
-            String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
-            String sortOrder = InAppMessageTable.COL_SENT_AT+ " DESC, " + InAppMessageTable.COL_UPDATED_AT+ " DESC, " + InAppMessageTable.COL_ID + " DESC";
+            String selection = InAppMessageTable.COL_DISMISSED_AT + " IS NULL";
 
-            Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
+            Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null, null, null, SORT_ORDER);
 
-            while(cursor.moveToNext()) {
+            while (cursor.moveToNext()) {
                 int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                 String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
                 String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_PRESENTED_WHEN));
@@ -208,10 +225,9 @@ class InAppContract {
                 m.setInAppId(inAppId);
                 m.setPresentedWhen(presentedWhen);
 
-                try{
+                try {
                     m.setContent(new JSONObject(content));
-                }
-                catch(JSONException e) {
+                } catch (JSONException e) {
                     Kumulos.log(TAG, e.getMessage());
                     continue;
                 }
@@ -223,18 +239,18 @@ class InAppContract {
 
             return itemsToPresent;
         }
-        
-        private List<ContentValues> assembleRows() throws ParseException{
+
+        private List<ContentValues> assembleRows() throws ParseException {
             List<ContentValues> rows = new ArrayList<>();
 
-            for (InAppMessage message: mInAppMessages ){
+            for (InAppMessage message : mInAppMessages) {
                 ContentValues values = new ContentValues();
 
                 values.put(InAppMessageTable.COL_ID, message.getInAppId());
 
                 Date inboxDeletedAt = message.getInboxDeletedAt();
                 Date messageDismissedAt = message.getDismissedAt();
-                if (messageDismissedAt != null || inboxDeletedAt != null ){
+                if (messageDismissedAt != null || inboxDeletedAt != null) {
                     Date dismissedTime = messageDismissedAt != null ? messageDismissedAt : inboxDeletedAt;
                     values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(dismissedTime));
                 }
@@ -252,24 +268,24 @@ class InAppContract {
                 }
 
                 Date sentAt = message.getSentAt();
-                if (sentAt != null){
+                if (sentAt != null) {
                     values.put(InAppMessageTable.COL_SENT_AT, dbDateFormat.format(sentAt));
                 }
 
                 String inboxFrom = null;
                 String inboxTo = null;
                 JSONObject inbox = null;
-                if (inboxDeletedAt == null){
+                if (inboxDeletedAt == null) {
                     inbox = message.getInbox();
                 }
 
-                if (inbox != null){
+                if (inbox != null) {
                     inboxFrom = this.getNullableString(inbox, "from");
-                    if (inboxFrom != null){
+                    if (inboxFrom != null) {
                         inboxFrom = this.formatDateForDb(inboxFrom);
                     }
                     inboxTo = this.getNullableString(inbox, "to");
-                    if (inboxTo != null){
+                    if (inboxTo != null) {
                         inboxTo = this.formatDateForDb(inboxTo);
                     }
                 }
@@ -290,12 +306,12 @@ class InAppContract {
             return rows;
         }
 
-        private String formatDateForDb(String date) throws ParseException{
+        private String formatDateForDb(String date) throws ParseException {
             return dbDateFormat.format(incomingDateFormat.parse(date));
         }
 
-        private String getNullableString(JSONObject json, String key){
-            if (!json.has(key) || json.isNull(key)){
+        private String getNullableString(JSONObject json, String key) {
+            if (!json.has(key) || json.isNull(key)) {
                 return null;
             }
 
@@ -328,17 +344,17 @@ class InAppContract {
                         + InAppMessageTable.COL_INBOX_TO + ", "
                         + InAppMessageTable.COL_INBOX_CONFIG_JSON;
 
-                String selectSql ="SELECT "+ columnList +" FROM " + InAppMessageTable.TABLE_NAME +
-                        " WHERE " +InAppMessageTable.COL_INBOX_CONFIG_JSON+" IS NOT NULL "+
-                        " AND (datetime('now') BETWEEN IFNULL("+ InAppMessageTable.COL_INBOX_FROM+", '1970-01-01') AND IFNULL("+ InAppMessageTable.COL_INBOX_TO+", '3970-01-01'))" +
-                        " ORDER BY "+InAppMessageTable.COL_UPDATED_AT+ " DESC";
+                String selectSql = "SELECT " + columnList + " FROM " + InAppMessageTable.TABLE_NAME +
+                        " WHERE " + InAppMessageTable.COL_INBOX_CONFIG_JSON + " IS NOT NULL " +
+                        " AND (datetime('now') BETWEEN IFNULL(" + InAppMessageTable.COL_INBOX_FROM + ", '1970-01-01') AND IFNULL(" + InAppMessageTable.COL_INBOX_TO + ", '3970-01-01'))" +
+                        " ORDER BY " + InAppMessageTable.COL_UPDATED_AT + " DESC";
 
                 Cursor cursor = db.rawQuery(selectSql, new String[]{});
 
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
                 sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-                while(cursor.moveToNext()) {
+                while (cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                     JSONObject inboxConfig = new JSONObject(cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON)));
 
@@ -361,18 +377,16 @@ class InAppContract {
                 cursor.close();
 
                 dbHelper.close();
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 e.printStackTrace();
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 Kumulos.log(TAG, e.getMessage());
             }
 
             return inboxItems;
         }
 
-        private Date getNullableDate(Cursor cursor, SimpleDateFormat sdf, String column) throws ParseException{
+        private Date getNullableDate(Cursor cursor, SimpleDateFormat sdf, String column) throws ParseException {
             String date = cursor.getString(cursor.getColumnIndexOrThrow(column));
 
             return date == null ? null : sdf.parse(date);
@@ -399,12 +413,12 @@ class InAppContract {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
-                String selection = InAppMessageTable.COL_INBOX_CONFIG_JSON+ " IS NOT NULL AND "+ InAppMessageTable.COL_ID + " = ?";
-                String[] selectionArgs = { mId+"" };
+                String selection = InAppMessageTable.COL_INBOX_CONFIG_JSON + " IS NOT NULL AND " + InAppMessageTable.COL_ID + " = ?";
+                String[] selectionArgs = {mId + ""};
 
-                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs,null,null, null);
+                Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs, null, null, null);
 
-                if (cursor.moveToFirst()){
+                if (cursor.moveToFirst()) {
                     String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
 
                     inboxMessage = new InAppMessage();
@@ -415,11 +429,9 @@ class InAppContract {
                 cursor.close();
 
                 dbHelper.close();
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 e.printStackTrace();
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 Kumulos.log(TAG, e.getMessage());
             }
 
@@ -453,17 +465,16 @@ class InAppContract {
                 values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(new Date()));
 
                 String selection = InAppMessageTable.COL_ID + " = ?";
-                String[] selectionArgs = { mId +"" };
+                String[] selectionArgs = {mId + ""};
 
                 int count = db.update(InAppMessageTable.TABLE_NAME, values, selection, selectionArgs);
 
-                if (count == 0){
+                if (count == 0) {
                     return false;
                 }
                 dbHelper.close();
-            }
-            catch (SQLiteException e) {
-                Kumulos.log(TAG, "Failed to delete inbox message with inAppID: "+ mId);
+            } catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed to delete inbox message with inAppID: " + mId);
                 e.printStackTrace();
                 return false;
             }
@@ -495,17 +506,16 @@ class InAppContract {
                 values.put(InAppMessageTable.COL_READ_AT, dbDateFormat.format(new Date()));
 
                 String selection = InAppMessageTable.COL_ID + " = ? AND " + InAppMessageTable.COL_READ_AT + " IS NULL";
-                String[] selectionArgs = { mId +"" };
+                String[] selectionArgs = {mId + ""};
 
                 int count = db.update(InAppMessageTable.TABLE_NAME, values, selection, selectionArgs);
 
-                if (count == 0){
+                if (count == 0) {
                     return false;
                 }
                 dbHelper.close();
-            }
-            catch (SQLiteException e) {
-                Kumulos.log(TAG, "Failed to set readAt of inbox message with inAppID: "+ mId);
+            } catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed to set readAt of inbox message with inAppID: " + mId);
                 e.printStackTrace();
                 return false;
             }
