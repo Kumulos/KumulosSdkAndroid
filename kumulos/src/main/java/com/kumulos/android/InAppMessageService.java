@@ -175,7 +175,9 @@ class InAppMessageService {
         }
     }
 
-    static void trackOpenedEvent(Context context, int id) {
+    static void handleMessageOpened(Context context, int id) {
+        markInboxItemRead(context, id);
+
         JSONObject params = new JSONObject();
         try {
             params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
