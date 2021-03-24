@@ -24,7 +24,8 @@ class InAppDbHelper extends SQLiteOpenHelper {
             + InAppMessageTable.COL_DISMISSED_AT + " DATETIME,"
             + InAppMessageTable.COL_UPDATED_AT + " DATETIME NOT NULL,"
             + InAppMessageTable.COL_EXPIRES_AT + " DATETIME,"
-            + InAppMessageTable.COL_READ_AT + " DATETIME)";
+            + InAppMessageTable.COL_READ_AT + " DATETIME,"
+            + InAppMessageTable.COL_SENT_AT + " DATETIME)";
 
     InAppDbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -65,5 +66,6 @@ class InAppDbHelper extends SQLiteOpenHelper {
 
     private void upgradeToVersion3(SQLiteDatabase db){
         db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_READ_AT + " DATETIME;");
+        db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_SENT_AT + " DATETIME;");
     }
 }

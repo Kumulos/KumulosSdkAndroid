@@ -40,6 +40,7 @@ class InAppContract {
         static final String COL_CONTENT_JSON = "contentJson";
         static final String COL_EXPIRES_AT = "expiresAt";
         static final String COL_READ_AT = "readAt";
+        static final String COL_SENT_AT = "sentAt";
     }
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
@@ -195,7 +196,7 @@ class InAppContract {
 
             String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
             String selection = InAppMessageTable.COL_DISMISSED_AT+ " IS NULL";
-            String sortOrder = InAppMessageTable.COL_UPDATED_AT + " ASC";//TODO:
+            String sortOrder = InAppMessageTable.COL_SENT_AT+ " DESC, " + InAppMessageTable.COL_UPDATED_AT+ " DESC, " + InAppMessageTable.COL_ID + " DESC";
 
             Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null,null,null, sortOrder);
 
@@ -248,6 +249,11 @@ class InAppContract {
                 Date readAt = message.getReadAt();
                 if (readAt != null) {
                     values.put(InAppMessageTable.COL_READ_AT, dbDateFormat.format(readAt));
+                }
+
+                Date sentAt = message.getSentAt();
+                if (sentAt != null){
+                    values.put(InAppMessageTable.COL_SENT_AT, dbDateFormat.format(sentAt));
                 }
 
                 String inboxFrom = null;

@@ -31,6 +31,8 @@ class InAppMessage {
     private Date inboxDeletedAt;
     @Nullable
     private Date readAt;
+    @Nullable
+    private Date sentAt;
 
     InAppMessage(){}
 
@@ -60,6 +62,10 @@ class InAppMessage {
 
         if (!obj.isNull("readAt")) {
             this.readAt = sdf.parse(obj.getString("readAt"));
+        }
+
+        if (!obj.isNull("sentAt")) {
+            this.sentAt = sdf.parse(obj.getString("sentAt"));
         }
     }
 
@@ -126,5 +132,10 @@ class InAppMessage {
     @Nullable
     Date getReadAt() {
         return readAt;
+    }
+
+    @Nullable
+    Date getSentAt() {
+        return sentAt;
     }
 }
