@@ -45,7 +45,8 @@ class InAppContract {
 
     private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
     private static SimpleDateFormat incomingDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
-    private static final String SORT_ORDER = InAppMessageTable.COL_SENT_AT + " DESC, " + InAppMessageTable.COL_UPDATED_AT + " DESC, " + InAppMessageTable.COL_ID + " DESC";
+    private static final String DESC_SORT_ORDER = InAppMessageTable.COL_SENT_AT + " DESC, " + InAppMessageTable.COL_UPDATED_AT + " DESC, " + InAppMessageTable.COL_ID + " DESC";
+    private static final String ASC_SORT_ORDER = InAppMessageTable.COL_SENT_AT + " ASC, " + InAppMessageTable.COL_UPDATED_AT + " ASC, " + InAppMessageTable.COL_ID + " ASC";
     private static final Integer STORED_IN_APP_LIMIT = 50;
 
     static {
@@ -181,7 +182,7 @@ class InAppContract {
             String inAppsExceedingLimitSql = "select * from (SELECT " + InAppMessageTable.COL_ID +
                     " FROM " + InAppMessageTable.TABLE_NAME +
                     " WHERE " + notConditions +
-                    " ORDER BY " + SORT_ORDER +
+                    " ORDER BY " + DESC_SORT_ORDER +
                     " LIMIT -1 OFFSET " + STORED_IN_APP_LIMIT + ")";
 
             String readSql = "SELECT inAppId FROM " + InAppMessageTable.TABLE_NAME +
@@ -215,7 +216,7 @@ class InAppContract {
             String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
             String selection = InAppMessageTable.COL_DISMISSED_AT + " IS NULL";
 
-            Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null, null, null, SORT_ORDER);
+            Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null, null, null, ASC_SORT_ORDER);
 
             while (cursor.moveToNext()) {
                 int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
@@ -347,7 +348,7 @@ class InAppContract {
                 String selectSql = "SELECT " + columnList + " FROM " + InAppMessageTable.TABLE_NAME +
                         " WHERE " + InAppMessageTable.COL_INBOX_CONFIG_JSON + " IS NOT NULL " +
                         " AND (datetime('now') BETWEEN IFNULL(" + InAppMessageTable.COL_INBOX_FROM + ", '1970-01-01') AND IFNULL(" + InAppMessageTable.COL_INBOX_TO + ", '3970-01-01'))" +
-                        " ORDER BY " + InAppMessageTable.COL_UPDATED_AT + " DESC";
+                        " ORDER BY " + DESC_SORT_ORDER;
 
                 Cursor cursor = db.rawQuery(selectSql, new String[]{});
 
@@ -463,6 +464,7 @@ class InAppContract {
                 values.putNull(InAppMessageTable.COL_INBOX_TO);
                 values.putNull(InAppMessageTable.COL_INBOX_CONFIG_JSON);
                 values.put(InAppMessageTable.COL_DISMISSED_AT, dbDateFormat.format(new Date()));
+                values.put(InAppMessageTable.COL_READ_AT, dbDateFormat.format(new Date()));
 
                 String selection = InAppMessageTable.COL_ID + " = ?";
                 String[] selectionArgs = {mId + ""};
