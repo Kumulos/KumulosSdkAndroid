@@ -46,6 +46,9 @@ public class KumulosInApp {
     }
 
     public static boolean markAsRead(Context context, InAppInboxItem item){
+        if (item.isRead()){
+            return false;
+        }
         return InAppMessageService.markInboxItemRead(context, item.getId());
     }
 
