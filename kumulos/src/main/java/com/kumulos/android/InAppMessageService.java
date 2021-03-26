@@ -176,7 +176,7 @@ class InAppMessageService {
     }
 
     static void handleMessageOpened(Context context, int id) {
-        markInboxItemRead(context, id);
+        markInboxItemRead(context, id, false);
 
         JSONObject params = new JSONObject();
         try {
@@ -278,15 +278,17 @@ class InAppMessageService {
         return result;
     }
 
-    static boolean markInboxItemRead(Context context, int id) {
+    static boolean markInboxItemRead(Context context, int id, boolean shouldWaitForResult) {
         Callable<Boolean> task = new InAppContract.MarkInAppInboxMessageAsReadCallable(context, id);
         final Future<Boolean> future = Kumulos.executorService.submit(task);
 
-        Boolean result = false;
-        try {
-            result = future.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            Kumulos.log(TAG, ex.getMessage());
+        Boolean result = true;
+        if (shouldWaitForResult){
+            try {
+                result = future.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                Kumulos.log(TAG, ex.getMessage());
+            }
         }
 
         if (!result){
@@ -316,7 +318,7 @@ class InAppMessageService {
                 continue;
             }
 
-            if (!markInboxItemRead(context, item.getId())){
+            if (!markInboxItemRead(context, item.getId(), true)){
                 result = false;
             }
         }

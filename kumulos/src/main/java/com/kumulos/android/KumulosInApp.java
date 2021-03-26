@@ -49,7 +49,7 @@ public class KumulosInApp {
         if (item.isRead()){
             return false;
         }
-        return InAppMessageService.markInboxItemRead(context, item.getId());
+        return InAppMessageService.markInboxItemRead(context, item.getId(), true);
     }
 
     public static boolean markAllInboxItemsAsRead(Context context){
