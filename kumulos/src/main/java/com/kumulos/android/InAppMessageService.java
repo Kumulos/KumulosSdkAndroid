@@ -7,7 +7,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Pair;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -59,18 +58,23 @@ class InAppMessageService {
             }
         }
 
-        Callable<Pair<List<InAppMessage>, List<Integer>>> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
+        Callable<InAppSaveResult> task = new InAppContract.SaveInAppMessagesCallable(context, inAppMessages);
 
         List<InAppMessage> unreadMessages;
         List<Integer> deliveredIds;
-
+        List<Integer> deletedIds;
         try {
-            Pair<List<InAppMessage>, List<Integer>> p = task.call();
-            unreadMessages = p.first;
-            deliveredIds = p.second;
+            InAppSaveResult result = task.call();
+            unreadMessages = result.getItemsToPresent();
+            deliveredIds = result.getDeliveredIds();
+            deletedIds = result.getDeletedIds();
         } catch (Exception e) {
             e.printStackTrace();
             return;
+        }
+
+        for (int inAppId : deletedIds) {
+            clearNotification(context, inAppId);
         }
 
         InAppMessageService.storeLastSyncTime(context, inAppMessages);
@@ -171,7 +175,9 @@ class InAppMessageService {
         }
     }
 
-    static void trackOpenedEvent(Context context, int id) {
+    static void handleMessageOpened(Context context, int id) {
+        markInboxItemRead(context, id, false);
+
         JSONObject params = new JSONObject();
         try {
             params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
@@ -267,6 +273,54 @@ class InAppMessageService {
             result = future.get();
         } catch (InterruptedException | ExecutionException ex) {
             Kumulos.log(TAG, ex.getMessage());
+        }
+
+        return result;
+    }
+
+    static boolean markInboxItemRead(Context context, int id, boolean shouldWaitForResult) {
+        Callable<Boolean> task = new InAppContract.MarkInAppInboxMessageAsReadCallable(context, id);
+        final Future<Boolean> future = Kumulos.executorService.submit(task);
+
+        Boolean result = true;
+        if (shouldWaitForResult){
+            try {
+                result = future.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                Kumulos.log(TAG, ex.getMessage());
+            }
+        }
+
+        if (!result){
+            return result;
+        }
+
+        JSONObject params = new JSONObject();
+        try {
+            params.put("type", AnalyticsContract.MESSAGE_TYPE_IN_APP);
+            params.put("id", id);
+
+            Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_READ, params);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        clearNotification(context, id);
+
+        return result;
+    }
+
+    static boolean markAllInboxItemsAsRead(Context context) {
+        List<InAppInboxItem> inboxItems = readInboxItems(context);
+        boolean result = true;
+        for(InAppInboxItem item: inboxItems){
+            if (item.isRead()){
+                continue;
+            }
+
+            if (!markInboxItemRead(context, item.getId(), true)){
+                result = false;
+            }
         }
 
         return result;

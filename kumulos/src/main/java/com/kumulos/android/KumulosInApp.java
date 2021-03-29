@@ -45,6 +45,17 @@ public class KumulosInApp {
         return InAppMessageService.deleteMessageFromInbox(context, item.getId());
     }
 
+    public static boolean markAsRead(Context context, InAppInboxItem item){
+        if (item.isRead()){
+            return false;
+        }
+        return InAppMessageService.markInboxItemRead(context, item.getId(), true);
+    }
+
+    public static boolean markAllInboxItemsAsRead(Context context){
+        return InAppMessageService.markAllInboxItemsAsRead(context);
+    }
+
     /**
      * Used to update in-app consent when enablement strategy is EXPLICIT_BY_USER
      *
