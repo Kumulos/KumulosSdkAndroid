@@ -6,11 +6,13 @@ class InAppSaveResult {
     List<InAppMessage> itemsToPresent;
     List<Integer> deliveredIds;
     List<Integer> deletedIds;
+    boolean inboxUpdated;
 
-    InAppSaveResult(List<InAppMessage> itemsToPresent, List<Integer> deliveredIds, List<Integer> deletedIds) {
+    InAppSaveResult(List<InAppMessage> itemsToPresent, List<Integer> deliveredIds, List<Integer> deletedIds, boolean inboxUpdated) {
         this.itemsToPresent = itemsToPresent;
         this.deliveredIds = deliveredIds;
         this.deletedIds = deletedIds;
+        this.inboxUpdated = inboxUpdated;
     }
 
     List<InAppMessage> getItemsToPresent() {
@@ -24,4 +26,6 @@ class InAppSaveResult {
     List<Integer> getDeletedIds() {
         return deletedIds;
     }
+
+    boolean wasInboxUpdated() { return inboxUpdated; }
 }

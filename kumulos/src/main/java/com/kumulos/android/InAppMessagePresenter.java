@@ -251,7 +251,7 @@ class InAppMessagePresenter {
     }
 
     static void messageOpened(Context context){
-        InAppMessageService.handleMessageOpened(context, messageQueue.get(0).getInAppId());
+        InAppMessageService.handleMessageOpened(context, messageQueue.get(0));
         setSpinnerVisibility(View.GONE);
     }
 

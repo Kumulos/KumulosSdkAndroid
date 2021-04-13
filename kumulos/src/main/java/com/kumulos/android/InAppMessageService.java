@@ -63,11 +63,13 @@ class InAppMessageService {
         List<InAppMessage> unreadMessages;
         List<Integer> deliveredIds;
         List<Integer> deletedIds;
+        boolean inboxUpdated = false;
         try {
             InAppSaveResult result = task.call();
             unreadMessages = result.getItemsToPresent();
             deliveredIds = result.getDeliveredIds();
             deletedIds = result.getDeletedIds();
+            inboxUpdated = result.wasInboxUpdated();
         } catch (Exception e) {
             e.printStackTrace();
             return;
@@ -76,6 +78,8 @@ class InAppMessageService {
         for (int inAppId : deletedIds) {
             clearNotification(context, inAppId);
         }
+
+        KumulosInApp.maybeRunInboxUpdatedHandler(inboxUpdated);
 
         InAppMessageService.storeLastSyncTime(context, inAppMessages);
 
@@ -101,7 +105,7 @@ class InAppMessageService {
             }
         }
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
+        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);//TODO:1
         pendingTickleIds.clear();
     }
 
@@ -175,8 +179,16 @@ class InAppMessageService {
         }
     }
 
-    static void handleMessageOpened(Context context, int id) {
-        markInboxItemRead(context, id, false);
+    static void handleMessageOpened(Context context, InAppMessage message) {
+        int id = message.getInAppId();
+
+        boolean markedRead = false;
+        if (message.getReadAt() == null){
+            markedRead = markInboxItemRead(context, id, false);
+        }
+        if (message.getInbox() != null){
+            KumulosInApp.maybeRunInboxUpdatedHandler(markedRead);
+        }
 
         JSONObject params = new JSONObject();
         try {
@@ -247,7 +259,7 @@ class InAppMessageService {
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         itemsToPresent.add(inboxMessage);
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, null);
+        InAppMessagePresenter.presentMessages(itemsToPresent, null);//TODO:1
 
         return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
     }
@@ -274,6 +286,8 @@ class InAppMessageService {
         } catch (InterruptedException | ExecutionException ex) {
             Kumulos.log(TAG, ex.getMessage());
         }
+
+        KumulosInApp.maybeRunInboxUpdatedHandler(result);
 
         return result;
     }
@@ -313,15 +327,23 @@ class InAppMessageService {
     static boolean markAllInboxItemsAsRead(Context context) {
         List<InAppInboxItem> inboxItems = readInboxItems(context);
         boolean result = true;
+        boolean inboxNeedsUpdate = false;
         for(InAppInboxItem item: inboxItems){
             if (item.isRead()){
                 continue;
             }
 
-            if (!markInboxItemRead(context, item.getId(), true)){
+            boolean success = markInboxItemRead(context, item.getId(), true);
+            if (success && !inboxNeedsUpdate){
+                inboxNeedsUpdate = true;
+            }
+
+            if (!success){
                 result = false;
             }
         }
+
+        KumulosInApp.maybeRunInboxUpdatedHandler(inboxNeedsUpdate);
 
         return result;
     }
@@ -341,7 +363,7 @@ class InAppMessageService {
 
         @Override
         public void run() {
-            List<InAppMessage> unreadMessages = getMessagesToPresent();
+            List<InAppMessage> unreadMessages = getMessagesToPresent();//TODO:1
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             for (InAppMessage message : unreadMessages) {
@@ -369,7 +391,7 @@ class InAppMessageService {
                 }
             }
 
-            InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
+            InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);//TODO:1
 
             // TODO potential bug? logic in here doesn't take into account the pending tickles
             //      in prod builds if synced < 1hr ago, may not sync again? (although assumed sync happens on app startup so...)
@@ -397,6 +419,7 @@ class InAppMessageService {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_ID));
                     String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_CONTENT_JSON));
                     String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_PRESENTED_WHEN));
+                    //TODO:2
                     InAppMessage m = new InAppMessage();
                     m.setInAppId(inAppId);
                     m.setContent(new JSONObject(content));

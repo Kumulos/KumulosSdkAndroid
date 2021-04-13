@@ -4,6 +4,8 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -11,7 +13,6 @@ import java.util.List;
 
 public class KumulosInApp {
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
-
     static Application application;
 
     public enum InboxMessagePresentationResult{
@@ -19,6 +20,11 @@ public class KumulosInApp {
         FAILED_EXPIRED,
         PRESENTED
     }
+
+    public interface InAppInboxUpdatedHandler {
+        void run();
+    }
+    static InAppInboxUpdatedHandler inboxUpdatedHandler;
 
     //==============================================================================================
     //-- Public APIs
@@ -49,12 +55,21 @@ public class KumulosInApp {
         if (item.isRead()){
             return false;
         }
-        return InAppMessageService.markInboxItemRead(context, item.getId(), true);
+
+        boolean res = InAppMessageService.markInboxItemRead(context, item.getId(), true);
+        maybeRunInboxUpdatedHandler(res);
+
+        return res;
     }
 
     public static boolean markAllInboxItemsAsRead(Context context){
         return InAppMessageService.markAllInboxItemsAsRead(context);
     }
+
+    public static void setOnInboxUpdated(@Nullable InAppInboxUpdatedHandler inboxUpdatedHandler) {
+        KumulosInApp.inboxUpdatedHandler = inboxUpdatedHandler;
+    }
+
 
     /**
      * Used to update in-app consent when enablement strategy is EXPLICIT_BY_USER
@@ -178,5 +193,13 @@ public class KumulosInApp {
                 InAppMessageService.fetch(KumulosInApp.application, true);
             }
         });
+    }
+
+    static void maybeRunInboxUpdatedHandler(boolean inboxNeedsUpdate){
+        if (!inboxNeedsUpdate || inboxUpdatedHandler == null){
+            return;
+        }
+
+        inboxUpdatedHandler.run();
     }
 }

@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Pair;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -129,14 +130,18 @@ class InAppContract {
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             List<Integer> deliveredIds = new ArrayList<>();
             List<Integer> deletedIds = new ArrayList<>();
+            boolean inboxUpdated = false;
+
             try {
                 List<ContentValues> rows = this.assembleRows();
 
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 deliveredIds = this.insertRows(db, rows);
-                deletedIds = this.deleteRows(db);
+                Pair<Boolean, List<Integer>> deleteResult = this.deleteRows(db);
+                deletedIds = deleteResult.second;
                 itemsToPresent = this.readRows(db);
+                inboxUpdated = this.isInboxUpdated(mInAppMessages, deleteResult.first);
 
                 dbHelper.close();
                 Kumulos.log(TAG, "Saved messages: " + mInAppMessages.size());
@@ -147,7 +152,21 @@ class InAppContract {
                 Kumulos.log(TAG, e.getMessage());
             }
 
-            return new InAppSaveResult(itemsToPresent, deliveredIds, deletedIds);
+            return new InAppSaveResult(itemsToPresent, deliveredIds, deletedIds, inboxUpdated);
+        }
+
+        private boolean isInboxUpdated(List<InAppMessage> mInAppMessages, boolean evictedInbox){
+            boolean syncUpdatedInbox = false;
+            for (InAppMessage message: mInAppMessages) {
+                //crude way to refresh when new inbox, updated readAt, updated inbox title/subtite
+                //may cause redundant refreshes.
+                if (message.getInbox() != null){
+                    syncUpdatedInbox = true;
+                    break;
+                }
+            }
+
+            return syncUpdatedInbox || evictedInbox;
         }
 
         private List<Integer> insertRows(SQLiteDatabase db, List<ContentValues> rows) {
@@ -165,7 +184,7 @@ class InAppContract {
             return deliveredIds;
         }
 
-        private List<Integer> deleteRows(SQLiteDatabase db) {
+        private Pair<Boolean, List<Integer>> deleteRows(SQLiteDatabase db) {
             String messageExpiredCondition = String.format("(%s IS NOT NULL AND (DATETIME(%s) <= DATETIME('now'))",
                     InAppMessageTable.COL_EXPIRES_AT,
                     InAppMessageTable.COL_EXPIRES_AT);
@@ -179,13 +198,15 @@ class InAppContract {
                     messageExpiredCondition);
 
             String notConditions = "(NOT " + noInboxAndMessageDismissed + " AND NOT " + noInboxAndMessageExpired + " AND NOT " + inboxExpiredAndMessageDismissedOrExpired + ")";
-            String inAppsExceedingLimitSql = "select * from (SELECT " + InAppMessageTable.COL_ID +
+
+            String columnList = InAppMessageTable.COL_ID + ", " + InAppMessageTable.COL_INBOX_CONFIG_JSON;
+            String inAppsExceedingLimitSql = "select * from (SELECT " + columnList +
                     " FROM " + InAppMessageTable.TABLE_NAME +
                     " WHERE " + notConditions +
                     " ORDER BY " + DESC_SORT_ORDER +
                     " LIMIT -1 OFFSET " + STORED_IN_APP_LIMIT + ")";
 
-            String readSql = "SELECT inAppId FROM " + InAppMessageTable.TABLE_NAME +
+            String readSql = "SELECT " + columnList + " FROM " + InAppMessageTable.TABLE_NAME +
                     " WHERE " +
                     noInboxAndMessageDismissed +
                     " OR " +
@@ -197,16 +218,23 @@ class InAppContract {
 
             Cursor c = db.rawQuery(readSql, new String[]{});
             List<Integer> deletedIds = new ArrayList<>();
+            boolean evictedInbox = false;
             while (c.moveToNext()) {
                 deletedIds.add(c.getInt(c.getColumnIndexOrThrow(InAppMessageTable.COL_ID)));
+                String inbox = c.getString(c.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON));
+                if (inbox != null){
+                    evictedInbox = true;
+                }
             }
             c.close();
 
-            String placeholders = new String(new char[deletedIds.size() - 1]).replace("\0", "?,") + "?";
-            String deleteSql = "DELETE FROM " + InAppMessageTable.TABLE_NAME + " WHERE " + InAppMessageTable.COL_ID + " IN (" + placeholders + ")";
-            db.execSQL(deleteSql, deletedIds.toArray(new Integer[0]));
+            if (deletedIds.size() > 0){
+                String placeholders = new String(new char[deletedIds.size() - 1]).replace("\0", "?,") + "?";
+                String deleteSql = "DELETE FROM " + InAppMessageTable.TABLE_NAME + " WHERE " + InAppMessageTable.COL_ID + " IN (" + placeholders + ")";
+                db.execSQL(deleteSql, deletedIds.toArray(new Integer[0]));
+            }
 
-            return deletedIds;
+            return new Pair<>(evictedInbox, deletedIds);
         }
 
         private List<InAppMessage> readRows(SQLiteDatabase db) {
@@ -360,8 +388,8 @@ class InAppContract {
                 while (cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                     JSONObject inboxConfig = new JSONObject(cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON)));
-                    JSONObject data = new JSONObject(cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_DATA_JSON)));
-
+                    String dataStr = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_DATA_JSON));
+                    JSONObject data = dataStr == null ? null : new JSONObject(dataStr);
                     Date availableFrom = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_FROM);
                     Date availableTo = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_TO);
                     Date dismissedAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_DISMISSED_AT);
