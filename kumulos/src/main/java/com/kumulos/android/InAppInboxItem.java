@@ -2,7 +2,10 @@ package com.kumulos.android;
 
 import java.util.Date;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import org.json.JSONObject;
 
 public class InAppInboxItem {
 
@@ -19,6 +22,10 @@ public class InAppInboxItem {
     private Date dismissedAt;
     @Nullable
     private Date readAt;
+    @Nullable
+    private Date sentAt;
+    @Nullable
+    private JSONObject data;
 
     public int getId() {
         return id;
@@ -77,5 +84,19 @@ public class InAppInboxItem {
 
     void setReadAt(@Nullable Date readAt) {
         this.readAt = readAt;
+    }
+
+    public @Nullable Date getSentAt() {
+        return sentAt;
+    }
+    void setSentAt(@Nullable Date sentAt) {
+        this.sentAt = sentAt;
+    }
+
+    public @Nullable JSONObject getData() {
+        return data;
+    }
+    void setData(@Nullable JSONObject data) {
+        this.data = data;
     }
 }

@@ -341,6 +341,8 @@ class InAppContract {
                 String columnList = InAppMessageTable.COL_ID + ", "
                         + InAppMessageTable.COL_DISMISSED_AT + ", "
                         + InAppMessageTable.COL_READ_AT + ", "
+                        + InAppMessageTable.COL_SENT_AT + ", "
+                        + InAppMessageTable.COL_DATA_JSON + ", "
                         + InAppMessageTable.COL_INBOX_FROM + ", "
                         + InAppMessageTable.COL_INBOX_TO + ", "
                         + InAppMessageTable.COL_INBOX_CONFIG_JSON;
@@ -358,11 +360,13 @@ class InAppContract {
                 while (cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                     JSONObject inboxConfig = new JSONObject(cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON)));
+                    JSONObject data = new JSONObject(cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_DATA_JSON)));
 
                     Date availableFrom = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_FROM);
                     Date availableTo = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_TO);
                     Date dismissedAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_DISMISSED_AT);
                     Date readAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_READ_AT);
+                    Date sentAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_SENT_AT);
 
                     InAppInboxItem i = new InAppInboxItem();
                     i.setId(inAppId);
@@ -370,6 +374,8 @@ class InAppContract {
                     i.setReadAt(readAt);
                     i.setAvailableTo(availableTo);
                     i.setAvailableFrom(availableFrom);
+                    i.setSentAt(sentAt);
+                    i.setData(data);
 
                     i.setTitle(inboxConfig.getString("title"));
                     i.setSubtitle(inboxConfig.getString("subtitle"));
