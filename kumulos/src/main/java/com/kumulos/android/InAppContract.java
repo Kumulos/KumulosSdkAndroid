@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -578,11 +579,11 @@ class InAppContract {
 
         private static final String TAG = ReadInboxSummaryRunnable.class.getName();
         private final Context mContext;
-        private final KumulosInApp.InAppInboxSummaryHandler callback;
+        private final WeakReference<KumulosInApp.InAppInboxSummaryHandler> callbackRef;
 
         ReadInboxSummaryRunnable(Context context, KumulosInApp.InAppInboxSummaryHandler callback) {
             mContext = context.getApplicationContext();
-            this.callback = callback;
+            this.callbackRef = new WeakReference<>(callback);
         }
 
         @Override
@@ -624,10 +625,15 @@ class InAppContract {
                 return;
             }
 
+            KumulosInApp.InAppInboxSummaryHandler callback = this.callbackRef.get();
+            if (callback == null){
+                return;
+            }
+
             currentActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    ReadInboxSummaryRunnable.this.callback.run(summary);
+                    callback.run(summary);
                 }
             });
         }
