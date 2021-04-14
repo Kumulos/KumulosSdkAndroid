@@ -46,8 +46,8 @@ class InAppContract {
         static final String COL_SENT_AT = "sentAt";
     }
 
-    private static SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-    private static SimpleDateFormat incomingDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
+    private static final SimpleDateFormat dbDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+    private static final SimpleDateFormat incomingDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
     private static final String DESC_SORT_ORDER = InAppMessageTable.COL_SENT_AT + " DESC, " + InAppMessageTable.COL_UPDATED_AT + " DESC, " + InAppMessageTable.COL_ID + " DESC";
     private static final String ASC_SORT_ORDER = InAppMessageTable.COL_SENT_AT + " ASC, " + InAppMessageTable.COL_UPDATED_AT + " ASC, " + InAppMessageTable.COL_ID + " ASC";
     private static final Integer STORED_IN_APP_LIMIT = 50;
@@ -63,7 +63,8 @@ class InAppContract {
         return date == null ? null : dbDateFormat.parse(date);
     }
 
-    static @Nullable JSONObject getNullableJsonObject(Cursor cursor, String column) throws JSONException {
+    static @Nullable
+    JSONObject getNullableJsonObject(Cursor cursor, String column) throws JSONException {
         String rawJson = cursor.getString(cursor.getColumnIndexOrThrow(column));
 
         return rawJson == null ? null : new JSONObject(rawJson);
@@ -96,8 +97,8 @@ class InAppContract {
     static class TrackMessageDismissedRunnable implements Runnable {
         private static final String TAG = TrackMessageDismissedRunnable.class.getName();
 
-        private Context mContext;
-        private InAppMessage mInAppMessage;
+        private final Context mContext;
+        private final InAppMessage mInAppMessage;
 
         TrackMessageDismissedRunnable(Context context, InAppMessage message) {
             mContext = context.getApplicationContext();
@@ -170,12 +171,12 @@ class InAppContract {
             return new InAppSaveResult(itemsToPresent, deliveredIds, deletedIds, inboxUpdated);
         }
 
-        private boolean isInboxUpdated(List<InAppMessage> mInAppMessages, boolean evictedInbox){
+        private boolean isInboxUpdated(List<InAppMessage> mInAppMessages, boolean evictedInbox) {
             boolean syncUpdatedInbox = false;
-            for (InAppMessage message: mInAppMessages) {
+            for (InAppMessage message : mInAppMessages) {
                 //crude way to refresh when new inbox, updated readAt, updated inbox title/subtite
                 //may cause redundant refreshes.
-                if (message.getInbox() != null){
+                if (message.getInbox() != null) {
                     syncUpdatedInbox = true;
                     break;
                 }
@@ -237,13 +238,13 @@ class InAppContract {
             while (c.moveToNext()) {
                 deletedIds.add(c.getInt(c.getColumnIndexOrThrow(InAppMessageTable.COL_ID)));
                 String inbox = c.getString(c.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON));
-                if (inbox != null){
+                if (inbox != null) {
                     evictedInbox = true;
                 }
             }
             c.close();
 
-            if (deletedIds.size() > 0){
+            if (deletedIds.size() > 0) {
                 String placeholders = new String(new char[deletedIds.size() - 1]).replace("\0", "?,") + "?";
                 String deleteSql = "DELETE FROM " + InAppMessageTable.TABLE_NAME + " WHERE " + InAppMessageTable.COL_ID + " IN (" + placeholders + ")";
                 db.execSQL(deleteSql, deletedIds.toArray(new Integer[0]));
@@ -375,7 +376,7 @@ class InAppContract {
 
         private static final String TAG = ReadInAppInboxCallable.class.getName();
 
-        private Context mContext;
+        private final Context mContext;
 
         ReadInAppInboxCallable(Context context) {
             mContext = context.getApplicationContext();
@@ -407,7 +408,7 @@ class InAppContract {
                 while (cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                     JSONObject inboxConfig = getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON);
-                    JSONObject data =  getNullableJsonObject(cursor, InAppMessageTable.COL_DATA_JSON);
+                    JSONObject data = getNullableJsonObject(cursor, InAppMessageTable.COL_DATA_JSON);
                     Date availableFrom = getNullableDate(cursor, InAppMessageTable.COL_INBOX_FROM);
                     Date availableTo = getNullableDate(cursor, InAppMessageTable.COL_INBOX_TO);
                     Date dismissedAt = getNullableDate(cursor, InAppMessageTable.COL_DISMISSED_AT);
@@ -443,8 +444,8 @@ class InAppContract {
     static class ReadInAppInboxMessageCallable implements Callable<InAppMessage> {
         private static final String TAG = ReadInAppInboxMessageCallable.class.getName();
 
-        private Context mContext;
-        private int mId;
+        private final Context mContext;
+        private final int mId;
 
         ReadInAppInboxMessageCallable(Context context, int id) {
             mContext = context.getApplicationContext();
@@ -490,8 +491,8 @@ class InAppContract {
 
         private static final String TAG = DeleteInAppInboxMessageCallable.class.getName();
 
-        private Context mContext;
-        private int mId;
+        private final Context mContext;
+        private final int mId;
 
         DeleteInAppInboxMessageCallable(Context context, int id) {
             mContext = context.getApplicationContext();
@@ -535,8 +536,8 @@ class InAppContract {
 
         private static final String TAG = MarkInAppInboxMessageAsReadCallable.class.getName();
 
-        private Context mContext;
-        private int mId;
+        private final Context mContext;
+        private final int mId;
 
         MarkInAppInboxMessageAsReadCallable(Context context, int id) {
             mContext = context.getApplicationContext();
@@ -572,4 +573,48 @@ class InAppContract {
         }
     }
 
+    static class ReadInboxSummaryCallable implements Callable<InAppInboxSummaryInfo> {
+
+        private static final String TAG = ReadInboxSummaryCallable.class.getName();
+        private final Context mContext;
+
+        ReadInboxSummaryCallable(Context context) {
+            mContext = context.getApplicationContext();
+        }
+
+        @Override
+        public @Nullable
+        InAppInboxSummaryInfo call() {
+            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
+
+            InAppInboxSummaryInfo summary = null;
+            try {
+                SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+                String selectSql = "SELECT COUNT(*) as totalCount, SUM(isUnread) as unreadCount FROM " +
+                        "(SELECT CASE WHEN " + InAppMessageTable.COL_READ_AT + " IS NULL THEN 1 ELSE 0 END AS isUnread " +
+                        " FROM " + InAppMessageTable.TABLE_NAME +
+                        " WHERE " + InAppMessageTable.COL_INBOX_CONFIG_JSON + " IS NOT NULL " +
+                        " AND (datetime('now') BETWEEN IFNULL(" + InAppMessageTable.COL_INBOX_FROM + ", '1970-01-01') AND IFNULL(" + InAppMessageTable.COL_INBOX_TO + ", '3970-01-01'))" +
+                        ") as sub";
+
+                Cursor cursor = db.rawQuery(selectSql, new String[]{});
+                cursor.moveToNext();
+                int totalCount = cursor.getInt(cursor.getColumnIndexOrThrow("totalCount"));
+                int unreadCount = cursor.getInt(cursor.getColumnIndexOrThrow("unreadCount"));
+                cursor.close();
+
+                summary = new InAppInboxSummaryInfo(totalCount, unreadCount);
+
+                dbHelper.close();
+            } catch (SQLiteException e) {
+                Kumulos.log(TAG, "Failed to read inbox summary");
+                e.printStackTrace();
+
+            }
+
+            return summary;
+        }
+
+    }
 }
