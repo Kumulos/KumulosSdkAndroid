@@ -589,7 +589,7 @@ class InAppContract {
         public void run() {
             SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
 
-            InAppInboxSummaryInfo summary = null;
+            InAppInboxSummary summary = null;
             try {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
@@ -606,7 +606,7 @@ class InAppContract {
                 int unreadCount = cursor.getInt(cursor.getColumnIndexOrThrow("unreadCount"));
                 cursor.close();
 
-                summary = new InAppInboxSummaryInfo(totalCount, unreadCount);
+                summary = new InAppInboxSummary(totalCount, unreadCount);
 
                 dbHelper.close();
             } catch (SQLiteException e) {
@@ -618,7 +618,7 @@ class InAppContract {
             this.fireCallback(summary);
         }
 
-        private void fireCallback(InAppInboxSummaryInfo summary){
+        private void fireCallback(InAppInboxSummary summary){
             Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
             if (currentActivity == null){
                 return;

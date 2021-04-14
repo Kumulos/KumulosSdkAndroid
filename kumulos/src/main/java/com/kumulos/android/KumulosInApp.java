@@ -28,7 +28,7 @@ public class KumulosInApp {
     static InAppInboxUpdatedHandler inboxUpdatedHandler;
 
     public interface InAppInboxSummaryHandler {
-        void run(InAppInboxSummaryInfo summary);
+        void run(InAppInboxSummary summary);
     }
 
     //==============================================================================================

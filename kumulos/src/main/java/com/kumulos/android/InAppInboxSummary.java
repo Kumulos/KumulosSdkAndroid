@@ -1,10 +1,10 @@
 package com.kumulos.android;
 
-public class InAppInboxSummaryInfo {
+public class InAppInboxSummary {
     private final int totalCount;
     private final int unreadCount;
 
-    InAppInboxSummaryInfo(int totalCount, int unreadCount) {
+    InAppInboxSummary(int totalCount, int unreadCount) {
         this.totalCount = totalCount;
         this.unreadCount = unreadCount;
     }
