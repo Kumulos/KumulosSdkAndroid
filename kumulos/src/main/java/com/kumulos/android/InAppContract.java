@@ -8,6 +8,8 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Pair;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -52,6 +54,19 @@ class InAppContract {
 
     static {
         dbDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
+
+    static @Nullable
+    Date getNullableDate(Cursor cursor, String column) throws ParseException {
+        String date = cursor.getString(cursor.getColumnIndexOrThrow(column));
+
+        return date == null ? null : dbDateFormat.parse(date);
+    }
+
+    static @Nullable JSONObject getNullableJsonObject(Cursor cursor, String column) throws JSONException {
+        String rawJson = cursor.getString(cursor.getColumnIndexOrThrow(column));
+
+        return rawJson == null ? null : new JSONObject(rawJson);
     }
 
     static class ClearDbRunnable implements Runnable {
@@ -237,25 +252,33 @@ class InAppContract {
             return new Pair<>(evictedInbox, deletedIds);
         }
 
-        private List<InAppMessage> readRows(SQLiteDatabase db) {
+        private List<InAppMessage> readRows(SQLiteDatabase db) throws ParseException {
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
 
-            String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_PRESENTED_WHEN, InAppMessageTable.COL_CONTENT_JSON};
+            String[] projection = {
+                    InAppMessageTable.COL_ID,
+                    InAppMessageTable.COL_PRESENTED_WHEN,
+                    InAppMessageTable.COL_CONTENT_JSON,
+                    InAppMessageTable.COL_READ_AT,
+                    InAppMessageTable.COL_INBOX_CONFIG_JSON
+            };
             String selection = InAppMessageTable.COL_DISMISSED_AT + " IS NULL";
 
             Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, null, null, null, ASC_SORT_ORDER);
-
             while (cursor.moveToNext()) {
                 int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
-                String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
                 String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_PRESENTED_WHEN));
+                Date readAt = getNullableDate(cursor, InAppMessageTable.COL_READ_AT);
+
                 InAppMessage m = new InAppMessage();
                 m.setInAppId(inAppId);
                 m.setPresentedWhen(presentedWhen);
+                m.setReadAt(readAt);
 
                 try {
-                    m.setContent(new JSONObject(content));
+                    m.setContent(getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON));
+                    m.setInbox(getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON));
                 } catch (JSONException e) {
                     Kumulos.log(TAG, e.getMessage());
                     continue;
@@ -381,20 +404,15 @@ class InAppContract {
                         " ORDER BY " + DESC_SORT_ORDER;
 
                 Cursor cursor = db.rawQuery(selectSql, new String[]{});
-
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-
                 while (cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
-                    JSONObject inboxConfig = new JSONObject(cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON)));
-                    String dataStr = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_DATA_JSON));
-                    JSONObject data = dataStr == null ? null : new JSONObject(dataStr);
-                    Date availableFrom = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_FROM);
-                    Date availableTo = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_INBOX_TO);
-                    Date dismissedAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_DISMISSED_AT);
-                    Date readAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_READ_AT);
-                    Date sentAt = this.getNullableDate(cursor, sdf, InAppMessageTable.COL_SENT_AT);
+                    JSONObject inboxConfig = getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON);
+                    JSONObject data =  getNullableJsonObject(cursor, InAppMessageTable.COL_DATA_JSON);
+                    Date availableFrom = getNullableDate(cursor, InAppMessageTable.COL_INBOX_FROM);
+                    Date availableTo = getNullableDate(cursor, InAppMessageTable.COL_INBOX_TO);
+                    Date dismissedAt = getNullableDate(cursor, InAppMessageTable.COL_DISMISSED_AT);
+                    Date readAt = getNullableDate(cursor, InAppMessageTable.COL_READ_AT);
+                    Date sentAt = getNullableDate(cursor, InAppMessageTable.COL_SENT_AT);
 
                     InAppInboxItem i = new InAppInboxItem();
                     i.setId(inAppId);
@@ -420,12 +438,6 @@ class InAppContract {
 
             return inboxItems;
         }
-
-        private Date getNullableDate(Cursor cursor, SimpleDateFormat sdf, String column) throws ParseException {
-            String date = cursor.getString(cursor.getColumnIndexOrThrow(column));
-
-            return date == null ? null : sdf.parse(date);
-        }
     }
 
     static class ReadInAppInboxMessageCallable implements Callable<InAppMessage> {
@@ -447,18 +459,18 @@ class InAppContract {
             try {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON};
+                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON, InAppMessageTable.COL_READ_AT, InAppMessageTable.COL_INBOX_CONFIG_JSON};
                 String selection = InAppMessageTable.COL_INBOX_CONFIG_JSON + " IS NOT NULL AND " + InAppMessageTable.COL_ID + " = ?";
                 String[] selectionArgs = {mId + ""};
 
                 Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs, null, null, null);
 
                 if (cursor.moveToFirst()) {
-                    String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_CONTENT_JSON));
-
                     inboxMessage = new InAppMessage();
                     inboxMessage.setInAppId(mId);
-                    inboxMessage.setContent(new JSONObject(content));
+                    inboxMessage.setContent(getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON));
+                    inboxMessage.setReadAt(getNullableDate(cursor, InAppMessageTable.COL_READ_AT));
+                    inboxMessage.setInbox(getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON));
                 }
 
                 cursor.close();
@@ -559,4 +571,5 @@ class InAppContract {
             return true;
         }
     }
+
 }

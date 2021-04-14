@@ -108,6 +108,10 @@ class InAppMessage {
         return inbox;
     }
 
+    void setInbox(@Nullable JSONObject inbox) {
+        this.inbox = inbox;
+    }
+
     void setInAppId(int id){
         this.inAppId = id;
     }
@@ -132,6 +136,10 @@ class InAppMessage {
     @Nullable
     Date getReadAt() {
         return readAt;
+    }
+
+    void setReadAt(@Nullable Date readAt){
+        this.readAt = readAt;
     }
 
     @Nullable

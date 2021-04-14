@@ -105,7 +105,7 @@ class InAppMessageService {
             }
         }
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);//TODO:1
+        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
         pendingTickleIds.clear();
     }
 
@@ -259,7 +259,7 @@ class InAppMessageService {
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         itemsToPresent.add(inboxMessage);
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, null);//TODO:1
+        InAppMessagePresenter.presentMessages(itemsToPresent, null);
 
         return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
     }
@@ -363,7 +363,7 @@ class InAppMessageService {
 
         @Override
         public void run() {
-            List<InAppMessage> unreadMessages = getMessagesToPresent();//TODO:1
+            List<InAppMessage> unreadMessages = getMessagesToPresent();
 
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             for (InAppMessage message : unreadMessages) {
@@ -391,7 +391,7 @@ class InAppMessageService {
                 }
             }
 
-            InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);//TODO:1
+            InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
 
             // TODO potential bug? logic in here doesn't take into account the pending tickles
             //      in prod builds if synced < 1hr ago, may not sync again? (although assumed sync happens on app startup so...)
@@ -405,7 +405,13 @@ class InAppMessageService {
             try {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-                String[] projection = {InAppContract.InAppMessageTable.COL_ID, InAppContract.InAppMessageTable.COL_PRESENTED_WHEN, InAppContract.InAppMessageTable.COL_CONTENT_JSON};
+                String[] projection = {
+                        InAppContract.InAppMessageTable.COL_ID,
+                        InAppContract.InAppMessageTable.COL_PRESENTED_WHEN,
+                        InAppContract.InAppMessageTable.COL_CONTENT_JSON,
+                        InAppContract.InAppMessageTable.COL_READ_AT,
+                        InAppContract.InAppMessageTable.COL_INBOX_CONFIG_JSON
+                };
                 String selection = String.format("%s IS NULL AND (%s IS NULL OR (DATETIME(%s) > DATETIME('now')))",
                         InAppContract.InAppMessageTable.COL_DISMISSED_AT,
                         InAppContract.InAppMessageTable.COL_EXPIRES_AT,
@@ -419,11 +425,15 @@ class InAppMessageService {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_ID));
                     String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_CONTENT_JSON));
                     String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_PRESENTED_WHEN));
-                    //TODO:2
+                    Date readAt = InAppContract.getNullableDate(cursor, InAppContract.InAppMessageTable.COL_READ_AT);
+                    JSONObject inbox = InAppContract.getNullableJsonObject(cursor, InAppContract.InAppMessageTable.COL_INBOX_CONFIG_JSON);
+
                     InAppMessage m = new InAppMessage();
                     m.setInAppId(inAppId);
                     m.setContent(new JSONObject(content));
                     m.setPresentedWhen(presentedWhen);
+                    m.setReadAt(readAt);
+                    m.setInbox(inbox);
                     itemsToPresent.add(m);
                 }
                 cursor.close();
