@@ -34,7 +34,8 @@ class InAppMessage {
     @Nullable
     private Date sentAt;
 
-    InAppMessage(){}
+    InAppMessage() {
+    }
 
     InAppMessage(JSONObject obj) throws JSONException, ParseException {
         this.inAppId = obj.getInt("id");
@@ -46,14 +47,14 @@ class InAppMessage {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        this.updatedAt =  sdf.parse(obj.getString("updatedAt"));
+        this.updatedAt = sdf.parse(obj.getString("updatedAt"));
 
         if (!obj.isNull("openedAt")) {
             this.dismissedAt = sdf.parse(obj.getString("openedAt"));
         }
 
         if (!obj.isNull("expiresAt")) {
-            this.expiresAt =  sdf.parse(obj.getString("expiresAt"));
+            this.expiresAt = sdf.parse(obj.getString("expiresAt"));
         }
 
         if (!obj.isNull("inboxDeletedAt")) {
@@ -95,14 +96,17 @@ class InAppMessage {
     Date getDismissedAt() {
         return dismissedAt;
     }
+
     @Nullable
     Date getUpdatedAt() {
         return updatedAt;
     }
+
     @Nullable
     Date getExpiresAt() {
         return expiresAt;
     }
+
     @Nullable
     JSONObject getInbox() {
         return inbox;
@@ -112,19 +116,19 @@ class InAppMessage {
         this.inbox = inbox;
     }
 
-    void setInAppId(int id){
+    void setInAppId(int id) {
         this.inAppId = id;
     }
 
-    void setContent(JSONObject content){
+    void setContent(JSONObject content) {
         this.content = content;
     }
 
-    void setDismissedAt(@Nullable Date dismissedAt){
+    void setDismissedAt(@Nullable Date dismissedAt) {
         this.dismissedAt = dismissedAt;
     }
 
-    void setPresentedWhen(String presentedWhen){
+    void setPresentedWhen(String presentedWhen) {
         this.presentedWhen = presentedWhen;
     }
 
@@ -138,7 +142,7 @@ class InAppMessage {
         return readAt;
     }
 
-    void setReadAt(@Nullable Date readAt){
+    void setReadAt(@Nullable Date readAt) {
         this.readAt = readAt;
     }
 
