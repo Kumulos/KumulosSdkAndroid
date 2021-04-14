@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -573,18 +574,19 @@ class InAppContract {
         }
     }
 
-    static class ReadInboxSummaryCallable implements Callable<InAppInboxSummaryInfo> {
+    static class ReadInboxSummaryRunnable implements Runnable {
 
-        private static final String TAG = ReadInboxSummaryCallable.class.getName();
+        private static final String TAG = ReadInboxSummaryRunnable.class.getName();
         private final Context mContext;
+        private final KumulosInApp.InAppInboxSummaryHandler callback;
 
-        ReadInboxSummaryCallable(Context context) {
+        ReadInboxSummaryRunnable(Context context, KumulosInApp.InAppInboxSummaryHandler callback) {
             mContext = context.getApplicationContext();
+            this.callback = callback;
         }
 
         @Override
-        public @Nullable
-        InAppInboxSummaryInfo call() {
+        public void run() {
             SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
 
             InAppInboxSummaryInfo summary = null;
@@ -613,8 +615,23 @@ class InAppContract {
 
             }
 
-            return summary;
+            this.fireCallback(summary);
         }
 
+        private void fireCallback(InAppInboxSummaryInfo summary){
+            Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
+            if (currentActivity == null){
+                return;
+            }
+
+            currentActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ReadInboxSummaryRunnable.this.callback.run(summary);
+                }
+            });
+        }
     }
+
+
 }

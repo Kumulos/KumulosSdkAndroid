@@ -1,5 +1,6 @@
 package com.kumulos.android;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -25,6 +26,10 @@ public class KumulosInApp {
         void run();
     }
     static InAppInboxUpdatedHandler inboxUpdatedHandler;
+
+    public interface InAppInboxSummaryHandler {
+        void run(InAppInboxSummaryInfo summary);
+    }
 
     //==============================================================================================
     //-- Public APIs
@@ -68,6 +73,11 @@ public class KumulosInApp {
 
     public static void setOnInboxUpdated(@Nullable InAppInboxUpdatedHandler inboxUpdatedHandler) {
         KumulosInApp.inboxUpdatedHandler = inboxUpdatedHandler;
+    }
+
+    public static void getInboxSummaryAsync(Context context, @Nullable InAppInboxSummaryHandler inboxSummaryHandler){
+        Runnable task = new InAppContract.ReadInboxSummaryRunnable(context, inboxSummaryHandler);
+        Kumulos.executorService.submit(task);
     }
 
 
@@ -200,6 +210,16 @@ public class KumulosInApp {
             return;
         }
 
-        inboxUpdatedHandler.run();
+        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
+        if (currentActivity == null){
+            return;
+        }
+
+        currentActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                inboxUpdatedHandler.run();
+            }
+        });
     }
 }
