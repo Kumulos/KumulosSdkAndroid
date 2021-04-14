@@ -37,7 +37,7 @@ public final class PushMessage implements Parcelable {
     JSONArray buttons;
     private final @Nullable
     String sound;
-    private @Nullable
+    private final @Nullable
     String collapseKey;
 
     /**
