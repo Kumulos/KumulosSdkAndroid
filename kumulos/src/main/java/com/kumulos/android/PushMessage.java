@@ -20,19 +20,39 @@ public final class PushMessage implements Parcelable {
     private static final int DEEP_LINK_TYPE_IN_APP = 1;
     public static final String TAG = PushMessage.class.getName();
 
-    private int id;
-    private String title;
-    private String message;
+    private final int id;
+    private final @Nullable
+    String title;
+    private final @Nullable
+    String message;
     private JSONObject data;
-    private long timeSent;
-    private Uri url;
-    private boolean runBackgroundHandler;
-    private int tickleId;
-    private String pictureUrl;
-    private JSONArray buttons;
-    private String sound;
+    private final long timeSent;
+    private @Nullable
+    Uri url;
+    private final boolean runBackgroundHandler;
+    private final int tickleId;
+    private final @Nullable
+    String pictureUrl;
+    private @Nullable
+    JSONArray buttons;
+    private final @Nullable
+    String sound;
+    private @Nullable
+    String collapseKey;
 
-    /** package */ PushMessage(int id, @Nullable String title, @Nullable String message, JSONObject data, long timeSent, @Nullable Uri url, boolean runBackgroundHandler, @Nullable String pictureUrl, @Nullable JSONArray buttons, @Nullable String sound) {
+    /**
+     * package
+     */
+    PushMessage(int id,
+                @Nullable String title,
+                @Nullable String message,
+                JSONObject data, long timeSent,
+                @Nullable Uri url,
+                boolean runBackgroundHandler,
+                @Nullable String pictureUrl,
+                @Nullable JSONArray buttons,
+                @Nullable String sound,
+                @Nullable String collapseKey) {
         this.id = id;
         this.title = title;
         this.message = message;
@@ -44,6 +64,7 @@ public final class PushMessage implements Parcelable {
         this.pictureUrl = pictureUrl;
         this.buttons = buttons;
         this.sound = sound;
+        this.collapseKey = collapseKey;
     }
 
     private PushMessage(Parcel in) {
@@ -79,25 +100,25 @@ public final class PushMessage implements Parcelable {
         }
 
         sound = in.readString();
+        collapseKey = in.readString();
     }
 
-    private Integer getTickleId(JSONObject data){
+    private Integer getTickleId(JSONObject data) {
         JSONObject deepLink = data.optJSONObject("k.deepLink");
 
-        if (deepLink == null){
+        if (deepLink == null) {
             return -1;
         }
 
         int linkType = deepLink.optInt("type", -1);
 
-        if (linkType != DEEP_LINK_TYPE_IN_APP){
+        if (linkType != DEEP_LINK_TYPE_IN_APP) {
             return -1;
         }
 
-        try{
+        try {
             return deepLink.getJSONObject("data").getInt("id");
-        }
-        catch(JSONException e){
+        } catch (JSONException e) {
             Kumulos.log(TAG, e.toString());
             return -1;
         }
@@ -137,17 +158,20 @@ public final class PushMessage implements Parcelable {
         dest.writeString(pictureUrl);
         dest.writeString(buttonsString);
         dest.writeString(sound);
+        dest.writeString(collapseKey);
     }
 
     public int getId() {
         return id;
     }
 
-    public String getTitle() {
+    public @Nullable
+    String getTitle() {
         return title;
     }
 
-    public String getMessage() {
+    public @Nullable
+    String getMessage() {
         return message;
     }
 
@@ -178,18 +202,23 @@ public final class PushMessage implements Parcelable {
 
 
     @Nullable
-    public String getPictureUrl(){
+    public String getPictureUrl() {
         return this.pictureUrl;
     }
 
     @Nullable
-    public JSONArray getButtons(){
+    public JSONArray getButtons() {
         return this.buttons;
     }
 
     @Nullable
-    public String getSound(){
+    public String getSound() {
         return this.sound;
+    }
+
+    @Nullable
+    public String getCollapseKey() {
+        return this.collapseKey;
     }
 
 }

@@ -3,7 +3,6 @@ package com.kumulos.android;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-
 import com.google.firebase.messaging.RemoteMessage;
 
 import org.json.JSONArray;
@@ -79,7 +78,8 @@ public class FirebaseMessageHandler {
                 runBackgroundHandler,
                 pictureUrl,
                 buttons,
-                sound
+                sound,
+                remoteMessage.getCollapseKey()
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);

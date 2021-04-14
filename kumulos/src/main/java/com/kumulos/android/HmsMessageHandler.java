@@ -80,7 +80,8 @@ public class HmsMessageHandler {
                 runBackgroundHandler,
                 pictureUrl,
                 buttons,
-                sound
+                sound,
+                remoteMessage.getCollapseKey()
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);
