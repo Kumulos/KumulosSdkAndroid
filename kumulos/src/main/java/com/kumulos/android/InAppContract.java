@@ -577,11 +577,11 @@ class InAppContract {
 
         private static final String TAG = ReadInboxSummaryRunnable.class.getName();
         private final Context mContext;
-        private final WeakReference<KumulosInApp.InAppInboxSummaryHandler> callbackRef;
+        private final KumulosInApp.InAppInboxSummaryHandler callback;
 
         ReadInboxSummaryRunnable(Context context, KumulosInApp.InAppInboxSummaryHandler callback) {
             mContext = context.getApplicationContext();
-            this.callbackRef = new WeakReference<>(callback);
+            this.callback = callback;
         }
 
         @Override
@@ -617,25 +617,18 @@ class InAppContract {
             this.fireCallback(summary);
         }
 
-        private void fireCallback(InAppInboxSummary summary){
+        private void fireCallback(InAppInboxSummary summary) {
             Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
-            if (currentActivity == null){
-                return;
-            }
-
-            KumulosInApp.InAppInboxSummaryHandler callback = this.callbackRef.get();
-            if (callback == null){
+            if (currentActivity == null) {
                 return;
             }
 
             currentActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    callback.run(summary);
+                    ReadInboxSummaryRunnable.this.callback.run(summary);
                 }
             });
         }
     }
-
-
 }
