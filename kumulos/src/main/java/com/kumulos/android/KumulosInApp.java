@@ -35,6 +35,11 @@ public class KumulosInApp {
     //==============================================================================================
     //-- Public APIs
 
+    /**
+     * Returns up to 50 non-expired in-app messages stored in inbox
+     *
+     * @param context
+     */
     public static List<InAppInboxItem> getInboxItems(Context context) {
         boolean inAppEnabled = isInAppEnabled();
         if (!inAppEnabled) {
@@ -44,6 +49,12 @@ public class KumulosInApp {
         return InAppMessageService.readInboxItems(context);
     }
 
+    /**
+     * Presents selected inbox item
+     *
+     * @param context
+     * @param item inbox item to present
+     */
     public static InboxMessagePresentationResult presentInboxMessage(Context context, InAppInboxItem item) {
         boolean inAppEnabled = isInAppEnabled();
         if (!inAppEnabled) {
@@ -53,10 +64,22 @@ public class KumulosInApp {
         return InAppMessageService.presentMessage(context, item);
     }
 
+    /**
+     * Deletes selected inbox item
+     *
+     * @param context
+     * @param item inbox item to delete
+     */
     public static boolean deleteMessageFromInbox(Context context, InAppInboxItem item) {
         return InAppMessageService.deleteMessageFromInbox(context, item.getId());
     }
 
+    /**
+     * Marks selected inbox item as read
+     *
+     * @param context
+     * @param item inbox item to mark as read
+     */
     public static boolean markAsRead(Context context, InAppInboxItem item) {
         if (item.isRead()) {
             return false;
@@ -68,14 +91,32 @@ public class KumulosInApp {
         return res;
     }
 
+    /**
+     * Marks all inbox items as read.
+     *
+     * @param context
+     */
     public static boolean markAllInboxItemsAsRead(Context context) {
         return InAppMessageService.markAllInboxItemsAsRead(context);
     }
 
+    /**
+     * Set a handler to run when inbox has changes which might be relevant for presentation.
+     * These concern messages with inbox set: fetched new message, message evicted, message opened, message deleted, message marked as read.
+     * Handler runs on UI thread.
+     *
+     * @param inboxUpdatedHandler handler
+     */
     public static void setOnInboxUpdated(@Nullable InAppInboxUpdatedHandler inboxUpdatedHandler) {
         KumulosInApp.inboxUpdatedHandler = inboxUpdatedHandler;
     }
 
+    /**
+     * Asynchronously runs inbox summary handler on UI thread. Handler receives a single argument InAppInboxSummary
+     *
+     * @param context
+     * @param inboxSummaryHandler handler
+     */
     public static void getInboxSummaryAsync(Context context, @Nullable InAppInboxSummaryHandler inboxSummaryHandler) {
         Runnable task = new InAppContract.ReadInboxSummaryRunnable(context, inboxSummaryHandler);
         Kumulos.executorService.submit(task);
