@@ -9,7 +9,7 @@ import com.kumulos.android.InAppContract.InAppMessageTable;
 
 class InAppDbHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "k_in_app.db";
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
 
     private static final String SQL_CREATE_IN_APP_MESSAGES
             = "CREATE TABLE " + InAppMessageTable.TABLE_NAME + "("
@@ -35,8 +35,7 @@ class InAppDbHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         try {
             db.execSQL(SQL_CREATE_IN_APP_MESSAGES);
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             Kumulos.log("Failed to create in app table");
             e.printStackTrace();
         }
@@ -45,13 +44,16 @@ class InAppDbHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
-        for (int i = oldVersion+1; i <= newVersion; ++i) {
-            switch(i) {
+        for (int i = oldVersion + 1; i <= newVersion; ++i) {
+            switch (i) {
                 case 2:
                     this.upgradeToVersion2(db);
                     break;
                 case 3:
                     this.upgradeToVersion3(db);
+                    break;
+                case 4:
+                    this.upgradeToVersion4(db);
                     break;
                 default:
                     throw new IllegalStateException("onUpgrade() with unknown newVersion " + newVersion);
@@ -60,12 +62,18 @@ class InAppDbHelper extends SQLiteOpenHelper {
 
     }
 
-    private void upgradeToVersion2(SQLiteDatabase db){
+    private void upgradeToVersion2(SQLiteDatabase db) {
         db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_EXPIRES_AT + " DATETIME;");
     }
 
-    private void upgradeToVersion3(SQLiteDatabase db){
+    private void upgradeToVersion3(SQLiteDatabase db) {
         db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_READ_AT + " DATETIME;");
         db.execSQL("ALTER TABLE " + InAppMessageTable.TABLE_NAME + " ADD COLUMN " + InAppMessageTable.COL_SENT_AT + " DATETIME;");
+    }
+
+    private void upgradeToVersion4(SQLiteDatabase db) {
+        db.execSQL("UPDATE " + InAppMessageTable.TABLE_NAME +
+                " SET " + InAppMessageTable.COL_SENT_AT + " = " + InAppMessageTable.COL_UPDATED_AT +
+                " WHERE " + InAppMessageTable.COL_SENT_AT + " IS NULL ");
     }
 }

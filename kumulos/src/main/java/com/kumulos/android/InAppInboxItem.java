@@ -22,7 +22,6 @@ public class InAppInboxItem {
     private Date dismissedAt;
     @Nullable
     private Date readAt;
-    @Nullable
     private Date sentAt;
     @Nullable
     private JSONObject data;
@@ -86,10 +85,10 @@ public class InAppInboxItem {
         this.readAt = readAt;
     }
 
-    public @Nullable Date getSentAt() {
+    public Date getSentAt() {
         return sentAt;
     }
-    void setSentAt(@Nullable Date sentAt) {
+    void setSentAt(Date sentAt) {
         this.sentAt = sentAt;
     }
 
