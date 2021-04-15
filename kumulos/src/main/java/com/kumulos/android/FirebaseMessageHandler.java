@@ -17,7 +17,7 @@ import androidx.annotation.Nullable;
 
 /**
  * FirebaseMessageHandler provides helpers for handling FirebaseMessagingService events
- *
+ * <p>
  * This can allow interoperating Kumulos push with your own FCM service
  */
 public class FirebaseMessageHandler {
@@ -27,6 +27,7 @@ public class FirebaseMessageHandler {
     /**
      * Handles the received notification from FCM, creating a PushMessage model and broadcasting
      * the appropriate com.kumulos.push Intent
+     *
      * @param context
      * @param remoteMessage
      */
@@ -79,7 +80,8 @@ public class FirebaseMessageHandler {
                 runBackgroundHandler,
                 pictureUrl,
                 buttons,
-                sound
+                sound,
+                remoteMessage.getCollapseKey()
         );
 
         Intent intent = new Intent(PushBroadcastReceiver.ACTION_PUSH_RECEIVED);

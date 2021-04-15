@@ -59,7 +59,7 @@ class InAppMessagePresenter {
     private static boolean presentationPendingOnResume = false;
 
     @AnyThread
-    static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
+    static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds) {
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
 
         if (currentActivity == null) {
@@ -79,13 +79,13 @@ class InAppMessagePresenter {
         addMessagesToQueue(itemsToPresent);
         moveTicklesToFront(tickleIds);
 
-        if (dialog == null){
+        if (dialog == null) {
             showWebView(currentActivity);
             return;
         }
 
         Activity dialogActivity = getDialogActivity(dialog.getContext());
-        if(dialogActivity.hashCode() != currentActivity.hashCode()){
+        if (dialogActivity.hashCode() != currentActivity.hashCode()) {
             closeDialog(dialogActivity);
             showWebView(currentActivity);
             return;
@@ -98,27 +98,27 @@ class InAppMessagePresenter {
         }
     }
 
-    private static void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue){
-        if (oldQueue.isEmpty()){
+    private static void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue) {
+        if (oldQueue.isEmpty()) {
             return;
         }
 
         InAppMessage oldFront = oldQueue.get(0);
 
-        if (oldFront.getInAppId() != messageQueue.get(0).getInAppId()){
+        if (oldFront.getInAppId() != messageQueue.get(0).getInAppId()) {
             presentMessageToClient();
         }
     }
 
-    private static void moveTicklesToFront(List<Integer> tickleIds){
-        if (tickleIds == null || tickleIds.isEmpty()){
+    private static void moveTicklesToFront(List<Integer> tickleIds) {
+        if (tickleIds == null || tickleIds.isEmpty()) {
             return;
         }
 
-        for (Integer tickleId : tickleIds){
-            for(int i=0; i<messageQueue.size(); i++){
+        for (Integer tickleId : tickleIds) {
+            for (int i = 0; i < messageQueue.size(); i++) {
                 InAppMessage next = messageQueue.get(i);
-                if (tickleId == next.getInAppId()){
+                if (tickleId == next.getInAppId()) {
                     messageQueue.remove(i);
                     messageQueue.add(0, next);
 
@@ -128,25 +128,25 @@ class InAppMessagePresenter {
         }
     }
 
-    private static void addMessagesToQueue(List<InAppMessage> itemsToPresent){
-        for(InAppMessage messageToAppend: itemsToPresent){
+    private static void addMessagesToQueue(List<InAppMessage> itemsToPresent) {
+        for (InAppMessage messageToAppend : itemsToPresent) {
             boolean exists = false;
-            for (InAppMessage messageFromQueue: messageQueue){
-                if (messageToAppend.getInAppId() == messageFromQueue.getInAppId()){
+            for (InAppMessage messageFromQueue : messageQueue) {
+                if (messageToAppend.getInAppId() == messageFromQueue.getInAppId()) {
                     exists = true;
                     break;
                 }
             }
 
-            if (!exists){
+            if (!exists) {
                 messageQueue.add(messageToAppend);
             }
         }
     }
 
-    private static void presentMessageToClient(){
+    private static void presentMessageToClient() {
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
-        if (currentActivity == null){
+        if (currentActivity == null) {
             presentationPendingOnResume = true;
 
             return;
@@ -154,13 +154,13 @@ class InAppMessagePresenter {
 
         presentationPendingOnResume = false;
 
-        if (messageQueue.isEmpty()){
+        if (messageQueue.isEmpty()) {
             closeDialog(currentActivity);
 
             return;
         }
 
-        if (dialog == null){
+        if (dialog == null) {
             return;
         }
 
@@ -170,8 +170,8 @@ class InAppMessagePresenter {
         sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, message.getContent());
     }
 
-    static void clientReady(Context context){
-        if (wv == null){
+    static void clientReady(Context context) {
+        if (wv == null) {
             return;
         }
 
@@ -184,18 +184,18 @@ class InAppMessagePresenter {
         });
     }
 
-    private static void maybeSetNotchInsets(Context context){
-        if (dialog == null){
+    private static void maybeSetNotchInsets(Context context) {
+        if (dialog == null) {
             return;
         }
 
         Window window = dialog.getWindow();
-        if (window == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.P){
+        if (window == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             return;
         }
 
         DisplayCutout displayCutout = window.getDecorView().getRootWindowInsets().getDisplayCutout();
-        if (displayCutout == null){
+        if (displayCutout == null) {
             return;
         }
 
@@ -208,7 +208,7 @@ class InAppMessagePresenter {
         float density = context.getResources().getDisplayMetrics().density;
 
         JSONObject notchData = new JSONObject();
-        try{
+        try {
             notchData.put("hasNotchOnTheLeft", notchPositions.first);
             notchData.put("hasNotchOnTheRight", notchPositions.second);
             notchData.put("insetTop", displayCutout.getSafeInsetTop() / density);
@@ -217,32 +217,28 @@ class InAppMessagePresenter {
             notchData.put("insetLeft", displayCutout.getSafeInsetLeft() / density);
 
             sendToClient(HOST_MESSAGE_TYPE_SET_NOTCH_INSETS, notchData);
-        }
-        catch(JSONException e){
+        } catch (JSONException e) {
             Kumulos.log(TAG, e.getMessage());
         }
     }
 
-    private static Pair<Boolean, Boolean> determineNotchPositions(Window window, List<Rect> cutoutBoundingRectangles){
+    private static Pair<Boolean, Boolean> determineNotchPositions(Window window, List<Rect> cutoutBoundingRectangles) {
         Display display = window.getWindowManager().getDefaultDisplay();
-        DisplayMetrics outMetrics = new DisplayMetrics ();
+        DisplayMetrics outMetrics = new DisplayMetrics();
         display.getMetrics(outMetrics);
 
         boolean hasNotchOnTheRight = false;
         boolean hasNotchOnTheLeft = false;
-        for (Rect rect: cutoutBoundingRectangles){
-            if (rect.top == 0){
-                if (rect.left > outMetrics.widthPixels - rect.right){
+        for (Rect rect : cutoutBoundingRectangles) {
+            if (rect.top == 0) {
+                if (rect.left > outMetrics.widthPixels - rect.right) {
                     hasNotchOnTheRight = true;
-                }
-                else if (rect.left < outMetrics.widthPixels - rect.right){
+                } else if (rect.left < outMetrics.widthPixels - rect.right) {
                     hasNotchOnTheLeft = true;
                 }
-            }
-            else if (rect.right >= outMetrics.widthPixels){
+            } else if (rect.right >= outMetrics.widthPixels) {
                 hasNotchOnTheRight = true;
-            }
-            else if (rect.left == 0){
+            } else if (rect.left == 0) {
                 hasNotchOnTheLeft = true;
             }
         }
@@ -250,13 +246,13 @@ class InAppMessagePresenter {
         return new Pair<Boolean, Boolean>(hasNotchOnTheLeft, hasNotchOnTheRight);
     }
 
-    static void messageOpened(Context context){
-        InAppMessageService.handleMessageOpened(context, messageQueue.get(0).getInAppId());
+    static void messageOpened(Context context) {
+        InAppMessageService.handleMessageOpened(context, messageQueue.get(0));
         setSpinnerVisibility(View.GONE);
     }
 
-    static void messageClosed(){
-        if (wv == null){
+    static void messageClosed() {
+        if (wv == null) {
             return;
         }
 
@@ -271,8 +267,8 @@ class InAppMessagePresenter {
         });
     }
 
-    static void closeCurrentMessage(Context context){
-        if (dialog == null || messageQueue.isEmpty()){
+    static void closeCurrentMessage(Context context) {
+        if (dialog == null || messageQueue.isEmpty()) {
             return;
         }
 
@@ -283,38 +279,37 @@ class InAppMessagePresenter {
         InAppMessageService.handleMessageClosed(context, message);
     }
 
-    private static void setSpinnerVisibility(int visibility){
-        if (wv == null){
+    private static void setSpinnerVisibility(int visibility) {
+        if (wv == null) {
             return;
         }
         wv.post(new Runnable() {
             @Override
             public void run() {
-                if (spinner != null){
+                if (spinner != null) {
                     spinner.setVisibility(visibility);
                 }
             }
         });
     }
 
-    private static void sendToClient(String type, JSONObject data){
-        if (wv == null){
+    private static void sendToClient(String type, JSONObject data) {
+        if (wv == null) {
             return;
         }
         wv.post(new Runnable() {
             @Override
             public void run() {
                 JSONObject j = new JSONObject();
-                try{
+                try {
                     j.put("data", data);
                     j.put("type", type);
-                }
-                catch(JSONException e){
+                } catch (JSONException e) {
                     Log.d(TAG, "Could not create client message");
                     return;
                 }
 
-                String script = "window.postHostMessage("+j.toString()+")";
+                String script = "window.postHostMessage(" + j.toString() + ")";
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     wv.evaluateJavascript(script, null);
@@ -325,12 +320,12 @@ class InAppMessagePresenter {
         });
     }
 
-    static void maybeCloseDialog(Activity stoppedActivity){
-        if (dialog == null){
+    static void maybeCloseDialog(Activity stoppedActivity) {
+        if (dialog == null) {
             return;
         }
         Activity dialogActivity = getDialogActivity(dialog.getContext());
-        if (stoppedActivity.hashCode() == dialogActivity.hashCode()){
+        if (stoppedActivity.hashCode() == dialogActivity.hashCode()) {
             closeDialog(stoppedActivity);
         }
     }
@@ -339,15 +334,15 @@ class InAppMessagePresenter {
         if (cont == null)
             return null;
         else if (cont instanceof Activity)
-            return (Activity)cont;
+            return (Activity) cont;
         else if (cont instanceof ContextWrapper)
-            return getDialogActivity(((ContextWrapper)cont).getBaseContext());
+            return getDialogActivity(((ContextWrapper) cont).getBaseContext());
 
         return null;
     }
 
-    private static void closeDialog(Activity dialogActivity){
-        if (dialog != null){
+    private static void closeDialog(Activity dialogActivity) {
+        if (dialog != null) {
             unsetStatusBarColorForDialog(dialogActivity);
             dialog.setOnKeyListener(null);
             dialog.dismiss();
@@ -358,12 +353,12 @@ class InAppMessagePresenter {
     }
 
     @UiThread
-    private static void setStatusBarColorForDialog(Activity currentActivity){
-        if (currentActivity == null){
+    private static void setStatusBarColorForDialog(Activity currentActivity) {
+        if (currentActivity == null) {
             return;
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return;
         }
 
@@ -378,10 +373,9 @@ class InAppMessagePresenter {
         window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         int statusBarColor;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch, null);
-        }
-        else{
+        } else {
             statusBarColor = currentActivity.getResources().getColor(R.color.statusBarColorForNotch);
         }
 
@@ -389,12 +383,12 @@ class InAppMessagePresenter {
     }
 
     @AnyThread
-    private static void unsetStatusBarColorForDialog(Activity dialogActivity){
-        if (dialogActivity == null){
+    private static void unsetStatusBarColorForDialog(Activity dialogActivity) {
+        if (dialogActivity == null) {
             return;
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP){
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return;
         }
 
@@ -405,11 +399,11 @@ class InAppMessagePresenter {
                 Window window = dialogActivity.getWindow();
                 window.setStatusBarColor(prevStatusBarColor);
 
-                if (prevFlagTranslucentStatus){
+                if (prevFlagTranslucentStatus) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                 }
 
-                if (!prevFlagDrawsSystemBarBackgrounds){
+                if (!prevFlagDrawsSystemBarBackgrounds) {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
                 }
             }
@@ -417,12 +411,12 @@ class InAppMessagePresenter {
     }
 
 
-    private static void showWebView(@NonNull Activity currentActivity){
+    private static void showWebView(@NonNull Activity currentActivity) {
         currentActivity.runOnUiThread(new Runnable() {
             @SuppressLint("SetJavaScriptEnabled")
             @Override
             public void run() {
-                if (dialog != null){
+                if (dialog != null) {
                     return;
                 }
 
@@ -435,7 +429,7 @@ class InAppMessagePresenter {
                     dialog = new Dialog(currentActivity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
 
                     Window window = dialog.getWindow();
-                    if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+                    if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         WindowManager.LayoutParams windowAttributes = dialog.getWindow().getAttributes();
                         windowAttributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 
@@ -469,7 +463,7 @@ class InAppMessagePresenter {
 
                     WebSettings settings = wv.getSettings();
                     settings.setJavaScriptEnabled(true);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1){
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                         settings.setMediaPlaybackRequiresUserGesture(false);
                     }
 
@@ -518,8 +512,7 @@ class InAppMessagePresenter {
                     });
 
                     wv.loadUrl(IN_APP_RENDERER_URL);
-                }
-                catch(Exception e){
+                } catch (Exception e) {
                     Kumulos.log(TAG, e.getMessage());
                 }
             }

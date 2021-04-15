@@ -63,11 +63,13 @@ class InAppMessageService {
         List<InAppMessage> unreadMessages;
         List<Integer> deliveredIds;
         List<Integer> deletedIds;
+        boolean inboxUpdated = false;
         try {
             InAppSaveResult result = task.call();
             unreadMessages = result.getItemsToPresent();
             deliveredIds = result.getDeliveredIds();
             deletedIds = result.getDeletedIds();
+            inboxUpdated = result.wasInboxUpdated();
         } catch (Exception e) {
             e.printStackTrace();
             return;
@@ -76,6 +78,8 @@ class InAppMessageService {
         for (int inAppId : deletedIds) {
             clearNotification(context, inAppId);
         }
+
+        KumulosInApp.maybeRunInboxUpdatedHandler(inboxUpdated);
 
         InAppMessageService.storeLastSyncTime(context, inAppMessages);
 
@@ -175,8 +179,16 @@ class InAppMessageService {
         }
     }
 
-    static void handleMessageOpened(Context context, int id) {
-        markInboxItemRead(context, id, false);
+    static void handleMessageOpened(Context context, InAppMessage message) {
+        int id = message.getInAppId();
+
+        boolean markedRead = false;
+        if (message.getReadAt() == null) {
+            markedRead = markInboxItemRead(context, id, false);
+        }
+        if (message.getInbox() != null) {
+            KumulosInApp.maybeRunInboxUpdatedHandler(markedRead);
+        }
 
         JSONObject params = new JSONObject();
         try {
@@ -275,6 +287,8 @@ class InAppMessageService {
             Kumulos.log(TAG, ex.getMessage());
         }
 
+        KumulosInApp.maybeRunInboxUpdatedHandler(result);
+
         return result;
     }
 
@@ -283,7 +297,7 @@ class InAppMessageService {
         final Future<Boolean> future = Kumulos.executorService.submit(task);
 
         Boolean result = true;
-        if (shouldWaitForResult){
+        if (shouldWaitForResult) {
             try {
                 result = future.get();
             } catch (InterruptedException | ExecutionException ex) {
@@ -291,7 +305,7 @@ class InAppMessageService {
             }
         }
 
-        if (!result){
+        if (!result) {
             return result;
         }
 
@@ -313,15 +327,23 @@ class InAppMessageService {
     static boolean markAllInboxItemsAsRead(Context context) {
         List<InAppInboxItem> inboxItems = readInboxItems(context);
         boolean result = true;
-        for(InAppInboxItem item: inboxItems){
-            if (item.isRead()){
+        boolean inboxNeedsUpdate = false;
+        for (InAppInboxItem item : inboxItems) {
+            if (item.isRead()) {
                 continue;
             }
 
-            if (!markInboxItemRead(context, item.getId(), true)){
+            boolean success = markInboxItemRead(context, item.getId(), true);
+            if (success && !inboxNeedsUpdate) {
+                inboxNeedsUpdate = true;
+            }
+
+            if (!success) {
                 result = false;
             }
         }
+
+        KumulosInApp.maybeRunInboxUpdatedHandler(inboxNeedsUpdate);
 
         return result;
     }
@@ -383,7 +405,13 @@ class InAppMessageService {
             try {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-                String[] projection = {InAppContract.InAppMessageTable.COL_ID, InAppContract.InAppMessageTable.COL_PRESENTED_WHEN, InAppContract.InAppMessageTable.COL_CONTENT_JSON};
+                String[] projection = {
+                        InAppContract.InAppMessageTable.COL_ID,
+                        InAppContract.InAppMessageTable.COL_PRESENTED_WHEN,
+                        InAppContract.InAppMessageTable.COL_CONTENT_JSON,
+                        InAppContract.InAppMessageTable.COL_READ_AT,
+                        InAppContract.InAppMessageTable.COL_INBOX_CONFIG_JSON
+                };
                 String selection = String.format("%s IS NULL AND (%s IS NULL OR (DATETIME(%s) > DATETIME('now')))",
                         InAppContract.InAppMessageTable.COL_DISMISSED_AT,
                         InAppContract.InAppMessageTable.COL_EXPIRES_AT,
@@ -397,10 +425,10 @@ class InAppMessageService {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_ID));
                     String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_CONTENT_JSON));
                     String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_PRESENTED_WHEN));
-                    InAppMessage m = new InAppMessage();
-                    m.setInAppId(inAppId);
-                    m.setContent(new JSONObject(content));
-                    m.setPresentedWhen(presentedWhen);
+                    Date readAt = InAppContract.getNullableDate(cursor, InAppContract.InAppMessageTable.COL_READ_AT);
+                    JSONObject inbox = InAppContract.getNullableJsonObject(cursor, InAppContract.InAppMessageTable.COL_INBOX_CONFIG_JSON);
+
+                    InAppMessage m = new InAppMessage(inAppId, presentedWhen, new JSONObject(content), inbox, readAt);
                     itemsToPresent.add(m);
                 }
                 cursor.close();

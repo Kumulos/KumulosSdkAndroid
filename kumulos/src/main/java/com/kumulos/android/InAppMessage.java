@@ -13,14 +13,14 @@ import androidx.annotation.Nullable;
 
 class InAppMessage {
     private String presentedWhen;
-    private int inAppId;
+    private final int inAppId;
     @Nullable
     private JSONObject badgeConfig;
     @Nullable
     private JSONObject data;
-    private JSONObject content;
+    private final JSONObject content;
     @Nullable
-    private JSONObject inbox;
+    private final JSONObject inbox;
     @Nullable
     private Date dismissedAt = null;
     @Nullable
@@ -34,7 +34,6 @@ class InAppMessage {
     @Nullable
     private Date sentAt;
 
-    InAppMessage(){}
 
     InAppMessage(JSONObject obj) throws JSONException, ParseException {
         this.inAppId = obj.getInt("id");
@@ -46,14 +45,14 @@ class InAppMessage {
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        this.updatedAt =  sdf.parse(obj.getString("updatedAt"));
+        this.updatedAt = sdf.parse(obj.getString("updatedAt"));
 
         if (!obj.isNull("openedAt")) {
             this.dismissedAt = sdf.parse(obj.getString("openedAt"));
         }
 
         if (!obj.isNull("expiresAt")) {
-            this.expiresAt =  sdf.parse(obj.getString("expiresAt"));
+            this.expiresAt = sdf.parse(obj.getString("expiresAt"));
         }
 
         if (!obj.isNull("inboxDeletedAt")) {
@@ -67,6 +66,21 @@ class InAppMessage {
         if (!obj.isNull("sentAt")) {
             this.sentAt = sdf.parse(obj.getString("sentAt"));
         }
+    }
+
+    InAppMessage(int inAppId, String presentedWhen, JSONObject content, @Nullable JSONObject inbox, @Nullable Date readAt) {
+        this.inAppId = inAppId;
+        this.presentedWhen = presentedWhen;
+        this.content = content;
+        this.inbox = inbox;
+        this.readAt = readAt;
+    }
+
+    InAppMessage(int inAppId, JSONObject content, @Nullable JSONObject inbox, @Nullable Date readAt) {
+        this.inAppId = inAppId;
+        this.content = content;
+        this.inbox = inbox;
+        this.readAt = readAt;
     }
 
     int getInAppId() {
@@ -95,33 +109,20 @@ class InAppMessage {
     Date getDismissedAt() {
         return dismissedAt;
     }
+
     @Nullable
     Date getUpdatedAt() {
         return updatedAt;
     }
+
     @Nullable
     Date getExpiresAt() {
         return expiresAt;
     }
+
     @Nullable
     JSONObject getInbox() {
         return inbox;
-    }
-
-    void setInAppId(int id){
-        this.inAppId = id;
-    }
-
-    void setContent(JSONObject content){
-        this.content = content;
-    }
-
-    void setDismissedAt(@Nullable Date dismissedAt){
-        this.dismissedAt = dismissedAt;
-    }
-
-    void setPresentedWhen(String presentedWhen){
-        this.presentedWhen = presentedWhen;
     }
 
     @Nullable
@@ -137,5 +138,9 @@ class InAppMessage {
     @Nullable
     Date getSentAt() {
         return sentAt;
+    }
+
+    void setDismissedAt(@Nullable Date dismissedAt) {
+        this.dismissedAt = dismissedAt;
     }
 }
