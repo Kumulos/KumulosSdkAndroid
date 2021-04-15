@@ -14,7 +14,6 @@ import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -240,9 +239,8 @@ class InAppContract {
             while (c.moveToNext()) {
                 deletedIds.add(c.getInt(c.getColumnIndexOrThrow(InAppMessageTable.COL_ID)));
 
-                boolean hasInbox = !c.isNull(c.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON));
-                if (hasInbox) {
-                    evictedInbox = true;
+                if (!evictedInbox){
+                    evictedInbox = !c.isNull(c.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON));
                 }
             }
             c.close();
