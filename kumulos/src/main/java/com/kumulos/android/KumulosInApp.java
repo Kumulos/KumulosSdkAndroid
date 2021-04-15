@@ -22,7 +22,7 @@ public class KumulosInApp {
         PRESENTED
     }
 
-    public interface InAppInboxUpdatedHandler {
+    public interface InAppInboxUpdatedHandler extends Runnable {
         void run();
     }
     static InAppInboxUpdatedHandler inboxUpdatedHandler;
@@ -215,11 +215,6 @@ public class KumulosInApp {
             return;
         }
 
-        currentActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                inboxUpdatedHandler.run();
-            }
-        });
+        currentActivity.runOnUiThread(inboxUpdatedHandler);
     }
 }
