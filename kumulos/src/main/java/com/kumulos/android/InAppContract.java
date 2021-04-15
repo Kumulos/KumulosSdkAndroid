@@ -239,7 +239,7 @@ class InAppContract {
             while (c.moveToNext()) {
                 deletedIds.add(c.getInt(c.getColumnIndexOrThrow(InAppMessageTable.COL_ID)));
 
-                if (!evictedInbox){
+                if (!evictedInbox) {
                     evictedInbox = !c.isNull(c.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON));
                 }
             }

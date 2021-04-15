@@ -183,10 +183,10 @@ class InAppMessageService {
         int id = message.getInAppId();
 
         boolean markedRead = false;
-        if (message.getReadAt() == null){
+        if (message.getReadAt() == null) {
             markedRead = markInboxItemRead(context, id, false);
         }
-        if (message.getInbox() != null){
+        if (message.getInbox() != null) {
             KumulosInApp.maybeRunInboxUpdatedHandler(markedRead);
         }
 
@@ -297,7 +297,7 @@ class InAppMessageService {
         final Future<Boolean> future = Kumulos.executorService.submit(task);
 
         Boolean result = true;
-        if (shouldWaitForResult){
+        if (shouldWaitForResult) {
             try {
                 result = future.get();
             } catch (InterruptedException | ExecutionException ex) {
@@ -305,7 +305,7 @@ class InAppMessageService {
             }
         }
 
-        if (!result){
+        if (!result) {
             return result;
         }
 
@@ -328,17 +328,17 @@ class InAppMessageService {
         List<InAppInboxItem> inboxItems = readInboxItems(context);
         boolean result = true;
         boolean inboxNeedsUpdate = false;
-        for(InAppInboxItem item: inboxItems){
-            if (item.isRead()){
+        for (InAppInboxItem item : inboxItems) {
+            if (item.isRead()) {
                 continue;
             }
 
             boolean success = markInboxItemRead(context, item.getId(), true);
-            if (success && !inboxNeedsUpdate){
+            if (success && !inboxNeedsUpdate) {
                 inboxNeedsUpdate = true;
             }
 
-            if (!success){
+            if (!success) {
                 result = false;
             }
         }

@@ -3,6 +3,7 @@ package com.kumulos.android;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+
 import com.google.firebase.messaging.RemoteMessage;
 
 import org.json.JSONArray;
@@ -16,7 +17,7 @@ import androidx.annotation.Nullable;
 
 /**
  * FirebaseMessageHandler provides helpers for handling FirebaseMessagingService events
- *
+ * <p>
  * This can allow interoperating Kumulos push with your own FCM service
  */
 public class FirebaseMessageHandler {
@@ -26,6 +27,7 @@ public class FirebaseMessageHandler {
     /**
      * Handles the received notification from FCM, creating a PushMessage model and broadcasting
      * the appropriate com.kumulos.push Intent
+     *
      * @param context
      * @param remoteMessage
      */

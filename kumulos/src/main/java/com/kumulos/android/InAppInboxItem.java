@@ -9,7 +9,8 @@ import org.json.JSONObject;
 
 public class InAppInboxItem {
 
-    InAppInboxItem(){ }
+    InAppInboxItem() {
+    }
 
     private int id;
     private String title;
@@ -88,13 +89,16 @@ public class InAppInboxItem {
     public Date getSentAt() {
         return sentAt;
     }
+
     void setSentAt(Date sentAt) {
         this.sentAt = sentAt;
     }
 
-    public @Nullable JSONObject getData() {
+    public @Nullable
+    JSONObject getData() {
         return data;
     }
+
     void setData(@Nullable JSONObject data) {
         this.data = data;
     }

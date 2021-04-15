@@ -16,7 +16,7 @@ public class KumulosInApp {
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
     static Application application;
 
-    public enum InboxMessagePresentationResult{
+    public enum InboxMessagePresentationResult {
         FAILED,
         FAILED_EXPIRED,
         PRESENTED
@@ -25,6 +25,7 @@ public class KumulosInApp {
     public interface InAppInboxUpdatedHandler extends Runnable {
         void run();
     }
+
     static InAppInboxUpdatedHandler inboxUpdatedHandler;
 
     public interface InAppInboxSummaryHandler {
@@ -34,30 +35,30 @@ public class KumulosInApp {
     //==============================================================================================
     //-- Public APIs
 
-    public static List<InAppInboxItem> getInboxItems(Context context){
+    public static List<InAppInboxItem> getInboxItems(Context context) {
         boolean inAppEnabled = isInAppEnabled();
-        if (!inAppEnabled){
+        if (!inAppEnabled) {
             throw new RuntimeException("Kumulos: It is only possible to read In App inbox if In App messaging is enabled");
         }
 
         return InAppMessageService.readInboxItems(context);
     }
 
-    public static InboxMessagePresentationResult presentInboxMessage(Context context, InAppInboxItem item)  {
+    public static InboxMessagePresentationResult presentInboxMessage(Context context, InAppInboxItem item) {
         boolean inAppEnabled = isInAppEnabled();
-        if (!inAppEnabled){
+        if (!inAppEnabled) {
             throw new RuntimeException("Kumulos: It is only possible to present In App inbox if In App messaging is enabled");
         }
 
         return InAppMessageService.presentMessage(context, item);
     }
 
-    public static boolean deleteMessageFromInbox(Context context, InAppInboxItem item){
+    public static boolean deleteMessageFromInbox(Context context, InAppInboxItem item) {
         return InAppMessageService.deleteMessageFromInbox(context, item.getId());
     }
 
-    public static boolean markAsRead(Context context, InAppInboxItem item){
-        if (item.isRead()){
+    public static boolean markAsRead(Context context, InAppInboxItem item) {
+        if (item.isRead()) {
             return false;
         }
 
@@ -67,7 +68,7 @@ public class KumulosInApp {
         return res;
     }
 
-    public static boolean markAllInboxItemsAsRead(Context context){
+    public static boolean markAllInboxItemsAsRead(Context context) {
         return InAppMessageService.markAllInboxItemsAsRead(context);
     }
 
@@ -75,7 +76,7 @@ public class KumulosInApp {
         KumulosInApp.inboxUpdatedHandler = inboxUpdatedHandler;
     }
 
-    public static void getInboxSummaryAsync(Context context, @Nullable InAppInboxSummaryHandler inboxSummaryHandler){
+    public static void getInboxSummaryAsync(Context context, @Nullable InAppInboxSummaryHandler inboxSummaryHandler) {
         Runnable task = new InAppContract.ReadInboxSummaryRunnable(context, inboxSummaryHandler);
         Kumulos.executorService.submit(task);
     }
@@ -84,16 +85,16 @@ public class KumulosInApp {
     /**
      * Used to update in-app consent when enablement strategy is EXPLICIT_BY_USER
      *
-     *   @param consentGiven
+     * @param consentGiven
      */
 
-    public static void updateConsentForUser(boolean consentGiven){
-        if (Kumulos.getConfig().getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
+    public static void updateConsentForUser(boolean consentGiven) {
+        if (Kumulos.getConfig().getInAppConsentStrategy() != KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER) {
             throw new RuntimeException("Kumulos: It is only possible to update In App consent for user if consent strategy is set to EXPLICIT_BY_USER");
         }
 
         boolean inAppWasEnabled = isInAppEnabled();
-        if (consentGiven != inAppWasEnabled){
+        if (consentGiven != inAppWasEnabled) {
             updateInAppEnablementFlags(consentGiven);
             toggleInAppMessageMonitoring(consentGiven);
         }
@@ -101,27 +102,27 @@ public class KumulosInApp {
 
     /**
      * Allows setting the handler you want to use for in-app deep-link buttons
+     *
      * @param handler
      */
     public static void setDeepLinkHandler(InAppDeepLinkHandlerInterface handler) {
         inAppDeepLinkHandler = handler;
     }
 
-    
+
     //==============================================================================================
     //-- Internal Helpers
 
-    static void initialize(Application application, KumulosConfig currentConfig){
+    static void initialize(Application application, KumulosConfig currentConfig) {
         KumulosInApp.application = application;
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         boolean inAppEnabled = isInAppEnabled();
 
-        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppEnabled){
+        if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL && !inAppEnabled) {
             inAppEnabled = true;
             updateInAppEnablementFlags(true);
-        }
-        else if (strategy == null && inAppEnabled){
+        } else if (strategy == null && inAppEnabled) {
             inAppEnabled = false;
             updateInAppEnablementFlags(false);
             InAppMessageService.clearAllMessages(application);
@@ -131,17 +132,17 @@ public class KumulosInApp {
         toggleInAppMessageMonitoring(inAppEnabled);
     }
 
-    private static void updateInAppEnablementFlags(boolean enabled){
+    private static void updateInAppEnablementFlags(boolean enabled) {
         updateRemoteInAppEnablementFlag(enabled);
         updateLocalInAppEnablementFlag(enabled);
     }
 
-    static boolean isInAppEnabled(){
+    static boolean isInAppEnabled() {
         SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         return prefs.getBoolean(SharedPrefs.IN_APP_ENABLED, false);
     }
 
-    private static void updateRemoteInAppEnablementFlag(boolean enabled){
+    private static void updateRemoteInAppEnablementFlag(boolean enabled) {
         try {
             JSONObject params = new JSONObject().put("consented", enabled);
 
@@ -151,7 +152,7 @@ public class KumulosInApp {
         }
     }
 
-    private static void updateLocalInAppEnablementFlag(boolean enabled){
+    private static void updateLocalInAppEnablementFlag(boolean enabled) {
         SharedPreferences prefs = application.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
 
         SharedPreferences.Editor editor = prefs.edit();
@@ -159,44 +160,41 @@ public class KumulosInApp {
         editor.apply();
     }
 
-    private static void clearLastSyncTime(Context context){
+    private static void clearLastSyncTime(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove(SharedPrefs.IN_APP_LAST_SYNC_TIME);
         editor.apply();
     }
 
-    static void handleInAppUserChange(Context context, KumulosConfig currentConfig){
+    static void handleInAppUserChange(Context context, KumulosConfig currentConfig) {
         InAppMessageService.clearAllMessages(context);
         clearLastSyncTime(context);
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
-        if (strategy == KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER){
+        if (strategy == KumulosConfig.InAppConsentStrategy.EXPLICIT_BY_USER) {
             updateLocalInAppEnablementFlag(false);
             toggleInAppMessageMonitoring(false);
-        }
-        else if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL){
+        } else if (strategy == KumulosConfig.InAppConsentStrategy.AUTO_ENROLL) {
             updateRemoteInAppEnablementFlag(true);
 
             fetchMessages();
-        }
-        else if (strategy == null){
+        } else if (strategy == null) {
             updateRemoteInAppEnablementFlag(false);
         }
     }
 
-    private static void toggleInAppMessageMonitoring(boolean enabled){
-        if (enabled){
+    private static void toggleInAppMessageMonitoring(boolean enabled) {
+        if (enabled) {
             InAppSyncWorker.startPeriodicFetches(application);
 
             fetchMessages();
-        }
-        else {
+        } else {
             InAppSyncWorker.cancelPeriodicFetches(application);
         }
     }
 
-    private static void fetchMessages(){
+    private static void fetchMessages() {
         Kumulos.executorService.submit(new Runnable() {
             @Override
             public void run() {
@@ -205,13 +203,13 @@ public class KumulosInApp {
         });
     }
 
-    static void maybeRunInboxUpdatedHandler(boolean inboxNeedsUpdate){
-        if (!inboxNeedsUpdate || inboxUpdatedHandler == null){
+    static void maybeRunInboxUpdatedHandler(boolean inboxNeedsUpdate) {
+        if (!inboxNeedsUpdate || inboxUpdatedHandler == null) {
             return;
         }
 
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
-        if (currentActivity == null){
+        if (currentActivity == null) {
             return;
         }
 

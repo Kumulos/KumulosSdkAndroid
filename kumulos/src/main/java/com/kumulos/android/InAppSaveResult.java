@@ -27,5 +27,7 @@ class InAppSaveResult {
         return deletedIds;
     }
 
-    boolean wasInboxUpdated() { return inboxUpdated; }
+    boolean wasInboxUpdated() {
+        return inboxUpdated;
+    }
 }
