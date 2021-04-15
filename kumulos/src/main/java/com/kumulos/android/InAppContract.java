@@ -273,20 +273,18 @@ class InAppContract {
                 int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_ID));
                 String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppMessageTable.COL_PRESENTED_WHEN));
                 Date readAt = getNullableDate(cursor, InAppMessageTable.COL_READ_AT);
-
-                InAppMessage m = new InAppMessage();
-                m.setInAppId(inAppId);
-                m.setPresentedWhen(presentedWhen);
-                m.setReadAt(readAt);
+                JSONObject content = null;
+                JSONObject inbox = null;
 
                 try {
-                    m.setContent(getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON));
-                    m.setInbox(getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON));
+                    content = getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON);
+                    inbox = getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON);
                 } catch (JSONException e) {
                     Kumulos.log(TAG, e.getMessage());
                     continue;
                 }
 
+                InAppMessage m = new InAppMessage(inAppId, presentedWhen, content, inbox, readAt);
                 itemsToPresent.add(m);
             }
 
@@ -469,11 +467,10 @@ class InAppContract {
                 Cursor cursor = db.query(InAppMessageTable.TABLE_NAME, projection, selection, selectionArgs, null, null, null);
 
                 if (cursor.moveToFirst()) {
-                    inboxMessage = new InAppMessage();
-                    inboxMessage.setInAppId(mId);
-                    inboxMessage.setContent(getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON));
-                    inboxMessage.setReadAt(getNullableDate(cursor, InAppMessageTable.COL_READ_AT));
-                    inboxMessage.setInbox(getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON));
+                    inboxMessage = new InAppMessage(mId,
+                            getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON),
+                            getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON),
+                            getNullableDate(cursor, InAppMessageTable.COL_READ_AT));
                 }
 
                 cursor.close();

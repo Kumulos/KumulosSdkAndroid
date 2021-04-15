@@ -428,12 +428,7 @@ class InAppMessageService {
                     Date readAt = InAppContract.getNullableDate(cursor, InAppContract.InAppMessageTable.COL_READ_AT);
                     JSONObject inbox = InAppContract.getNullableJsonObject(cursor, InAppContract.InAppMessageTable.COL_INBOX_CONFIG_JSON);
 
-                    InAppMessage m = new InAppMessage();
-                    m.setInAppId(inAppId);
-                    m.setContent(new JSONObject(content));
-                    m.setPresentedWhen(presentedWhen);
-                    m.setReadAt(readAt);
-                    m.setInbox(inbox);
+                    InAppMessage m = new InAppMessage(inAppId, presentedWhen, new JSONObject(content), inbox, readAt);
                     itemsToPresent.add(m);
                 }
                 cursor.close();

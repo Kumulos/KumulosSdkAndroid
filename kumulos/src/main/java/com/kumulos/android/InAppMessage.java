@@ -13,14 +13,14 @@ import androidx.annotation.Nullable;
 
 class InAppMessage {
     private String presentedWhen;
-    private int inAppId;
+    private final int inAppId;
     @Nullable
     private JSONObject badgeConfig;
     @Nullable
     private JSONObject data;
-    private JSONObject content;
+    private final JSONObject content;
     @Nullable
-    private JSONObject inbox;
+    private final JSONObject inbox;
     @Nullable
     private Date dismissedAt = null;
     @Nullable
@@ -34,8 +34,6 @@ class InAppMessage {
     @Nullable
     private Date sentAt;
 
-    InAppMessage() {
-    }
 
     InAppMessage(JSONObject obj) throws JSONException, ParseException {
         this.inAppId = obj.getInt("id");
@@ -68,6 +66,21 @@ class InAppMessage {
         if (!obj.isNull("sentAt")) {
             this.sentAt = sdf.parse(obj.getString("sentAt"));
         }
+    }
+
+    InAppMessage(int inAppId, String presentedWhen, JSONObject content,  @Nullable JSONObject inbox, @Nullable Date readAt) {
+        this.inAppId = inAppId;
+        this.presentedWhen = presentedWhen;
+        this.content = content;
+        this.inbox = inbox;
+        this.readAt = readAt;
+    }
+
+    InAppMessage(int inAppId, JSONObject content, @Nullable JSONObject inbox, @Nullable Date readAt) {
+        this.inAppId = inAppId;
+        this.content = content;
+        this.inbox = inbox;
+        this.readAt = readAt;
     }
 
     int getInAppId() {
@@ -112,26 +125,6 @@ class InAppMessage {
         return inbox;
     }
 
-    void setInbox(@Nullable JSONObject inbox) {
-        this.inbox = inbox;
-    }
-
-    void setInAppId(int id) {
-        this.inAppId = id;
-    }
-
-    void setContent(JSONObject content) {
-        this.content = content;
-    }
-
-    void setDismissedAt(@Nullable Date dismissedAt) {
-        this.dismissedAt = dismissedAt;
-    }
-
-    void setPresentedWhen(String presentedWhen) {
-        this.presentedWhen = presentedWhen;
-    }
-
     @Nullable
     Date getInboxDeletedAt() {
         return inboxDeletedAt;
@@ -142,12 +135,12 @@ class InAppMessage {
         return readAt;
     }
 
-    void setReadAt(@Nullable Date readAt) {
-        this.readAt = readAt;
-    }
-
     @Nullable
     Date getSentAt() {
         return sentAt;
+    }
+
+    void setDismissedAt(@Nullable Date dismissedAt) {
+        this.dismissedAt = dismissedAt;
     }
 }
