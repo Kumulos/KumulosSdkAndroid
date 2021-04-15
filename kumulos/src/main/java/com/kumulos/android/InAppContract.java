@@ -239,8 +239,9 @@ class InAppContract {
             boolean evictedInbox = false;
             while (c.moveToNext()) {
                 deletedIds.add(c.getInt(c.getColumnIndexOrThrow(InAppMessageTable.COL_ID)));
-                String inbox = c.getString(c.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON));
-                if (inbox != null) {
+
+                boolean hasInbox = !c.isNull(c.getColumnIndexOrThrow(InAppMessageTable.COL_INBOX_CONFIG_JSON));
+                if (hasInbox) {
                     evictedInbox = true;
                 }
             }
