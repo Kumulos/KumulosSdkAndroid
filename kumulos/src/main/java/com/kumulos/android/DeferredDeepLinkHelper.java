@@ -184,8 +184,11 @@ public class DeferredDeepLinkHelper {
                 .get()
                 .build();
 
-        this.makeNetworkRequest(context, httpClient, request, url, wasDeferred);
-
+        try {
+            this.makeNetworkRequest(context, httpClient, request, new URL(requestUrl), wasDeferred);
+        } catch (MalformedURLException e) {
+            Log.d(TAG, "Could not create correct URL: " + e.getMessage());
+        }
     }
 
     private void makeNetworkRequest(Context context, OkHttpClient httpClient, Request request, URL url, boolean wasDeferred) {
