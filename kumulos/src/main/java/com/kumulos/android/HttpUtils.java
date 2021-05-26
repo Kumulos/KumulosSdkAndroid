@@ -3,6 +3,8 @@ package com.kumulos.android;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
@@ -30,11 +32,23 @@ class HttpUtils {
     static Map<String, String> splitQuery(URL url) throws UnsupportedEncodingException {
         Map<String, String> map = new LinkedHashMap<String, String>();
         String query = url.getQuery();
+        if (query == null){
+            return map;
+        }
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             int idx = pair.indexOf("=");
             map.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"), URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
         }
         return map;
+    }
+
+    static String getUrlWithoutParameters(URL url) throws URISyntaxException {
+        URI uri = url.toURI();
+        return new URI(uri.getScheme(),
+                uri.getAuthority(),
+                uri.getPath(),
+                null,
+                uri.getFragment()).toString();
     }
 }

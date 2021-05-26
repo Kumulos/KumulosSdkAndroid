@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 
@@ -183,11 +184,12 @@ public class DeferredDeepLinkHelper {
                 .addHeader("Content-Type", "application/json")
                 .get()
                 .build();
-
+        
         try {
-            this.makeNetworkRequest(context, httpClient, request, new URL(requestUrl), wasDeferred);
-        } catch (MalformedURLException e) {
-            Log.d(TAG, "Could not create correct URL: " + e.getMessage());
+            URL noParamsUrl = new URL(HttpUtils.getUrlWithoutParameters(url));
+            this.makeNetworkRequest(context, httpClient, request, noParamsUrl , wasDeferred);
+        } catch (URISyntaxException | MalformedURLException e) {
+            Log.d(TAG, "Could not format URL: " + e.getMessage());
         }
     }
 
