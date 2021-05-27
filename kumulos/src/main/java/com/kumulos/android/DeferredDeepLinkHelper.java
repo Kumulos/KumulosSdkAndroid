@@ -184,13 +184,8 @@ public class DeferredDeepLinkHelper {
                 .addHeader("Content-Type", "application/json")
                 .get()
                 .build();
-        
-        try {
-            URL noParamsUrl = new URL(HttpUtils.getUrlWithoutParameters(url));
-            this.makeNetworkRequest(context, httpClient, request, noParamsUrl , wasDeferred);
-        } catch (URISyntaxException | MalformedURLException e) {
-            Log.d(TAG, "Could not format URL: " + e.getMessage());
-        }
+
+        this.makeNetworkRequest(context, httpClient, request, url, wasDeferred);
     }
 
     private void makeNetworkRequest(Context context, OkHttpClient httpClient, Request request, URL url, boolean wasDeferred) {

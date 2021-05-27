@@ -1,10 +1,7 @@
 package com.kumulos.android;
 
 import org.json.JSONObject;
-
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
@@ -41,14 +38,5 @@ class HttpUtils {
             map.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"), URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
         }
         return map;
-    }
-
-    static String getUrlWithoutParameters(URL url) throws URISyntaxException {
-        URI uri = url.toURI();
-        return new URI(uri.getScheme(),
-                uri.getAuthority(),
-                uri.getPath(),
-                null,
-                uri.getFragment()).toString();
     }
 }
