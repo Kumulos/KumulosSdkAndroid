@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.util.Log;
 import android.webkit.URLUtil;
 
 import androidx.annotation.Nullable;
@@ -18,11 +17,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Map;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -32,7 +28,6 @@ import static android.content.Context.CLIPBOARD_SERVICE;
 
 public class DeferredDeepLinkHelper {
     private static final String BASE_URL = "https://links.kumulos.com";
-    private static final String TAG = DeferredDeepLinkHelper.class.getName();
 
     /* package */ DeferredDeepLinkHelper() {
     }
@@ -165,14 +160,9 @@ public class DeferredDeepLinkHelper {
 
         String slug = Uri.encode(url.getPath().replaceAll("/$|^/", ""));
         String params = "?wasDeferred=" + (wasDeferred ? 1 : 0);
-        try {
-            Map<String, String> map = HttpUtils.splitQuery(url);
-            String webInstallId = map.get("webInstallId");
-            if (webInstallId != null) {
-                params = params + "&webInstallId=" + webInstallId;
-            }
-        } catch (UnsupportedEncodingException e) {
-            Log.d(TAG, "Could not decode query parameters: " + e.getMessage());
+        String query = url.getQuery();
+        if (query != null){
+           params = params + "&" + query;
         }
 
         String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug + params;
