@@ -29,7 +29,8 @@ import static android.content.Context.CLIPBOARD_SERVICE;
 public class DeferredDeepLinkHelper {
     private static final String BASE_URL = "https://links.kumulos.com";
 
-    /* package */ DeferredDeepLinkHelper(){}
+    /* package */ DeferredDeepLinkHelper() {
+    }
 
     public class DeepLinkContent {
         DeepLinkContent(@Nullable String title, @Nullable String description) {
@@ -155,10 +156,15 @@ public class DeferredDeepLinkHelper {
     }
 
     private void handleDeepLink(Context context, URL url, boolean wasDeferred) {
-        OkHttpClient  httpClient = Kumulos.getHttpClient();
+        OkHttpClient httpClient = Kumulos.getHttpClient();
 
         String slug = Uri.encode(url.getPath().replaceAll("/$|^/", ""));
         String params = "?wasDeferred=" + (wasDeferred ? 1 : 0);
+        String query = url.getQuery();
+        if (query != null){
+           params = params + "&" + query;
+        }
+
         String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug + params;
 
         final Request request = new Request.Builder()
@@ -170,7 +176,6 @@ public class DeferredDeepLinkHelper {
                 .build();
 
         this.makeNetworkRequest(context, httpClient, request, url, wasDeferred);
-
     }
 
     private void makeNetworkRequest(Context context, OkHttpClient httpClient, Request request, URL url, boolean wasDeferred) {
