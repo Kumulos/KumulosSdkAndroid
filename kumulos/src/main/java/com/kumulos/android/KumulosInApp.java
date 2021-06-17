@@ -26,10 +26,10 @@ public class KumulosInApp {
         void run();
     }
 
-    static InAppInboxUpdatedHandler inboxUpdatedHandler;
+    private static InAppInboxUpdatedHandler inboxUpdatedHandler;
 
     public interface InAppInboxSummaryHandler {
-        void run(InAppInboxSummary summary);
+        void run(@Nullable InAppInboxSummary summary);
     }
 
     //==============================================================================================
@@ -117,7 +117,7 @@ public class KumulosInApp {
      * @param context
      * @param inboxSummaryHandler handler
      */
-    public static void getInboxSummaryAsync(Context context, @Nullable InAppInboxSummaryHandler inboxSummaryHandler) {
+    public static void getInboxSummaryAsync(Context context, InAppInboxSummaryHandler inboxSummaryHandler) {
         Runnable task = new InAppContract.ReadInboxSummaryRunnable(context, inboxSummaryHandler);
         Kumulos.executorService.submit(task);
     }
