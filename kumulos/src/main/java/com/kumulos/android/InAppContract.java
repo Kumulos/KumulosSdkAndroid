@@ -423,8 +423,14 @@ class InAppContract {
                     i.setSentAt(sentAt);
                     i.setData(data);
 
-                    i.setTitle(inboxConfig.getString("title"));
-                    i.setSubtitle(inboxConfig.getString("subtitle"));
+                    if (inboxConfig != null){
+                        i.setTitle(inboxConfig.getString("title"));
+                        i.setSubtitle(inboxConfig.getString("subtitle"));
+                        if (!inboxConfig.isNull("imagePath")) {
+                            i.setImagePath(inboxConfig.getString("imagePath"));
+                        }
+                    }
+
                     inboxItems.add(i);
                 }
                 cursor.close();
