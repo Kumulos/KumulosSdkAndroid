@@ -3,7 +3,7 @@ package com.kumulos.android;
 import android.content.Context;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.GoogleApiAvailabilityLight;
 import com.huawei.hms.api.HuaweiApiAvailability;
 
 import androidx.annotation.NonNull;
@@ -23,8 +23,8 @@ final class ImplementationUtil {
     private ImplementationUtil() {}
 
     private ImplementationUtil(@NonNull Context context) {
-        if (canLoadClass("com.google.android.gms.common.GoogleApiAvailability")) {
-            int result = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
+        if (canLoadClass("com.google.android.gms.common.GoogleApiAvailabilityLight")) {
+            int result = GoogleApiAvailabilityLight.getInstance().isGooglePlayServicesAvailable(context);
 
             if (ConnectionResult.SUCCESS == result) {
                 availableMessagingApi = MessagingApi.FCM;
