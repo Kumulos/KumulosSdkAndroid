@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Build;
@@ -35,11 +34,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
-import androidx.annotation.WorkerThread;
 
 class InAppMessagePresenter {
 
@@ -222,7 +219,7 @@ class InAppMessagePresenter {
             return;
         }
 
-        Pair notchPositions = determineNotchPositions(window, cutoutBoundingRectangles);
+        Pair<Boolean, Boolean> notchPositions = determineNotchPositions(window, cutoutBoundingRectangles);
         float density = context.getResources().getDisplayMetrics().density;
 
         JSONObject notchData = new JSONObject();
@@ -262,7 +259,7 @@ class InAppMessagePresenter {
             }
         }
 
-        return new Pair<Boolean, Boolean>(hasNotchOnTheLeft, hasNotchOnTheRight);
+        return new Pair<>(hasNotchOnTheLeft, hasNotchOnTheRight);
     }
 
     @AnyThread
@@ -454,14 +451,11 @@ class InAppMessagePresenter {
 
             LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             dialog.setContentView(inflater.inflate(R.layout.dialog_view, null), paramsWebView);
-            dialog.setOnKeyListener(new Dialog.OnKeyListener() {
-                @Override
-                public boolean onKey(DialogInterface arg0, int keyCode, KeyEvent event) {
-                    if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
-                        InAppMessagePresenter.closeCurrentMessage(currentActivity);
-                    }
-                    return true;
+            dialog.setOnKeyListener((arg0, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
+                    InAppMessagePresenter.closeCurrentMessage(currentActivity);
                 }
+                return true;
             });
             dialog.show();
 
@@ -497,8 +491,7 @@ class InAppMessagePresenter {
                     setStatusBarColorForDialog(currentActivity);
                     super.onPageFinished(view, url);
                 }
-
-                @SuppressWarnings("deprecation")
+                
                 @Override
                 public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                     Kumulos.log(TAG, "Error code: " + errorCode + ". " + description + " " + failingUrl);
