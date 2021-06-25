@@ -263,9 +263,11 @@ class InAppMessagePresenter {
     }
 
     @AnyThread
-    static void messageOpened(Context context) {
-        InAppMessageService.handleMessageOpened(context, messageQueue.get(0));
-        setSpinnerVisibility(View.GONE);
+    static void messageOpened(Activity activity) {
+        activity.runOnUiThread(() -> {
+            InAppMessageService.handleMessageOpened(activity, messageQueue.get(0));
+            setSpinnerVisibility(View.GONE);
+        });
     }
 
     @AnyThread
@@ -279,9 +281,7 @@ class InAppMessagePresenter {
                 return;
             }
 
-            if (!messageQueue.isEmpty()){
-                messageQueue.remove(0);
-            }
+            messageQueue.remove(0);
 
             presentMessageToClient();
         });
@@ -289,27 +289,27 @@ class InAppMessagePresenter {
 
     @AnyThread
     static void closeCurrentMessage(Activity activity) {
-        if (dialog == null || messageQueue.isEmpty() || activity == null) {
+        if (dialog == null  || activity == null) {
             return;
         }
 
-        InAppMessage message = messageQueue.get(0);
+        activity.runOnUiThread(() -> {
+            if (messageQueue.isEmpty()){
+                return;
+            }
+            InAppMessage message = messageQueue.get(0);
 
-        activity.runOnUiThread(() -> InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null));
+            InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
 
-        InAppMessageService.handleMessageClosed(activity, message);
+            InAppMessageService.handleMessageClosed(activity, message);
+        });
     }
 
-    @AnyThread
+    @UiThread
     private static void setSpinnerVisibility(int visibility) {
-        if (wv == null) {
-            return;
+        if (spinner != null){
+            spinner.setVisibility(visibility);
         }
-        wv.post(() -> {
-            if (wv != null && spinner != null) {
-                spinner.setVisibility(visibility);
-            }
-        });
     }
 
     @UiThread
