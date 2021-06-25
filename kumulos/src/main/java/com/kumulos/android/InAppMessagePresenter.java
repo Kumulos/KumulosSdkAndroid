@@ -178,6 +178,10 @@ class InAppMessagePresenter {
         wv.post(new Runnable() {
             @Override
             public void run() {
+                if (wv == null) {
+                    return;
+                }
+
                 maybeSetNotchInsets(context);
                 presentMessageToClient();
             }
@@ -259,6 +263,10 @@ class InAppMessagePresenter {
         wv.post(new Runnable() {
             @Override
             public void run() {
+                if (wv == null) {
+                    return;
+                }
+
                 if (!messageQueue.isEmpty()){
                     messageQueue.remove(0);
                 }
@@ -287,7 +295,7 @@ class InAppMessagePresenter {
         wv.post(new Runnable() {
             @Override
             public void run() {
-                if (spinner != null) {
+                if (wv != null && spinner != null) {
                     spinner.setVisibility(visibility);
                 }
             }
@@ -301,6 +309,10 @@ class InAppMessagePresenter {
         wv.post(new Runnable() {
             @Override
             public void run() {
+                if (wv == null) {
+                    return;
+                }
+
                 JSONObject j = new JSONObject();
                 try {
                     j.put("data", data);
