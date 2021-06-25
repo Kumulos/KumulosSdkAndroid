@@ -343,9 +343,9 @@ class InAppMessagePresenter {
 
     private static void closeDialog(Activity dialogActivity) {
         if (dialog != null) {
-            unsetStatusBarColorForDialog(dialogActivity);
             dialog.setOnKeyListener(null);
             dialog.dismiss();
+            unsetStatusBarColorForDialog(dialogActivity);
         }
         dialog = null;
         wv = null;
