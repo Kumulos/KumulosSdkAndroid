@@ -61,7 +61,7 @@ final class PushRegistration {
                 case LATEST:
                     this.registerFcmNew(context);
                     break;
-                case DEPRECATED:
+                case DEPRECATED_1:
                     this.registerFcmOld(context);
                     break;
                 case UNKNOWN:
@@ -87,7 +87,6 @@ final class PushRegistration {
 
                     String token = task.getResult();
 
-                    Log.d("vlad", "victory new: " + token);
                     Kumulos.pushTokenStore(context, PushTokenType.FCM, token);
                 });
             } catch (NoSuchMethodException e) {
@@ -124,7 +123,7 @@ final class PushRegistration {
                     try {
                         Method getTokenMethod = instanceIdResult.getClass().getMethod("getToken");
                         String token = (String) getTokenMethod.invoke(instanceIdResult);
-                        Log.d("vlad", "victory old: " + token);
+
                         Kumulos.pushTokenStore(context, PushTokenType.FCM, token);
                     } catch (Exception e) {
                         Log.e(TAG, "Failed to get FCM token with FirebaseMessaging <21.0.0, in callback : " + e.getMessage());
@@ -211,7 +210,7 @@ final class PushRegistration {
                 case LATEST:
                     this.unregisterFcmNew(context);
                     break;
-                case DEPRECATED:
+                case DEPRECATED_1:
                     this.unregisterFcmOld(context);
                     break;
                 case UNKNOWN:
@@ -226,7 +225,7 @@ final class PushRegistration {
 
             Exception exception = null;
             try {
-                Method deleteToken = instance.getClass().getMethod("deleteToken");//TODO: same?
+                Method deleteToken = instance.getClass().getMethod("deleteToken");
                 Task<Void> result = (Task<Void>) deleteToken.invoke(instance);
 
                 result.addOnCompleteListener(Kumulos.executorService, task -> {
@@ -312,7 +311,4 @@ final class PushRegistration {
     String getHmsAppId(Context context) {
         return AGConnectServicesConfig.fromContext(context).getString("client/app_id");
     }
-
 }
-
-

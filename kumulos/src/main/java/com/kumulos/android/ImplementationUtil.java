@@ -21,7 +21,7 @@ final class ImplementationUtil {
 
     enum FirebaseMessagingApi {
         UNKNOWN,
-        DEPRECATED,  //FirebaseMessaging [19.0.0, 22.0.0)
+        DEPRECATED_1,  //FirebaseMessaging [19.0.0, 22.0.0)
         LATEST   //FirebaseMessaging [21.0.0, 22.99.99]
     }
 
@@ -36,8 +36,8 @@ final class ImplementationUtil {
             if (ConnectionResult.SUCCESS == result) {
                 availableMessagingApi = MessagingApi.FCM;
 
-                if (this.canLoadClass("com.google.firebase.iid.FirebaseInstanceId")){
-                    firebaseMessagingApi = FirebaseMessagingApi.DEPRECATED;
+                if (canLoadClass("com.google.firebase.iid.FirebaseInstanceId")){
+                    firebaseMessagingApi = FirebaseMessagingApi.DEPRECATED_1;
                 }
                 else if (this.hasLatestFirebaseMessaging()){
                     firebaseMessagingApi = FirebaseMessagingApi.LATEST;
