@@ -259,8 +259,9 @@ class InAppMessagePresenter {
         wv.post(new Runnable() {
             @Override
             public void run() {
-                InAppMessage message = messageQueue.get(0);
-                messageQueue.remove(0);
+                if (!messageQueue.isEmpty()){
+                    messageQueue.remove(0);
+                }
 
                 presentMessageToClient();
             }
