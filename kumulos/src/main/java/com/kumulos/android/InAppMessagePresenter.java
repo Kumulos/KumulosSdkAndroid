@@ -367,10 +367,12 @@ class InAppMessagePresenter {
         prevStatusBarColor = window.getStatusBarColor();
 
         int flags = window.getAttributes().flags;
-        prevFlagTranslucentStatus = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
-        prevFlagDrawsSystemBarBackgrounds = (flags & WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS) != 0;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            prevFlagTranslucentStatus = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
 
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        prevFlagDrawsSystemBarBackgrounds = (flags & WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS) != 0;
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         int statusBarColor;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
