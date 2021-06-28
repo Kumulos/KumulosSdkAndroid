@@ -41,7 +41,7 @@ public class KumulosInApp {
      *
      * @param context
      */
-    public static List<InAppInboxItem> getInboxItems(Context context) {
+    public static List<InAppInboxItem> getInboxItems(@NonNull Context context) {
         boolean inAppEnabled = isInAppEnabled();
         if (!inAppEnabled) {
             throw new RuntimeException("Kumulos: It is only possible to read In App inbox if In App messaging is enabled");
@@ -56,7 +56,7 @@ public class KumulosInApp {
      * @param context
      * @param item inbox item to present
      */
-    public static InboxMessagePresentationResult presentInboxMessage(Context context, @NonNull InAppInboxItem item) {
+    public static InboxMessagePresentationResult presentInboxMessage(@NonNull Context context, @NonNull InAppInboxItem item) {
         boolean inAppEnabled = isInAppEnabled();
         if (!inAppEnabled) {
             throw new RuntimeException("Kumulos: It is only possible to present In App inbox if In App messaging is enabled");
@@ -71,7 +71,7 @@ public class KumulosInApp {
      * @param context
      * @param item inbox item to delete
      */
-    public static boolean deleteMessageFromInbox(Context context, @NonNull InAppInboxItem item) {
+    public static boolean deleteMessageFromInbox(@NonNull Context context, @NonNull InAppInboxItem item) {
         return InAppMessageService.deleteMessageFromInbox(context, item.getId());
     }
 
@@ -81,7 +81,7 @@ public class KumulosInApp {
      * @param context
      * @param item inbox item to mark as read
      */
-    public static boolean markAsRead(Context context, @NonNull InAppInboxItem item) {
+    public static boolean markAsRead(@NonNull Context context, @NonNull InAppInboxItem item) {
         if (item.isRead()) {
             return false;
         }
@@ -97,7 +97,7 @@ public class KumulosInApp {
      *
      * @param context
      */
-    public static boolean markAllInboxItemsAsRead(Context context) {
+    public static boolean markAllInboxItemsAsRead(@NonNull Context context) {
         return InAppMessageService.markAllInboxItemsAsRead(context);
     }
 
@@ -118,7 +118,7 @@ public class KumulosInApp {
      * @param context
      * @param inboxSummaryHandler handler
      */
-    public static void getInboxSummaryAsync(Context context, @NonNull InAppInboxSummaryHandler inboxSummaryHandler) {
+    public static void getInboxSummaryAsync(@NonNull Context context, @NonNull InAppInboxSummaryHandler inboxSummaryHandler) {
         Runnable task = new InAppContract.ReadInboxSummaryRunnable(context, inboxSummaryHandler);
         Kumulos.executorService.submit(task);
     }
