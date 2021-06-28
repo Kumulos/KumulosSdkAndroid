@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.json.JSONException;
@@ -55,7 +56,7 @@ public class KumulosInApp {
      * @param context
      * @param item inbox item to present
      */
-    public static InboxMessagePresentationResult presentInboxMessage(Context context, InAppInboxItem item) {
+    public static InboxMessagePresentationResult presentInboxMessage(Context context, @NonNull InAppInboxItem item) {
         boolean inAppEnabled = isInAppEnabled();
         if (!inAppEnabled) {
             throw new RuntimeException("Kumulos: It is only possible to present In App inbox if In App messaging is enabled");
@@ -70,7 +71,7 @@ public class KumulosInApp {
      * @param context
      * @param item inbox item to delete
      */
-    public static boolean deleteMessageFromInbox(Context context, InAppInboxItem item) {
+    public static boolean deleteMessageFromInbox(Context context, @NonNull InAppInboxItem item) {
         return InAppMessageService.deleteMessageFromInbox(context, item.getId());
     }
 
@@ -80,7 +81,7 @@ public class KumulosInApp {
      * @param context
      * @param item inbox item to mark as read
      */
-    public static boolean markAsRead(Context context, InAppInboxItem item) {
+    public static boolean markAsRead(Context context, @NonNull InAppInboxItem item) {
         if (item.isRead()) {
             return false;
         }
@@ -117,7 +118,7 @@ public class KumulosInApp {
      * @param context
      * @param inboxSummaryHandler handler
      */
-    public static void getInboxSummaryAsync(Context context, InAppInboxSummaryHandler inboxSummaryHandler) {
+    public static void getInboxSummaryAsync(Context context, @NonNull InAppInboxSummaryHandler inboxSummaryHandler) {
         Runnable task = new InAppContract.ReadInboxSummaryRunnable(context, inboxSummaryHandler);
         Kumulos.executorService.submit(task);
     }
