@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Build;
@@ -66,6 +65,15 @@ class InAppMessagePresenter {
             return;
         }
 
+        currentActivity.runOnUiThread(() -> presentMessagesOnUiThread(currentActivity, itemsToPresent, tickleIds));
+    }
+
+    @UiThread
+    private static void presentMessagesOnUiThread(Activity currentActivity, List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
+        if (currentActivity == null){
+            return;
+        }
+
         if (itemsToPresent.isEmpty()) {
             if (messageQueue.isEmpty()) {
                 maybeCloseDialog(currentActivity);
@@ -98,6 +106,7 @@ class InAppMessagePresenter {
         }
     }
 
+    @UiThread
     private static void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue) {
         if (oldQueue.isEmpty()) {
             return;
@@ -110,6 +119,7 @@ class InAppMessagePresenter {
         }
     }
 
+    @UiThread
     private static void moveTicklesToFront(List<Integer> tickleIds) {
         if (tickleIds == null || tickleIds.isEmpty()) {
             return;
@@ -128,6 +138,7 @@ class InAppMessagePresenter {
         }
     }
 
+    @UiThread
     private static void addMessagesToQueue(List<InAppMessage> itemsToPresent) {
         for (InAppMessage messageToAppend : itemsToPresent) {
             boolean exists = false;
@@ -144,6 +155,7 @@ class InAppMessagePresenter {
         }
     }
 
+    @UiThread
     private static void presentMessageToClient() {
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (currentActivity == null) {
@@ -170,20 +182,23 @@ class InAppMessagePresenter {
         sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, message.getContent());
     }
 
+    @AnyThread
     static void clientReady(Context context) {
         if (wv == null) {
             return;
         }
 
-        wv.post(new Runnable() {
-            @Override
-            public void run() {
-                maybeSetNotchInsets(context);
-                presentMessageToClient();
+        wv.post(() -> {
+            if (wv == null) {
+                return;
             }
+
+            maybeSetNotchInsets(context);
+            presentMessageToClient();
         });
     }
 
+    @UiThread
     private static void maybeSetNotchInsets(Context context) {
         if (dialog == null) {
             return;
@@ -204,7 +219,7 @@ class InAppMessagePresenter {
             return;
         }
 
-        Pair notchPositions = determineNotchPositions(window, cutoutBoundingRectangles);
+        Pair<Boolean, Boolean> notchPositions = determineNotchPositions(window, cutoutBoundingRectangles);
         float density = context.getResources().getDisplayMetrics().density;
 
         JSONObject notchData = new JSONObject();
@@ -222,6 +237,7 @@ class InAppMessagePresenter {
         }
     }
 
+    @UiThread
     private static Pair<Boolean, Boolean> determineNotchPositions(Window window, List<Rect> cutoutBoundingRectangles) {
         Display display = window.getWindowManager().getDefaultDisplay();
         DisplayMetrics outMetrics = new DisplayMetrics();
@@ -243,84 +259,85 @@ class InAppMessagePresenter {
             }
         }
 
-        return new Pair<Boolean, Boolean>(hasNotchOnTheLeft, hasNotchOnTheRight);
+        return new Pair<>(hasNotchOnTheLeft, hasNotchOnTheRight);
     }
 
-    static void messageOpened(Context context) {
-        InAppMessageService.handleMessageOpened(context, messageQueue.get(0));
-        setSpinnerVisibility(View.GONE);
+    @AnyThread
+    static void messageOpened(Activity activity) {
+        activity.runOnUiThread(() -> {
+            InAppMessageService.handleMessageOpened(activity, messageQueue.get(0));
+            setSpinnerVisibility(View.GONE);
+        });
     }
 
+    @AnyThread
     static void messageClosed() {
         if (wv == null) {
             return;
         }
 
-        wv.post(new Runnable() {
-            @Override
-            public void run() {
-                InAppMessage message = messageQueue.get(0);
-                messageQueue.remove(0);
-
-                presentMessageToClient();
+        wv.post(() -> {
+            if (wv == null) {
+                return;
             }
+
+            messageQueue.remove(0);
+
+            presentMessageToClient();
         });
     }
 
-    static void closeCurrentMessage(Context context) {
-        if (dialog == null || messageQueue.isEmpty()) {
+    @AnyThread
+    static void closeCurrentMessage(Activity activity) {
+        if (dialog == null  || activity == null) {
             return;
         }
 
-        InAppMessage message = messageQueue.get(0);
+        activity.runOnUiThread(() -> {
+            if (messageQueue.isEmpty()){
+                return;
+            }
+            InAppMessage message = messageQueue.get(0);
 
-        InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
+            InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
 
-        InAppMessageService.handleMessageClosed(context, message);
+            InAppMessageService.handleMessageClosed(activity, message);
+        });
     }
 
+    @UiThread
     private static void setSpinnerVisibility(int visibility) {
-        if (wv == null) {
-            return;
+        if (spinner != null){
+            spinner.setVisibility(visibility);
         }
-        wv.post(new Runnable() {
-            @Override
-            public void run() {
-                if (spinner != null) {
-                    spinner.setVisibility(visibility);
-                }
-            }
-        });
     }
 
+    @UiThread
     private static void sendToClient(String type, JSONObject data) {
         if (wv == null) {
             return;
         }
-        wv.post(new Runnable() {
-            @Override
-            public void run() {
-                JSONObject j = new JSONObject();
-                try {
-                    j.put("data", data);
-                    j.put("type", type);
-                } catch (JSONException e) {
-                    Log.d(TAG, "Could not create client message");
-                    return;
-                }
 
-                String script = "window.postHostMessage(" + j.toString() + ")";
+        JSONObject j = new JSONObject();
+        try {
+            j.put("data", data);
+            j.put("type", type);
+        } catch (JSONException e) {
+            Log.d(TAG, "Could not create client message");
+            return;
+        }
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    wv.evaluateJavascript(script, null);
-                } else {
-                    wv.loadUrl("javascript:" + script);
-                }
-            }
-        });
+        String script = "window.postHostMessage(" + j.toString() + ")";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            wv.evaluateJavascript(script, null);
+        } else {
+            wv.loadUrl("javascript:" + script);
+        }
     }
 
-    static void maybeCloseDialog(Activity stoppedActivity) {
+    @UiThread
+    static void maybeCloseDialog (Activity stoppedActivity) {
         if (dialog == null) {
             return;
         }
@@ -330,6 +347,7 @@ class InAppMessagePresenter {
         }
     }
 
+    @UiThread
     private static Activity getDialogActivity(Context cont) {
         if (cont == null)
             return null;
@@ -341,11 +359,15 @@ class InAppMessagePresenter {
         return null;
     }
 
+    @UiThread
     private static void closeDialog(Activity dialogActivity) {
         if (dialog != null) {
-            unsetStatusBarColorForDialog(dialogActivity);
             dialog.setOnKeyListener(null);
             dialog.dismiss();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+                unsetStatusBarColorForDialog(dialogActivity);
+            }
+
         }
         dialog = null;
         wv = null;
@@ -367,10 +389,12 @@ class InAppMessagePresenter {
         prevStatusBarColor = window.getStatusBarColor();
 
         int flags = window.getAttributes().flags;
-        prevFlagTranslucentStatus = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
-        prevFlagDrawsSystemBarBackgrounds = (flags & WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS) != 0;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            prevFlagTranslucentStatus = (flags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0;
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
 
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        prevFlagDrawsSystemBarBackgrounds = (flags & WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS) != 0;
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         int statusBarColor;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -382,140 +406,122 @@ class InAppMessagePresenter {
         window.setStatusBarColor(statusBarColor);
     }
 
-    @AnyThread
+    @UiThread
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private static void unsetStatusBarColorForDialog(Activity dialogActivity) {
         if (dialogActivity == null) {
             return;
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        Window window = dialogActivity.getWindow();
+        window.setStatusBarColor(prevStatusBarColor);
+
+        if (prevFlagTranslucentStatus) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
+
+        if (!prevFlagDrawsSystemBarBackgrounds) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    @UiThread
+    private static void showWebView(@NonNull Activity currentActivity) {
+        if (dialog != null) {
             return;
         }
 
-        dialogActivity.runOnUiThread(new Runnable() {
-            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-            @Override
-            public void run() {
-                Window window = dialogActivity.getWindow();
-                window.setStatusBarColor(prevStatusBarColor);
-
-                if (prevFlagTranslucentStatus) {
-                    window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-                }
-
-                if (!prevFlagDrawsSystemBarBackgrounds) {
-                    window.clearFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                }
+        try {
+            if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                WebView.setWebContentsDebuggingEnabled(true);
             }
-        });
-    }
 
+            RelativeLayout.LayoutParams paramsWebView = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+            dialog = new Dialog(currentActivity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
 
-    private static void showWebView(@NonNull Activity currentActivity) {
-        currentActivity.runOnUiThread(new Runnable() {
-            @SuppressLint("SetJavaScriptEnabled")
-            @Override
-            public void run() {
-                if (dialog != null) {
-                    return;
-                }
+            Window window = dialog.getWindow();
+            if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                WindowManager.LayoutParams windowAttributes = dialog.getWindow().getAttributes();
+                windowAttributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 
-                try {
-                    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                        WebView.setWebContentsDebuggingEnabled(true);
-                    }
-
-                    RelativeLayout.LayoutParams paramsWebView = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-                    dialog = new Dialog(currentActivity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen);
-
-                    Window window = dialog.getWindow();
-                    if (window != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        WindowManager.LayoutParams windowAttributes = dialog.getWindow().getAttributes();
-                        windowAttributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-
-                        View view = window.getDecorView();
-                        view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-                    }
-
-                    LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                    dialog.setContentView(inflater.inflate(R.layout.dialog_view, null), paramsWebView);
-                    dialog.setOnKeyListener(new Dialog.OnKeyListener() {
-                        @Override
-                        public boolean onKey(DialogInterface arg0, int keyCode, KeyEvent event) {
-                            if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
-                                InAppMessagePresenter.closeCurrentMessage(currentActivity);
-                            }
-                            return true;
-                        }
-                    });
-                    dialog.show();
-
-                    wv = dialog.findViewById(R.id.webview);
-                    spinner = dialog.findViewById(R.id.progressBar);
-
-                    int cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK;
-                    if (BuildConfig.DEBUG) {
-                        cacheMode = WebSettings.LOAD_NO_CACHE;
-                    }
-                    wv.getSettings().setCacheMode(cacheMode);
-
-                    wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-
-                    WebSettings settings = wv.getSettings();
-                    settings.setJavaScriptEnabled(true);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        settings.setMediaPlaybackRequiresUserGesture(false);
-                    }
-
-                    wv.addJavascriptInterface(new InAppJavaScriptInterface(), InAppJavaScriptInterface.NAME);
-
-                    wv.setWebViewClient(new WebViewClient() {
-                        @Override
-                        public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                            super.onPageStarted(view, url, favicon);
-                            InAppMessagePresenter.setSpinnerVisibility(View.VISIBLE);
-                        }
-
-                        @Override
-                        public void onPageFinished(WebView view, String url) {
-                            view.setBackgroundColor(android.graphics.Color.TRANSPARENT);
-                            setStatusBarColorForDialog(currentActivity);
-                            super.onPageFinished(view, url);
-                        }
-
-                        @SuppressWarnings("deprecation")
-                        @Override
-                        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                            Kumulos.log(TAG, "Error code: " + errorCode + ". " + description + " " + failingUrl);
-
-                            String extension = failingUrl.substring(failingUrl.length() - 4);
-                            boolean isVideo = extension.matches(".mp4|.m4a|.m4p|.m4b|.m4r|.m4v");
-                            if (errorCode == -1 && "net::ERR_FAILED".equals(description) && isVideo) {
-                                // This is a workaround for a bug in the WebView.
-                                // See these chromium issues for more context:
-                                // https://bugs.chromium.org/p/chromium/issues/detail?id=1023678
-                                // https://bugs.chromium.org/p/chromium/issues/detail?id=1050635
-
-                                //We encountered the issue only with some (and not other) videos, but possibly not limited to other file types
-                                return;
-                            }
-
-                            closeDialog(currentActivity);
-                        }
-
-                        @TargetApi(android.os.Build.VERSION_CODES.M)
-                        @Override
-                        public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError rerr) {
-                            onReceivedError(view, rerr.getErrorCode(), rerr.getDescription().toString(), req.getUrl().toString());
-                        }
-
-                    });
-
-                    wv.loadUrl(IN_APP_RENDERER_URL);
-                } catch (Exception e) {
-                    Kumulos.log(TAG, e.getMessage());
-                }
+                View view = window.getDecorView();
+                view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
             }
-        });
+
+            LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            dialog.setContentView(inflater.inflate(R.layout.dialog_view, null), paramsWebView);
+            dialog.setOnKeyListener((arg0, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
+                    InAppMessagePresenter.closeCurrentMessage(currentActivity);
+                }
+                return true;
+            });
+            dialog.show();
+
+            wv = dialog.findViewById(R.id.webview);
+            spinner = dialog.findViewById(R.id.progressBar);
+
+            int cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK;
+            if (BuildConfig.DEBUG) {
+                cacheMode = WebSettings.LOAD_NO_CACHE;
+            }
+            wv.getSettings().setCacheMode(cacheMode);
+
+            wv.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+
+            WebSettings settings = wv.getSettings();
+            settings.setJavaScriptEnabled(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                settings.setMediaPlaybackRequiresUserGesture(false);
+            }
+
+            wv.addJavascriptInterface(new InAppJavaScriptInterface(), InAppJavaScriptInterface.NAME);
+
+            wv.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                    super.onPageStarted(view, url, favicon);
+                    InAppMessagePresenter.setSpinnerVisibility(View.VISIBLE);
+                }
+
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    view.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                    setStatusBarColorForDialog(currentActivity);
+                    super.onPageFinished(view, url);
+                }
+                
+                @Override
+                public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                    Kumulos.log(TAG, "Error code: " + errorCode + ". " + description + " " + failingUrl);
+
+                    String extension = failingUrl.substring(failingUrl.length() - 4);
+                    boolean isVideo = extension.matches(".mp4|.m4a|.m4p|.m4b|.m4r|.m4v");
+                    if (errorCode == -1 && "net::ERR_FAILED".equals(description) && isVideo) {
+                        // This is a workaround for a bug in the WebView.
+                        // See these chromium issues for more context:
+                        // https://bugs.chromium.org/p/chromium/issues/detail?id=1023678
+                        // https://bugs.chromium.org/p/chromium/issues/detail?id=1050635
+
+                        //We encountered the issue only with some (and not other) videos, but possibly not limited to other file types
+                        return;
+                    }
+
+                    closeDialog(currentActivity);
+                }
+
+                @TargetApi(android.os.Build.VERSION_CODES.M)
+                @Override
+                public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError rerr) {
+                    onReceivedError(view, rerr.getErrorCode(), rerr.getDescription().toString(), req.getUrl().toString());
+                }
+
+            });
+
+            wv.loadUrl(IN_APP_RENDERER_URL);
+        } catch (Exception e) {
+            Kumulos.log(TAG, e.getMessage());
+        }
     }
 }

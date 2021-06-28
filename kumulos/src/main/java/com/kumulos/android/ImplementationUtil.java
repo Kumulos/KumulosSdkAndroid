@@ -3,7 +3,8 @@ package com.kumulos.android;
 import android.content.Context;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.GoogleApiAvailabilityLight;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.huawei.hms.api.HuaweiApiAvailability;
 
 import androidx.annotation.NonNull;
@@ -11,11 +12,17 @@ import androidx.annotation.NonNull;
 final class ImplementationUtil {
 
     private MessagingApi availableMessagingApi;
-
+    private FirebaseMessagingApi firebaseMessagingApi = FirebaseMessagingApi.UNKNOWN;
     enum MessagingApi {
         NONE,
         FCM,
         HMS
+    }
+
+    enum FirebaseMessagingApi {
+        UNKNOWN,
+        DEPRECATED_1,  //FirebaseMessaging [19.0.0, 22.0.0)
+        LATEST   //FirebaseMessaging [21.0.0, 22.99.99]
     }
 
     private static ImplementationUtil instance;
@@ -23,11 +30,19 @@ final class ImplementationUtil {
     private ImplementationUtil() {}
 
     private ImplementationUtil(@NonNull Context context) {
-        if (canLoadClass("com.google.android.gms.common.GoogleApiAvailability")) {
-            int result = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context);
+        if (canLoadClass("com.google.android.gms.common.GoogleApiAvailabilityLight")) {
+            int result = GoogleApiAvailabilityLight.getInstance().isGooglePlayServicesAvailable(context);
 
             if (ConnectionResult.SUCCESS == result) {
                 availableMessagingApi = MessagingApi.FCM;
+
+                if (canLoadClass("com.google.firebase.iid.FirebaseInstanceId")){
+                    firebaseMessagingApi = FirebaseMessagingApi.DEPRECATED_1;
+                }
+                else if (this.hasLatestFirebaseMessaging()){
+                    firebaseMessagingApi = FirebaseMessagingApi.LATEST;
+                }
+
                 return;
             }
         }
@@ -59,11 +74,25 @@ final class ImplementationUtil {
         return availableMessagingApi;
     }
 
+    FirebaseMessagingApi getAvailableFirebaseMessagingApi() {
+        return firebaseMessagingApi;
+    }
+
     private boolean canLoadClass(@NonNull String className) {
         try {
             Class.forName(className);
             return true;
         } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private boolean hasLatestFirebaseMessaging() {
+        FirebaseMessaging instance = FirebaseMessaging.getInstance();
+        try {
+            instance.getClass().getMethod("getToken");
+            return true;
+        } catch (NoSuchMethodException e) {
             return false;
         }
     }

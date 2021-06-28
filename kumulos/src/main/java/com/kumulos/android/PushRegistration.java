@@ -3,18 +3,16 @@ package com.kumulos.android;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
-
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.huawei.agconnect.config.AGConnectServicesConfig;
 import com.huawei.hms.aaid.HmsInstanceId;
 import com.huawei.hms.common.ApiException;
-
-import java.io.IOException;
 import java.lang.ref.WeakReference;
-
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.concurrent.Executor;
 import androidx.annotation.Nullable;
 
 final class PushRegistration {
@@ -40,11 +38,12 @@ final class PushRegistration {
                 return;
             }
 
-            ImplementationUtil.MessagingApi api = ImplementationUtil.getInstance(context).getAvailableMessagingApi();
+            ImplementationUtil instance = ImplementationUtil.getInstance(context);
+            ImplementationUtil.MessagingApi api = instance.getAvailableMessagingApi();
 
             switch (api) {
                 case FCM:
-                    this.registerFcm(context);
+                    this.registerFcm(context, instance);
                     break;
                 case HMS:
                     this.registerHms(context);
@@ -55,12 +54,99 @@ final class PushRegistration {
             }
         }
 
-        private void registerFcm(Context context) {
-            Task<InstanceIdResult> result = FirebaseInstanceId.getInstance().getInstanceId();
+        private void registerFcm(Context context, ImplementationUtil instance) {
+            ImplementationUtil.FirebaseMessagingApi api = instance.getAvailableFirebaseMessagingApi();
 
-            result.addOnSuccessListener(Kumulos.executorService, instanceIdResult ->
-                    Kumulos.pushTokenStore(context, PushTokenType.FCM, instanceIdResult.getToken()));
+            switch (api) {
+                case LATEST:
+                    this.registerFcmNew(context);
+                    break;
+                case DEPRECATED_1:
+                    this.registerFcmOld(context);
+                    break;
+                case UNKNOWN:
+                    Log.e(TAG, "FirebaseMessaging version not supported");
+                    break;
+            }
         }
+
+        @SuppressWarnings("unchecked")
+        private void registerFcmNew(Context context) {
+            FirebaseMessaging instance = FirebaseMessaging.getInstance();
+
+            Exception exception = null;
+            try {
+                Method getToken = instance.getClass().getMethod("getToken");
+                Task<String> result = (Task<String>) getToken.invoke(instance);
+
+                result.addOnCompleteListener(Kumulos.executorService, task -> {
+                    if (!task.isSuccessful()) {
+                        Log.w(TAG, "Fetching FCM registration token failed for FirebaseMessaging >=21.0.0 ", task.getException());
+                        return;
+                    }
+
+                    String token = task.getResult();
+
+                    Kumulos.pushTokenStore(context, PushTokenType.FCM, token);
+                });
+            } catch (NoSuchMethodException e) {
+                exception = e;
+            } catch (IllegalAccessException e) {
+                exception = e;
+            } catch (InvocationTargetException e) {
+                exception = e;
+            }
+
+            if (exception != null) {
+                Log.e(TAG, "Failed to get FCM token with FirebaseMessaging >=21.0.0 : " + exception.getMessage());
+            }
+        }
+
+
+        private void registerFcmOld(Context context) {
+            // Equivalent of:
+            // Task<InstanceIdResult> result = com.google.firebase.iid.FirebaseInstanceId.getInstance().getInstanceId();
+            // result.addOnSuccessListener(Kumulos.executorService, instanceIdResult ->
+            //        Kumulos.pushTokenStore(context, PushTokenType.FCM, instanceIdResult.getToken()));
+
+            Exception exception = null;
+            try {
+                Class<?> FirebaseInstanceIdClass = Class.forName("com.google.firebase.iid.FirebaseInstanceId");
+
+                Method getInstanceMethod = FirebaseInstanceIdClass.getMethod("getInstance");
+                Object instance = getInstanceMethod.invoke(null);
+
+                Method getInstanceIdMethod = instance.getClass().getMethod("getInstanceId");
+                Object task = getInstanceIdMethod.invoke(instance);
+
+                OnSuccessListener<?> callback = instanceIdResult -> {
+                    try {
+                        Method getTokenMethod = instanceIdResult.getClass().getMethod("getToken");
+                        String token = (String) getTokenMethod.invoke(instanceIdResult);
+
+                        Kumulos.pushTokenStore(context, PushTokenType.FCM, token);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to get FCM token with FirebaseMessaging <21.0.0, in callback : " + e.getMessage());
+                    }
+                };
+
+                Method addOnSuccessListenerMethod = task.getClass().getMethod("addOnSuccessListener", Executor.class, OnSuccessListener.class);
+                addOnSuccessListenerMethod.invoke(task, Kumulos.executorService, callback);
+            } catch (ClassNotFoundException e) {
+                exception = e;
+            } catch (NoSuchMethodException e) {
+                exception = e;
+            } catch (IllegalAccessException e) {
+                exception = e;
+            } catch (InvocationTargetException e) {
+                exception = e;
+            }
+
+            if (exception != null) {
+                Log.e(TAG, "Failed to get FCM token with FirebaseMessaging <21.0.0 : " + exception.getMessage());
+            }
+        }
+
 
         private void registerHms(Context context) {
             try {
@@ -101,11 +187,12 @@ final class PushRegistration {
                 return;
             }
 
-            ImplementationUtil.MessagingApi api = ImplementationUtil.getInstance(context).getAvailableMessagingApi();
+            ImplementationUtil instance = ImplementationUtil.getInstance(context);
+            ImplementationUtil.MessagingApi api = instance.getAvailableMessagingApi();
 
             switch (api) {
                 case FCM:
-                    this.unregisterFcm(context);
+                    this.unregisterFcm(context, instance);
                     break;
                 case HMS:
                     this.unregisterHms(context);
@@ -116,18 +203,91 @@ final class PushRegistration {
             }
         }
 
-        private void unregisterFcm(Context context) {
-            Task<InstanceIdResult> result = FirebaseInstanceId.getInstance().getInstanceId();
+        private void unregisterFcm(Context context, ImplementationUtil instance) {
+            ImplementationUtil.FirebaseMessagingApi api = instance.getAvailableFirebaseMessagingApi();
 
-            result.addOnSuccessListener(Kumulos.executorService, instanceIdResult -> {
-                try {
-                    FirebaseInstanceId.getInstance().deleteToken(instanceIdResult.getToken(),
-                            FirebaseMessaging.INSTANCE_ID_SCOPE);
+            switch (api) {
+                case LATEST:
+                    this.unregisterFcmNew(context);
+                    break;
+                case DEPRECATED_1:
+                    this.unregisterFcmOld(context);
+                    break;
+                case UNKNOWN:
+                    Log.e(TAG, "FirebaseMessaging version not supported");
+                    break;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private void unregisterFcmNew(Context context) {
+            FirebaseMessaging instance = FirebaseMessaging.getInstance();
+
+            Exception exception = null;
+            try {
+                Method deleteToken = instance.getClass().getMethod("deleteToken");
+                Task<Void> result = (Task<Void>) deleteToken.invoke(instance);
+
+                result.addOnCompleteListener(Kumulos.executorService, task -> {
+                    if (!task.isSuccessful()) {
+                        Log.w(TAG, "Deleting FCM registration token failed for FirebaseMessaging >=21.0.0 ", task.getException());
+                        return;
+                    }
+
                     Kumulos.trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_UNSUBSCRIBED, null);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+                });
+            } catch (NoSuchMethodException e) {
+                exception = e;
+            } catch (IllegalAccessException e) {
+                exception = e;
+            } catch (InvocationTargetException e) {
+                exception = e;
+            }
+
+            if (exception != null) {
+                Log.e(TAG, "Failed to get FCM token with FirebaseMessaging >=21.0.0 : " + exception.getMessage());
+            }
+        }
+
+        private void unregisterFcmOld(Context context) {
+            Exception exception = null;
+            try {
+                Class<?> FirebaseInstanceIdClass = Class.forName("com.google.firebase.iid.FirebaseInstanceId");
+
+                Method getInstanceMethod = FirebaseInstanceIdClass.getMethod("getInstance");
+                Object instance = getInstanceMethod.invoke(null);
+
+                Method getInstanceIdMethod = instance.getClass().getMethod("getInstanceId");
+                Object task = getInstanceIdMethod.invoke(instance);
+
+                OnSuccessListener<?> callback = instanceIdResult -> {
+                    try {
+                        Method getTokenMethod = instanceIdResult.getClass().getMethod("getToken");
+                        String token = (String) getTokenMethod.invoke(instanceIdResult);
+
+                        Method getDeleteTokenMethod = instance.getClass().getMethod("deleteToken", String.class, String.class);
+                        getDeleteTokenMethod.invoke(instance, token, FirebaseMessaging.INSTANCE_ID_SCOPE);
+                        Kumulos.trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_UNSUBSCRIBED, null);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to delete FCM token with FirebaseMessaging <21.0.0, in callback : " + e.getMessage());
+                    }
+                };
+
+                Method addOnSuccessListenerMethod = task.getClass().getMethod("addOnSuccessListener", Executor.class, OnSuccessListener.class);
+                addOnSuccessListenerMethod.invoke(task, Kumulos.executorService, callback);
+            } catch (ClassNotFoundException e) {
+                exception = e;
+            } catch (NoSuchMethodException e) {
+                exception = e;
+            } catch (IllegalAccessException e) {
+                exception = e;
+            } catch (InvocationTargetException e) {
+                exception = e;
+            }
+
+            if (exception != null) {
+                Log.e(TAG, "Failed to delete FCM token with FirebaseMessaging <21.0.0 : " + exception.getMessage());
+            }
         }
 
         private void unregisterHms(Context context) {
@@ -147,8 +307,8 @@ final class PushRegistration {
         }
     }
 
-    private static @Nullable String getHmsAppId(Context context) {
+    private static @Nullable
+    String getHmsAppId(Context context) {
         return AGConnectServicesConfig.fromContext(context).getString("client/app_id");
     }
-
 }

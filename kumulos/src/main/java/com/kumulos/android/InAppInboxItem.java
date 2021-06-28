@@ -1,5 +1,7 @@
 package com.kumulos.android;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Date;
 
 import androidx.annotation.NonNull;
@@ -11,6 +13,8 @@ public class InAppInboxItem {
 
     InAppInboxItem() {
     }
+
+    private final int DEFAULT_IMAGE_WIDTH = 300;
 
     private int id;
     private String title;
@@ -26,6 +30,8 @@ public class InAppInboxItem {
     private Date sentAt;
     @Nullable
     private JSONObject data;
+    @Nullable
+    private String imagePath;
 
     public int getId() {
         return id;
@@ -101,5 +107,28 @@ public class InAppInboxItem {
 
     void setData(@Nullable JSONObject data) {
         this.data = data;
+    }
+
+    void setImagePath(@NonNull String imagePath) {
+        this.imagePath = imagePath;
+    }
+
+    public @Nullable
+    URL getImageUrl() {
+        return this.getImageUrl(DEFAULT_IMAGE_WIDTH);
+    }
+
+    public @Nullable
+    URL getImageUrl(int width) {
+        if (width <= 0 || this.imagePath == null){
+            return null;
+        }
+
+        try{
+            return MediaHelper.getCompletePictureUrl(this.imagePath, width);
+        }
+        catch(MalformedURLException e){
+            return null;
+        }
     }
 }

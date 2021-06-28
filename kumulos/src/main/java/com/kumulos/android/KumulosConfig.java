@@ -20,7 +20,7 @@ public final class KumulosConfig {
 
     @DrawableRes
     static final int DEFAULT_NOTIFICATION_ICON_ID = R.drawable.kumulos_ic_stat_notifications;
-    static final int DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS = 40;
+    static final int DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS = 23;
     private static final String KEY_API_KEY = "apiKey";
     private static final String KEY_SECRET_KEY = "secretKey";
     private static final String KEY_NOTIFICATION_SMALL_ICON_ID = "smallNotificationIconId";

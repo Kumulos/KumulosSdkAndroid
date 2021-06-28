@@ -48,7 +48,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     private static final String DEFAULT_CHANNEL_ID = "kumulos_general_v3";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
-    private static final String MEDIA_RESIZER_BASE_URL = "https://i.app.delivery";
+
 
     @Override
     final public void onReceive(Context context, Intent intent) {
@@ -490,13 +490,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 throw new RuntimeException("Kumulos: pictureUrl cannot be null at this point");
             }
 
-            if (pictureUrl.substring(0, 8).equals("https://") || pictureUrl.substring(0, 7).equals("http://")){
-                return new URL(pictureUrl);
-            }
-
             DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
-
-            return new URL(MEDIA_RESIZER_BASE_URL + "/" + metrics.widthPixels + "x/" + pictureUrl);
+            return MediaHelper.getCompletePictureUrl(pictureUrl,  metrics.widthPixels);
         }
 
         @Override
