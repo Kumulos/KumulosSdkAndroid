@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.work.Constraints;
@@ -422,6 +423,7 @@ import androidx.work.WorkManager;
         public void onActivitySaveInstanceState(Activity activity, Bundle outState) {  /* noop */ }
 
         @Override
+        @MainThread
         public void onActivityDestroyed(Activity activity) {
             InAppMessagePresenter.maybeCloseDialog(activity);
 
