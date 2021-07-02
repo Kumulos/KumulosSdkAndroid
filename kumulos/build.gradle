@@ -29,15 +29,14 @@ android {
     }
 }
 
-
-def firebaseMessagingVersionRange = '[19.0.0, 22.99.99]'
 dependencies {
     testImplementation 'junit:junit:4.12'
+    // Use 3.12.x tree as long as possible (EOL Dec 2021) to keep minSdk 16
     implementation 'com.squareup.okhttp3:okhttp:3.12.13'
     implementation 'ch.acra:acra-http:5.5.0'
     implementation 'org.codehaus.jackson:jackson-mapper-asl:1.8.5'
     implementation 'androidx.work:work-runtime:2.5.0'
-    implementation "com.google.firebase:firebase-messaging:$firebaseMessagingVersionRange"
+    implementation 'com.google.firebase:firebase-messaging:21.0.1'
     compileOnly 'com.huawei.hms:push:4.0.3.300'
 }
 
