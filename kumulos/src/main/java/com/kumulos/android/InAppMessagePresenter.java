@@ -69,8 +69,8 @@ class InAppMessagePresenter {
     }
 
     @UiThread
-    private static void presentMessagesOnUiThread(Activity currentActivity, List<InAppMessage> itemsToPresent, List<Integer> tickleIds){
-        if (currentActivity == null){
+    private static void presentMessagesOnUiThread(Activity currentActivity, List<InAppMessage> itemsToPresent, List<Integer> tickleIds) {
+        if (currentActivity == null) {
             return;
         }
 
@@ -289,12 +289,12 @@ class InAppMessagePresenter {
 
     @AnyThread
     static void closeCurrentMessage(Activity activity) {
-        if (dialog == null  || activity == null) {
+        if (dialog == null || activity == null) {
             return;
         }
 
         activity.runOnUiThread(() -> {
-            if (messageQueue.isEmpty()){
+            if (messageQueue.isEmpty()) {
                 return;
             }
             InAppMessage message = messageQueue.get(0);
@@ -307,7 +307,7 @@ class InAppMessagePresenter {
 
     @UiThread
     private static void setSpinnerVisibility(int visibility) {
-        if (spinner != null){
+        if (spinner != null) {
             spinner.setVisibility(visibility);
         }
     }
@@ -337,7 +337,7 @@ class InAppMessagePresenter {
     }
 
     @UiThread
-    static void maybeCloseDialog (Activity stoppedActivity) {
+    static void maybeCloseDialog(Activity stoppedActivity) {
         if (dialog == null) {
             return;
         }
@@ -364,11 +364,15 @@ class InAppMessagePresenter {
         if (dialog != null) {
             dialog.setOnKeyListener(null);
             dialog.dismiss();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 unsetStatusBarColorForDialog(dialogActivity);
             }
-
         }
+
+        if (null != wv) {
+            wv.destroy();
+        }
+
         dialog = null;
         wv = null;
         spinner = null;
@@ -425,7 +429,7 @@ class InAppMessagePresenter {
         }
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @UiThread
     private static void showWebView(@NonNull Activity currentActivity) {
         if (dialog != null) {
@@ -491,7 +495,7 @@ class InAppMessagePresenter {
                     setStatusBarColorForDialog(currentActivity);
                     super.onPageFinished(view, url);
                 }
-                
+
                 @Override
                 public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                     Kumulos.log(TAG, "Error code: " + errorCode + ". " + description + " " + failingUrl);
