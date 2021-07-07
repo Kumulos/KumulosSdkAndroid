@@ -23,8 +23,14 @@ android {
 
 dependencies {
     // Kumulos debug & release libraries
-    debugImplementation 'com.kumulos.android:kumulos-android-debug:11.7.1'
-    releaseImplementation 'com.kumulos.android:kumulos-android-release:11.7.1'
+    debugImplementation 'com.kumulos.android:kumulos-android-debug:12.0.0'
+    releaseImplementation 'com.kumulos.android:kumulos-android-release:12.0.0'
+
+    // Add firebase-messaging dep using BoM to get compatible version
+    // of Android FCM push gateway library for Kumulos to retrieve
+    // FCM push tokens.
+    implementation platform('com.google.firebase:firebase-bom:28.2.0')
+    implementation 'com.google.firebase:firebase-messaging'
 }
 ```
 
