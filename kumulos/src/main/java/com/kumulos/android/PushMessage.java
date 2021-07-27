@@ -39,6 +39,7 @@ public final class PushMessage implements Parcelable {
     String sound;
     private final @Nullable
     String collapseKey;
+    private final String channel;
 
     /**
      * package
@@ -65,6 +66,7 @@ public final class PushMessage implements Parcelable {
         this.buttons = buttons;
         this.sound = sound;
         this.collapseKey = collapseKey;
+        this.channel = this.getChannel(data);
     }
 
     private PushMessage(Parcel in) {
@@ -101,6 +103,26 @@ public final class PushMessage implements Parcelable {
 
         sound = in.readString();
         collapseKey = in.readString();
+        channel = in.readString();
+    }
+
+    private String getChannel(JSONObject data) {
+        String customChannel = data.optString("k.channel");
+        String notificationType = data.optString("k.notificationType");
+
+        if (customChannel != null) {
+            return customChannel;
+        }
+
+        if (notificationType == null) {
+            return PushBroadcastReceiver.DEFAULT_CHANNEL_ID;
+        }
+
+        if (notificationType.equals("important")) {
+            return PushBroadcastReceiver.IMPORTANT_CHANNEL_ID;
+        }
+
+        return PushBroadcastReceiver.DEFAULT_CHANNEL_ID;
     }
 
     private Integer getTickleId(JSONObject data) {
@@ -159,6 +181,7 @@ public final class PushMessage implements Parcelable {
         dest.writeString(buttonsString);
         dest.writeString(sound);
         dest.writeString(collapseKey);
+        dest.writeString(channel);
     }
 
     public int getId() {
@@ -221,4 +244,5 @@ public final class PushMessage implements Parcelable {
         return this.collapseKey;
     }
 
+    public String getChannel() { return channel; }
 }

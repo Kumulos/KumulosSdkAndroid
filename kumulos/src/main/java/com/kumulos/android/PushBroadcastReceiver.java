@@ -45,7 +45,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
-    private static final String DEFAULT_CHANNEL_ID = "kumulos_general_v3";
+    public static final String DEFAULT_CHANNEL_ID = "kumulos_general_v3";
+    public static final String IMPORTANT_CHANNEL_ID = "kumulos_important_v1";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
 
@@ -306,17 +307,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 return null;
             }
 
-            NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
-            if (null == channel) {
-                this.clearOldChannels(notificationManager);
+            this.channelSetup(notificationManager);
 
-                channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
-                channel.setSound(null, null);
-                channel.setVibrationPattern(new long[]{0, 250, 250, 250});
-                notificationManager.createNotificationChannel(channel);
-            }
-
-            notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
+            notificationBuilder = new Notification.Builder(context, pushMessage.getCategory());
         }
         else {
             notificationBuilder = new Notification.Builder(context);
@@ -324,6 +317,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         KumulosConfig config = Kumulos.getConfig();
         int icon = config != null ? config.getNotificationSmallIconId() : KumulosConfig.DEFAULT_NOTIFICATION_ICON_ID;
+        int priority = pushMessage.getCategory().equals(IMPORTANT_CHANNEL_ID) ? Notification.PRIORITY_MAX : Notification.PRIORITY_DEFAULT;
 
         notificationBuilder
                 .setSmallIcon(icon)
@@ -331,7 +325,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setContentText(pushMessage.getMessage())
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent)
-                .setDeleteIntent(pendingDismissedIntent);
+                .setDeleteIntent(pendingDismissedIntent)
+                .setPriority(priority);
 
         this.maybeAddSound(context, notificationBuilder, notificationManager, pushMessage);
 
@@ -354,6 +349,34 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return null;
         }
         return notificationBuilder.build();
+    }
+
+    private void channelSetup(NotificationManager notificationManager) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return;
+        }
+
+        NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
+        NotificationChannel importantChannel = notificationManager.getNotificationChannel(IMPORTANT_CHANNEL_ID);
+
+        //- Signalling a change / update to SDK
+        if (null == channel || null == importantChannel) {
+            this.clearOldChannels(notificationManager);
+        }
+
+        if (null == channel) {
+            channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setSound(null, null);
+            channel.setVibrationPattern(new long[]{0, 250, 250, 250});
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        if (null == importantChannel) {
+            channel = new NotificationChannel(IMPORTANT_CHANNEL_ID, "Important", NotificationManager.IMPORTANCE_HIGH);
+            channel.setSound(null, null);
+            channel.setVibrationPattern(new long[]{0, 250, 250, 250});
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     private PendingIntent getPushIntent(Context context, PushMessage pushMessage, String action){
