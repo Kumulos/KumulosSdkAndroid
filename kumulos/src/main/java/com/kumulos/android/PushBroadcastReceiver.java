@@ -309,7 +309,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             this.channelSetup(notificationManager);
 
-            notificationBuilder = new Notification.Builder(context, pushMessage.getCategory());
+            notificationBuilder = new Notification.Builder(context, pushMessage.getChannel());
         }
         else {
             notificationBuilder = new Notification.Builder(context);
@@ -317,7 +317,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         KumulosConfig config = Kumulos.getConfig();
         int icon = config != null ? config.getNotificationSmallIconId() : KumulosConfig.DEFAULT_NOTIFICATION_ICON_ID;
-        int priority = pushMessage.getCategory().equals(IMPORTANT_CHANNEL_ID) ? Notification.PRIORITY_MAX : Notification.PRIORITY_DEFAULT;
+        int priority = pushMessage.getChannel().equals(IMPORTANT_CHANNEL_ID) ? Notification.PRIORITY_MAX : Notification.PRIORITY_DEFAULT;
 
         notificationBuilder
                 .setSmallIcon(icon)
