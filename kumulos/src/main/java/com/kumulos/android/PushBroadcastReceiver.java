@@ -309,7 +309,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             this.channelSetup(notificationManager);
 
-            notificationBuilder = new Notification.Builder(context, pushMessage.getChannel());
+            if (notificationManager.getNotificationChannel(pushMessage.getChannel()) == null) {
+                notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
+            }
+            else {
+                notificationBuilder = new Notification.Builder(context, pushMessage.getChannel());
+            }
         }
         else {
             notificationBuilder = new Notification.Builder(context);
