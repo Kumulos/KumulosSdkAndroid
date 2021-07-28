@@ -110,15 +110,11 @@ public final class PushMessage implements Parcelable {
         String customChannel = data.optString("k.channel");
         String notificationType = data.optString("k.notificationType");
 
-        if (customChannel != null) {
+        if (!TextUtils.isEmpty(customChannel)) {
             return customChannel;
         }
 
-        if (notificationType == null) {
-            return PushBroadcastReceiver.DEFAULT_CHANNEL_ID;
-        }
-
-        if (notificationType.equals("important")) {
+        if (!TextUtils.isEmpty(notificationType) && notificationType.equals("important")) {
             return PushBroadcastReceiver.IMPORTANT_CHANNEL_ID;
         }
 
