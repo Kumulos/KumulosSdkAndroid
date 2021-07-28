@@ -322,7 +322,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         KumulosConfig config = Kumulos.getConfig();
         int icon = config != null ? config.getNotificationSmallIconId() : KumulosConfig.DEFAULT_NOTIFICATION_ICON_ID;
-        int priority = pushMessage.getChannel().equals(IMPORTANT_CHANNEL_ID) ? Notification.PRIORITY_MAX : Notification.PRIORITY_DEFAULT;
 
         notificationBuilder
                 .setSmallIcon(icon)
@@ -330,8 +329,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setContentText(pushMessage.getMessage())
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent)
-                .setDeleteIntent(pendingDismissedIntent)
-                .setPriority(priority);
+                .setDeleteIntent(pendingDismissedIntent);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            int priority = pushMessage.getChannel().equals(IMPORTANT_CHANNEL_ID) ? Notification.PRIORITY_MAX : Notification.PRIORITY_DEFAULT;
+            notificationBuilder.setPriority(priority);
+        }
 
         this.maybeAddSound(context, notificationBuilder, notificationManager, pushMessage);
 
