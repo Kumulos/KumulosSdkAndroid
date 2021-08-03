@@ -361,12 +361,18 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
         intent.setPackage(context.getPackageName());
 
+        final int flags;
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE;
+        } else {
+            flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT;
+        }
+
         return PendingIntent.getBroadcast(
                 context,
                 (int) pushMessage.getTimeSent(),
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-
+                flags);
     }
 
     @TargetApi(android.os.Build.VERSION_CODES.O)
@@ -447,11 +453,18 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 clickIntent.putExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID, buttonId);
                 clickIntent.setPackage(context.getPackageName());
 
+                final int flags;
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags = PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE;
+                } else {
+                    flags = PendingIntent.FLAG_ONE_SHOT;
+                }
+
                 PendingIntent pendingClickIntent = PendingIntent.getBroadcast(
                         context,
                         ((int) pushMessage.getTimeSent()) + (i+1),
                         clickIntent,
-                        PendingIntent.FLAG_ONE_SHOT);
+                        flags);
 
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
                     notificationBuilder.addAction(0, label, pendingClickIntent);
