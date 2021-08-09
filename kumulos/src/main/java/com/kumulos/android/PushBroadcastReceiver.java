@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 
 import androidx.annotation.Nullable;
@@ -501,10 +502,15 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     private class LoadNotificationPicture extends AsyncTask<Void, Void, Bitmap> {
-        private Notification.Builder builder;
-        private Context context;
-        private PushMessage pushMessage;
-        private PendingResult pendingResult;
+        private final Notification.Builder builder;
+        private final Context context;
+        private final PushMessage pushMessage;
+        private final PendingResult pendingResult;
+
+        //Theoretical time limit for BroadcastReceiver's bg execution is 30s. Leave 6s for connection.
+        //Practically ANR doesnt happen with even bigger 40+s timeouts.
+        private final int READ_TIMEOUT = 24000;
+        private final int CONNECTION_TIMEOUT = 6000;
 
         LoadNotificationPicture(Context context, PendingResult pendingResult, Notification.Builder builder, PushMessage pushMessage) {
             super();
@@ -533,14 +539,20 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
+                connection.setConnectTimeout(CONNECTION_TIMEOUT);
+                connection.setReadTimeout(READ_TIMEOUT);
+
                 connection.connect();
                 in = connection.getInputStream();
                 return BitmapFactory.decodeStream(in);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
+            } catch(SocketTimeoutException e){
+                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
             return null;
         }
 
@@ -549,6 +561,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             super.onPostExecute(result);
 
             if (result == null){
+                Notification notification = this.builder.build();
+                PushBroadcastReceiver.this.showNotification(this.context, this.pushMessage, notification);
+
                 pendingResult.finish();
                 return;
             }
