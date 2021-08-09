@@ -507,9 +507,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         private final PushMessage pushMessage;
         private final PendingResult pendingResult;
 
-        //Theoretical time limit for BroadcastReceiver's bg execution is 30s. Leave 5s for connection etc.
+        //Theoretical time limit for BroadcastReceiver's bg execution is 30s. Leave 6s for connection.
         //Practically ANR doesnt happen with even bigger 40+s timeouts.
-        private final int READ_TIMEOUT = 25000;
+        private final int READ_TIMEOUT = 24000;
+        private final int CONNECTION_TIMEOUT = 6000;
 
         LoadNotificationPicture(Context context, PendingResult pendingResult, Notification.Builder builder, PushMessage pushMessage) {
             super();
@@ -538,6 +539,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
+                connection.setConnectTimeout(CONNECTION_TIMEOUT);
                 connection.setReadTimeout(READ_TIMEOUT);
 
                 connection.connect();
