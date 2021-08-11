@@ -79,7 +79,7 @@ public class DeepLinkFingerprinter {
     private final String CLIENT_FINGERPRINT_GENERATED = "FINGERPRINT_GENERATED";
     private final String REQUEST_FINGERPRINT = "REQUEST_FINGERPRINT";
 
-    private final Deferred<Map<String, String>> fingerprint;
+    private final Deferred<JSONObject> fingerprint;
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @AnyThread
@@ -133,7 +133,7 @@ public class DeepLinkFingerprinter {
         wv.loadUrl(PRINT_DUST_RUNTIME_URL);
     }
 
-    public void getFingerprintComponents(DeepLinkFingerprintWatcherInterface<Map<String, String>> onGenerated) {
+    public void getFingerprintComponents(DeepLinkFingerprintWatcherInterface<JSONObject> onGenerated) {
         fingerprint.then(onGenerated);
     }
 
@@ -173,21 +173,9 @@ public class DeepLinkFingerprinter {
                     return;
                 }
 
-                JSONObject componentsJson = data.optJSONObject("components");
-                if (componentsJson == null) {
+                JSONObject components = data.optJSONObject("components");
+                if (components == null) {
                     return;
-                }
-
-                Map<String, String> components = new HashMap<>();
-                Iterator<String> keys = componentsJson.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next();
-                    try {
-                        String value = componentsJson.getString(key);
-                        components.put(key, value);
-                    } catch (JSONException e) {
-                        Log.d(TAG, "Incorrect components key: " + key);
-                    }
                 }
 
                 fingerprint.resolve(components);

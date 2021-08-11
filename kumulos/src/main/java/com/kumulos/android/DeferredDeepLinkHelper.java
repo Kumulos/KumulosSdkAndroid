@@ -1,14 +1,19 @@
 package com.kumulos.android;
 
 import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Base64;
+import android.util.Log;
+import android.view.textclassifier.TextClassifier;
 import android.webkit.URLUtil;
 
 import androidx.annotation.Nullable;
@@ -19,6 +24,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -29,7 +35,10 @@ import static android.content.Context.CLIPBOARD_SERVICE;
 public class DeferredDeepLinkHelper {
     private static final String BASE_URL = "https://links.kumulos.com";
 
+    private static boolean continuationHandled;
+
     /* package */ DeferredDeepLinkHelper() {
+        continuationHandled = false;
     }
 
     public class DeepLinkContent {
@@ -74,11 +83,43 @@ public class DeferredDeepLinkHelper {
         LINK_MATCHED
     }
 
-    /* package */ void checkForDeferredLink(Context context) {
+    /* package */ void checkForNonContinuationLinkMatch(Context context) {
+        if (this.checkForDeferredLinkOnClipboard(context)){
+            return;
+        }
+
+        if (continuationHandled){
+            return;
+        }
+
+        this.checkForWebToAppBannerTap(context);
+    }
+
+    /* package */ boolean maybeProcessUrl(Context context, String urlStr, boolean wasDeferred) {
+        URL url = this.getURL(urlStr);
+        if (url == null) {
+            return false;
+        }
+
+        if (!this.urlShouldBeHandled(url)) {
+            return false;
+        }
+
+        if (!wasDeferred){
+            continuationHandled = true;
+        }
+
+        this.handleDeepLink(context, url, wasDeferred);
+        return true;
+    }
+
+    private boolean checkForDeferredLinkOnClipboard(Context context){
+        boolean handled = false;
+
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
         boolean checked = preferences.getBoolean(SharedPrefs.DEFERRED_LINK_CHECKED_KEY, false);
         if (checked) {
-            return;
+            return handled;
         }
 
         SharedPreferences.Editor editor = preferences.edit();
@@ -87,24 +128,12 @@ public class DeferredDeepLinkHelper {
 
         String text = this.getClipText(context);
         if (text == null) {
-            return;
+            return handled;
         }
 
-        this.maybeProcessUrl(context, text, true);
-    }
+        handled = this.maybeProcessUrl(context, text, true);
 
-
-    /* package */ void maybeProcessUrl(Context context, String urlStr, boolean wasDeferred) {
-        URL url = this.getURL(urlStr);
-        if (url == null) {
-            return;
-        }
-
-        if (!this.urlShouldBeHandled(url)) {
-            return;
-        }
-
-        this.handleDeepLink(context, url, wasDeferred);
+        return handled;
     }
 
     private @Nullable
@@ -113,6 +142,18 @@ public class DeferredDeepLinkHelper {
         if (clipboard == null) {
             return null;
         }
+
+        //TODO: enable when target 31
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+//            ClipDescription description = clipboard.getPrimaryClipDescription();
+//            if (description == null){
+//                return null;
+//            }
+//            float score = description.getConfidenceScore(TextClassifier.TYPE_URL);
+//            if (score != 1){
+//                return null;
+//            }
+//        }
 
         ClipData clip = clipboard.getPrimaryClip();
         if (clip == null) {
@@ -258,6 +299,92 @@ public class DeferredDeepLinkHelper {
             }
         });
     }
+
+
+    //********************************* FINGERPRINTING *********************************
+
+    private void checkForWebToAppBannerTap(Context context){
+        DeepLinkFingerprinter fp = new DeepLinkFingerprinter(context);
+
+        fp.getFingerprintComponents((JSONObject components) -> {
+            this.handleFingerprintComponents(context, components);
+        });
+    }
+
+    private void handleFingerprintComponents(Context context, JSONObject components){
+        String encodedComponents = Base64.encodeToString(components.toString().getBytes(), Base64.NO_WRAP);
+        String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/_taps?fingerprint=" + encodedComponents;
+
+        final Request request = new Request.Builder()
+                .url(requestUrl)
+                .addHeader(Kumulos.KEY_AUTH_HEADER, Kumulos.authHeader)
+                .addHeader("Accept", "application/json")
+                .addHeader("Content-Type", "application/json")
+                .get()
+                .build();
+
+        OkHttpClient httpClient = Kumulos.getHttpClient();
+
+        Kumulos.executorService.submit(() -> {
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+                    DeferredDeepLinkHelper.this.handledFingerprintSuccessResponse(context, response);
+                } else {
+                    DeferredDeepLinkHelper.this.handledFingerprintFailedResponse(context, response);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void handledFingerprintSuccessResponse(Context context, Response response) throws IOException {
+        if (response.code() != 200) {
+            return;
+        }
+
+        try {
+            JSONObject data = new JSONObject(response.body().string());
+            String linkUrl = data.getString("linkUrl");
+            URL url = new URL(linkUrl);
+
+            DeepLink deepLink = new DeepLink(url, data);
+
+            this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_MATCHED, url, deepLink);
+
+            this.trackLinkMatched(context, url, false);
+        } catch (NullPointerException | JSONException e) {
+            // Fingerprint matches that fail to parse correctly can't know the URL so
+            // don't invoke any error handler.
+            e.printStackTrace();
+        }
+    }
+
+    private void handledFingerprintFailedResponse(Context context, Response response) throws IOException {
+        int statusCode = response.code();
+        if (statusCode != 410 && statusCode != 429){
+            return;
+        }
+
+        try {
+            JSONObject data = new JSONObject(response.body().string());
+            String linkUrl = data.getString("linkUrl");
+            URL url = new URL(linkUrl);
+
+            switch (statusCode) {
+                case 410:
+                    this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_EXPIRED, url, null);
+                    break;
+                case 429:
+                    this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_LIMIT_EXCEEDED, url, null);
+                    break;
+            }
+        } catch (NullPointerException | JSONException e) {
+            // Fingerprint matches that fail to parse correctly can't know the URL so
+            // don't invoke any error handler.
+
+            e.printStackTrace();
+        }
+    }
+
 }
-
-

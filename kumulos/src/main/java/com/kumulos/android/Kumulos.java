@@ -72,6 +72,8 @@ public final class Kumulos {
 
     static PushActionHandlerInterface pushActionHandler = null;
 
+    private static DeferredDeepLinkHelper deepLinkHelper = new DeferredDeepLinkHelper();
+
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
             e.printStackTrace();
@@ -642,8 +644,7 @@ public final class Kumulos {
             return;
         }
 
-        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
-        helper.maybeProcessUrl(context, uri.toString(), false);
+        deepLinkHelper.maybeProcessUrl(context, uri.toString(), false);
     }
 
     public static void seeInputFocus(Context context, boolean hasFocus) {
@@ -655,11 +656,8 @@ public final class Kumulos {
             return;
         }
 
-        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
-        helper.checkForDeferredLink(context);
+        deepLinkHelper.checkForNonContinuationLinkMatch(context);//TODO: not efficient? [webview + loadUrl + request] every time activity gets focus
     }
-
-
 
     //==============================================================================================
     //-- OTHER
