@@ -72,7 +72,7 @@ public final class Kumulos {
 
     static PushActionHandlerInterface pushActionHandler = null;
 
-    private static DeferredDeepLinkHelper deepLinkHelper = new DeferredDeepLinkHelper();
+    private static DeferredDeepLinkHelper deepLinkHelper;
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -126,6 +126,9 @@ public final class Kumulos {
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
+        if (currentConfig.getDeferredDeepLinkHandler() != null){
+            deepLinkHelper = new DeferredDeepLinkHelper();
+        }
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
