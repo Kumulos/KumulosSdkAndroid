@@ -35,7 +35,7 @@ class Deferred<R> {
     }
 
     private State state = State.PENDING;
-    private final List<DeepLinkFingerprintWatcherInterface<R>> pendingWatchers = new ArrayList<>();
+    private final List<Kumulos.ResultCallback<R>> pendingWatchers = new ArrayList<>();
     private R components;
 
     void resolve(R result) {
@@ -47,22 +47,22 @@ class Deferred<R> {
         components = result;
 
         new Handler(Looper.getMainLooper()).post(() -> {
-            for (DeepLinkFingerprintWatcherInterface<R> watcher : pendingWatchers) {
-                watcher.run(result);
+            for (Kumulos.ResultCallback<R> watcher : pendingWatchers) {
+                watcher.onSuccess(result);
             }
 
             pendingWatchers.clear();
         });
     }
 
-    void then(DeepLinkFingerprintWatcherInterface<R> onResult) {
+    void then(Kumulos.ResultCallback<R> onResult) {
         new Handler(Looper.getMainLooper()).post(() -> {
             if (state == State.PENDING) {
                 pendingWatchers.add(onResult);
                 return;
             }
             if (state == State.RESOLVED) {
-                onResult.run(components);
+                onResult.onSuccess(components);
             }
         });
     }
@@ -133,7 +133,7 @@ class DeepLinkFingerprinter {
         wv.loadUrl(PRINT_DUST_RUNTIME_URL);
     }
 
-    public void getFingerprintComponents(DeepLinkFingerprintWatcherInterface<JSONObject> onGenerated) {
+    public void getFingerprintComponents(Kumulos.ResultCallback<JSONObject> onGenerated) {
         fingerprint.then(onGenerated);
     }
 

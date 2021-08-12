@@ -303,8 +303,11 @@ public class DeferredDeepLinkHelper {
     private void checkForWebToAppBannerTap(Context context){
         DeepLinkFingerprinter fp = new DeepLinkFingerprinter(context);
 
-        fp.getFingerprintComponents((JSONObject components) -> {
-            this.handleFingerprintComponents(context, components);
+        fp.getFingerprintComponents(new Kumulos.ResultCallback<JSONObject>() {
+            @Override
+            public void onSuccess(JSONObject components) {
+                DeferredDeepLinkHelper.this.handleFingerprintComponents(context, components);
+            }
         });
     }
 
