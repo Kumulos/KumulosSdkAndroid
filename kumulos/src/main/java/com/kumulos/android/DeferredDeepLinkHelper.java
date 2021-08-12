@@ -1,21 +1,18 @@
 package com.kumulos.android;
 
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
-import android.view.textclassifier.TextClassifier;
 import android.webkit.URLUtil;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.json.JSONException;
@@ -24,8 +21,9 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -300,7 +298,6 @@ public class DeferredDeepLinkHelper {
         });
     }
 
-
     //********************************* FINGERPRINTING *********************************
 
     private void checkForWebToAppBannerTap(Context context){
@@ -323,23 +320,26 @@ public class DeferredDeepLinkHelper {
                 .get()
                 .build();
 
-        OkHttpClient httpClient = Kumulos.getHttpClient();
+        Kumulos.getHttpClient().newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                e.printStackTrace();
+            }
 
-        Kumulos.executorService.submit(() -> {
-            try (Response response = httpClient.newCall(request).execute()) {
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
                 if (response.isSuccessful()) {
                     DeferredDeepLinkHelper.this.handledFingerprintSuccessResponse(context, response);
                 } else {
                     DeferredDeepLinkHelper.this.handledFingerprintFailedResponse(context, response);
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         });
     }
 
-    private void handledFingerprintSuccessResponse(Context context, Response response) throws IOException {
+    private void handledFingerprintSuccessResponse(Context context, Response response)  {
         if (response.code() != 200) {
+            response.close();
             return;
         }
 
@@ -353,16 +353,21 @@ public class DeferredDeepLinkHelper {
             this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_MATCHED, url, deepLink);
 
             this.trackLinkMatched(context, url, false);
-        } catch (NullPointerException | JSONException e) {
+        } catch (NullPointerException | JSONException | IOException e) {
             // Fingerprint matches that fail to parse correctly can't know the URL so
             // don't invoke any error handler.
             e.printStackTrace();
         }
+        finally {
+            response.close();
+        }
+
     }
 
-    private void handledFingerprintFailedResponse(Context context, Response response) throws IOException {
+    private void handledFingerprintFailedResponse(Context context, Response response) {
         int statusCode = response.code();
         if (statusCode != 410 && statusCode != 429){
+            response.close();
             return;
         }
 
@@ -379,12 +384,14 @@ public class DeferredDeepLinkHelper {
                     this.invokeDeepLinkHandler(context, DeepLinkResolution.LINK_LIMIT_EXCEEDED, url, null);
                     break;
             }
-        } catch (NullPointerException | JSONException e) {
+        } catch (NullPointerException | JSONException | IOException e) {
             // Fingerprint matches that fail to parse correctly can't know the URL so
             // don't invoke any error handler.
 
             e.printStackTrace();
         }
+        finally {
+            response.close();
+        }
     }
-
 }

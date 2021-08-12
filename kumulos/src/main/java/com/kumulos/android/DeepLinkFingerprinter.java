@@ -68,7 +68,7 @@ class Deferred<R> {
     }
 }
 
-public class DeepLinkFingerprinter {
+class DeepLinkFingerprinter {
     private static final String TAG = DeepLinkFingerprinter.class.getName();
     private WebView wv;
     private final String PRINT_DUST_RUNTIME_URL = "https://pd.app.delivery";
