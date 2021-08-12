@@ -656,7 +656,7 @@ public final class Kumulos {
             return;
         }
 
-        deepLinkHelper.checkForNonContinuationLinkMatch(context);//TODO: not efficient? [webview + loadUrl + request] every time activity gets focus
+        deepLinkHelper.checkForNonContinuationLinkMatch(context);
     }
 
     //==============================================================================================
