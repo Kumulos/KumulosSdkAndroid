@@ -33,4 +33,4 @@ Update docs site with correct version number references
 
 Update changelog:
 
-- [ ] https://docs.kumulos.com/developer-guide/sdk-reference/android/#changelog
+- [ ] https://docs.kumulos.com/developer-guide/sdk-reference/cordova/#changelog
