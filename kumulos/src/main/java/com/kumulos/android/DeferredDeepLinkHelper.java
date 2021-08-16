@@ -86,11 +86,11 @@ public class DeferredDeepLinkHelper {
     }
 
     /* package */ void checkForNonContinuationLinkMatch(Context context) {
-        if (this.checkForDeferredLinkOnClipboard(context)){
+        if (this.checkForDeferredLinkOnClipboard(context)) {
             return;
         }
 
-        if (continuationHandled.get()){
+        if (continuationHandled.get()) {
             return;
         }
 
@@ -107,7 +107,7 @@ public class DeferredDeepLinkHelper {
             return false;
         }
 
-        if (!wasDeferred){
+        if (!wasDeferred) {
             continuationHandled.set(true);
         }
 
@@ -115,7 +115,7 @@ public class DeferredDeepLinkHelper {
         return true;
     }
 
-    private boolean checkForDeferredLinkOnClipboard(Context context){
+    private boolean checkForDeferredLinkOnClipboard(Context context) {
         boolean handled = false;
 
         SharedPreferences preferences = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
@@ -204,8 +204,8 @@ public class DeferredDeepLinkHelper {
         String slug = Uri.encode(url.getPath().replaceAll("/$|^/", ""));
         String params = "?wasDeferred=" + (wasDeferred ? 1 : 0);
         String query = url.getQuery();
-        if (query != null){
-           params = params + "&" + query;
+        if (query != null) {
+            params = params + "&" + query;
         }
 
         String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug + params;
@@ -304,7 +304,7 @@ public class DeferredDeepLinkHelper {
 
     //********************************* FINGERPRINTING *********************************
 
-    private void checkForWebToAppBannerTap(Context context){
+    private void checkForWebToAppBannerTap(Context context) {
         fingerprinter = new DeepLinkFingerprinter(context);
 
         fingerprinter.getFingerprintComponents(new Kumulos.ResultCallback<JSONObject>() {
@@ -315,7 +315,7 @@ public class DeferredDeepLinkHelper {
         });
     }
 
-    private void handleFingerprintComponents(Context context, JSONObject components){
+    private void handleFingerprintComponents(Context context, JSONObject components) {
         String encodedComponents = Base64.encodeToString(components.toString().getBytes(), Base64.NO_WRAP);
         String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/_taps?fingerprint=" + encodedComponents;
 
@@ -344,7 +344,7 @@ public class DeferredDeepLinkHelper {
         });
     }
 
-    private void handledFingerprintSuccessResponse(Context context, Response response)  {
+    private void handledFingerprintSuccessResponse(Context context, Response response) {
         if (response.code() != 200) {
             response.close();
             return;
@@ -364,8 +364,7 @@ public class DeferredDeepLinkHelper {
             // Fingerprint matches that fail to parse correctly can't know the URL so
             // don't invoke any error handler.
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             response.close();
         }
 
@@ -373,7 +372,7 @@ public class DeferredDeepLinkHelper {
 
     private void handledFingerprintFailedResponse(Context context, Response response) {
         int statusCode = response.code();
-        if (statusCode != 410 && statusCode != 429){
+        if (statusCode != 410 && statusCode != 429) {
             response.close();
             return;
         }
@@ -396,8 +395,7 @@ public class DeferredDeepLinkHelper {
             // don't invoke any error handler.
 
             e.printStackTrace();
-        }
-        finally {
+        } finally {
             response.close();
         }
     }

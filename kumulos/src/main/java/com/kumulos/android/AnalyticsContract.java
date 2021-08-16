@@ -34,7 +34,10 @@ import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
-/** package */ final class AnalyticsContract {
+/**
+ * package
+ */
+final class AnalyticsContract {
 
     private static final String EVENT_TYPE_FOREGROUND = "k.fg";
     static final String EVENT_TYPE_BACKGROUND = "k.bg";
@@ -54,9 +57,13 @@ import androidx.work.WorkManager;
     static final int MESSAGE_TYPE_PUSH = 1;
     static final int MESSAGE_TYPE_IN_APP = 2;
 
-    private AnalyticsContract() {}
+    private AnalyticsContract() {
+    }
 
-    /** package */ static class AnalyticsEvent {
+    /**
+     * package
+     */
+    static class AnalyticsEvent {
         static final String TABLE_NAME = "events";
         static final String COL_ID = "id";
         static final String COL_UUID = "uuid";
@@ -79,7 +86,8 @@ import androidx.work.WorkManager;
         private JSONObject properties;
         private boolean immediateFlush;
 
-        private TrackEventRunnable() {}
+        private TrackEventRunnable() {
+        }
 
         TrackEventRunnable(Context context, @NonNull String eventType, long happenedAt, @Nullable JSONObject properties, boolean immediateFlush) {
             this.mContext = context.getApplicationContext();
@@ -110,8 +118,7 @@ import androidx.work.WorkManager;
                 db.insertOrThrow(AnalyticsEvent.TABLE_NAME, null, values);
                 dbHelper.close();
                 Kumulos.log(TAG, "Tracked event " + eventType + " with UUID " + uuidStr);
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 e.printStackTrace();
                 return;
             }
@@ -136,8 +143,7 @@ import androidx.work.WorkManager;
 
             if (BuildConfig.DEBUG) {
                 taskBuilder.setInitialDelay(10, TimeUnit.SECONDS);
-            }
-            else {
+            } else {
                 taskBuilder.setInitialDelay(1, TimeUnit.MINUTES);
             }
 
@@ -156,11 +162,12 @@ import androidx.work.WorkManager;
         private Context mContext;
         private long mUpToEventId;
 
-        private TrimEventsRunnable() {}
+        private TrimEventsRunnable() {
+        }
 
         TrimEventsRunnable(Context context, long upToEventId) {
             mContext = context.getApplicationContext();
-            mUpToEventId =  upToEventId;
+            mUpToEventId = upToEventId;
         }
 
         @Override
@@ -177,8 +184,7 @@ import androidx.work.WorkManager;
 
                 dbHelper.close();
                 Kumulos.log(TAG, "Trimmed events up to " + mUpToEventId + " (inclusive)");
-            }
-            catch (SQLiteException e) {
+            } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to trim events up to " + mUpToEventId + " (inclusive)");
                 e.printStackTrace();
             }
@@ -196,7 +202,8 @@ import androidx.work.WorkManager;
 
         private Context mContext;
 
-        private StatsCallHomeRunnable() {}
+        private StatsCallHomeRunnable() {
+        }
 
         StatsCallHomeRunnable(Context context) {
             mContext = context.getApplicationContext();
@@ -333,12 +340,15 @@ import androidx.work.WorkManager;
 
         //IN APP
         private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
+
         @Nullable
         static Activity getCurrentActivity() {
             return currentActivityRef.get();
         }
+
         private static int numStarted = 0;
-        static boolean isBackground(){
+
+        static boolean isBackground() {
             return numStarted == 0;
         }
 
@@ -354,7 +364,7 @@ import androidx.work.WorkManager;
         @Override
         public void onActivityStarted(Activity activity) {  /* noop */ }
 
-        private Integer getTickleId(Activity activity){
+        private Integer getTickleId(Activity activity) {
             Intent i = activity.getIntent();
             int tickleIdExtra = i.getIntExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, -1);
             return tickleIdExtra == -1 ? null : tickleIdExtra;
@@ -376,7 +386,7 @@ import androidx.work.WorkManager;
             }
 
             if (startNewSession.getAndSet(false)) {
-                if (this.isLaunchActivity(context, activity)){
+                if (this.isLaunchActivity(context, activity)) {
                     DeferredDeepLinkHelper.nonContinuationLinkCheckedForSession.set(false);
                 }
 
@@ -392,14 +402,14 @@ import androidx.work.WorkManager;
             });
         }
 
-        private boolean isLaunchActivity(Context context, Activity activity){
+        private boolean isLaunchActivity(Context context, Activity activity) {
             String packageName = context.getPackageName();
             Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
-            if (launchIntent == null){
+            if (launchIntent == null) {
                 return false;
             }
             ComponentName component = launchIntent.getComponent();
-            if (component == null){
+            if (component == null) {
                 return false;
             }
 
@@ -409,7 +419,7 @@ import androidx.work.WorkManager;
         @Override
         public void onActivityPaused(Activity activity) {
             clearCurrentActivity(activity);
-            numStarted = Math.max(numStarted-1, 0);
+            numStarted = Math.max(numStarted - 1, 0);
 
             final Context context = mContextRef.get();
             if (null == context) {
@@ -449,9 +459,9 @@ import androidx.work.WorkManager;
             clearCurrentActivity(activity);
         }
 
-        private void clearCurrentActivity(Activity activity){
+        private void clearCurrentActivity(Activity activity) {
             Activity currentActivity = getCurrentActivity();
-            if (currentActivity == null){
+            if (currentActivity == null) {
                 return;
             }
 
