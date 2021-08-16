@@ -2,6 +2,7 @@ package com.kumulos.android;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -375,6 +376,10 @@ import androidx.work.WorkManager;
             }
 
             if (startNewSession.getAndSet(false)) {
+                if (this.isLaunchActivity(context, activity)){
+                    DeferredDeepLinkHelper.nonContinuationLinkCheckedForSession.set(false);
+                }
+
                 Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_FOREGROUND, null);
                 return;
             }
@@ -385,6 +390,20 @@ import androidx.work.WorkManager;
                     WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
                 }
             });
+        }
+
+        private boolean isLaunchActivity(Context context, Activity activity){
+            String packageName = context.getPackageName();
+            Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+            if (launchIntent == null){
+                return false;
+            }
+            ComponentName component = launchIntent.getComponent();
+            if (component == null){
+                return false;
+            }
+
+            return component.getClassName().equals(activity.getComponentName().getClassName());
         }
 
         @Override

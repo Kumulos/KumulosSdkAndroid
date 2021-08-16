@@ -124,11 +124,12 @@ public final class Kumulos {
 
         KumulosInApp.initialize(application, currentConfig);
 
-        application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
-
         if (currentConfig.getDeferredDeepLinkHandler() != null){
             deepLinkHelper = new DeferredDeepLinkHelper();
         }
+
+        application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
+
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
         executorService.submit(statsTask);
@@ -656,6 +657,10 @@ public final class Kumulos {
         }
 
         if (currentConfig.getDeferredDeepLinkHandler() == null){
+            return;
+        }
+
+        if (DeferredDeepLinkHelper.nonContinuationLinkCheckedForSession.getAndSet(true)) {
             return;
         }
 

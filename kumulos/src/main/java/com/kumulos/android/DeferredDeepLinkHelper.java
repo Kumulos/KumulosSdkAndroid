@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -33,10 +34,13 @@ import static android.content.Context.CLIPBOARD_SERVICE;
 public class DeferredDeepLinkHelper {
     private static final String BASE_URL = "https://links.kumulos.com";
 
-    private static boolean continuationHandled;
+    private static AtomicBoolean continuationHandled;
+    static AtomicBoolean nonContinuationLinkCheckedForSession = new AtomicBoolean(false);
+    @SuppressWarnings("FieldCanBeLocal")
+    private DeepLinkFingerprinter fingerprinter;
 
     /* package */ DeferredDeepLinkHelper() {
-        continuationHandled = false;
+        continuationHandled = new AtomicBoolean(false);
     }
 
     public class DeepLinkContent {
@@ -86,7 +90,7 @@ public class DeferredDeepLinkHelper {
             return;
         }
 
-        if (continuationHandled){
+        if (continuationHandled.get()){
             return;
         }
 
@@ -104,7 +108,7 @@ public class DeferredDeepLinkHelper {
         }
 
         if (!wasDeferred){
-            continuationHandled = true;
+            continuationHandled.set(true);
         }
 
         this.handleDeepLink(context, url, wasDeferred);
@@ -301,9 +305,9 @@ public class DeferredDeepLinkHelper {
     //********************************* FINGERPRINTING *********************************
 
     private void checkForWebToAppBannerTap(Context context){
-        DeepLinkFingerprinter fp = new DeepLinkFingerprinter(context);
+        fingerprinter = new DeepLinkFingerprinter(context);
 
-        fp.getFingerprintComponents(new Kumulos.ResultCallback<JSONObject>() {
+        fingerprinter.getFingerprintComponents(new Kumulos.ResultCallback<JSONObject>() {
             @Override
             public void onSuccess(JSONObject components) {
                 DeferredDeepLinkHelper.this.handleFingerprintComponents(context, components);
