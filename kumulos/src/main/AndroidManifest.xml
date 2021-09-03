@@ -4,4 +4,18 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application />
+
+    <!-- https://developer.android.com/training/package-visibility/use-cases#check-browser-available -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
 </manifest>
