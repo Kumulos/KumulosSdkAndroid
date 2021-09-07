@@ -262,6 +262,7 @@ class InAppContract {
                     InAppMessageTable.COL_ID,
                     InAppMessageTable.COL_PRESENTED_WHEN,
                     InAppMessageTable.COL_CONTENT_JSON,
+                    InAppMessageTable.COL_DATA_JSON,
                     InAppMessageTable.COL_READ_AT,
                     InAppMessageTable.COL_INBOX_CONFIG_JSON
             };
@@ -274,16 +275,18 @@ class InAppContract {
                 Date readAt = getNullableDate(cursor, InAppMessageTable.COL_READ_AT);
                 JSONObject content = null;
                 JSONObject inbox = null;
+                JSONObject data = null;
 
                 try {
                     content = getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON);
+                    data = getNullableJsonObject(cursor, InAppMessageTable.COL_DATA_JSON);
                     inbox = getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON);
                 } catch (JSONException e) {
                     Kumulos.log(TAG, e.getMessage());
                     continue;
                 }
 
-                InAppMessage m = new InAppMessage(inAppId, presentedWhen, content, inbox, readAt);
+                InAppMessage m = new InAppMessage(inAppId, presentedWhen, content, data, inbox, readAt);
                 itemsToPresent.add(m);
             }
 
@@ -423,7 +426,7 @@ class InAppContract {
                     i.setSentAt(sentAt);
                     i.setData(data);
 
-                    if (inboxConfig != null){
+                    if (inboxConfig != null) {
                         i.setTitle(inboxConfig.getString("title"));
                         i.setSubtitle(inboxConfig.getString("subtitle"));
                         if (!inboxConfig.isNull("imagePath")) {
@@ -465,7 +468,13 @@ class InAppContract {
             try {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON, InAppMessageTable.COL_READ_AT, InAppMessageTable.COL_INBOX_CONFIG_JSON};
+                String[] projection = {
+                        InAppMessageTable.COL_ID,
+                        InAppMessageTable.COL_CONTENT_JSON,
+                        InAppMessageTable.COL_DATA_JSON,
+                        InAppMessageTable.COL_READ_AT,
+                        InAppMessageTable.COL_INBOX_CONFIG_JSON
+                };
                 String selection = InAppMessageTable.COL_INBOX_CONFIG_JSON + " IS NOT NULL AND " + InAppMessageTable.COL_ID + " = ?";
                 String[] selectionArgs = {mId + ""};
 
@@ -474,6 +483,7 @@ class InAppContract {
                 if (cursor.moveToFirst()) {
                     inboxMessage = new InAppMessage(mId,
                             getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON),
+                            getNullableJsonObject(cursor, InAppMessageTable.COL_DATA_JSON),
                             getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON),
                             getNullableDate(cursor, InAppMessageTable.COL_READ_AT));
                 }

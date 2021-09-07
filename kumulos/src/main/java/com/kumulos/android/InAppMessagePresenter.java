@@ -35,6 +35,7 @@ import java.util.List;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 
@@ -66,6 +67,16 @@ class InAppMessagePresenter {
         }
 
         currentActivity.runOnUiThread(() -> presentMessagesOnUiThread(currentActivity, itemsToPresent, tickleIds));
+    }
+
+    @UiThread
+    @Nullable
+    static InAppMessage getCurrentMessage() {
+        if (0 == messageQueue.size()) {
+            return null;
+        }
+
+        return messageQueue.get(0);
     }
 
     @UiThread
