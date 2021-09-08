@@ -68,17 +68,19 @@ class InAppMessage {
         }
     }
 
-    InAppMessage(int inAppId, String presentedWhen, JSONObject content, @Nullable JSONObject inbox, @Nullable Date readAt) {
+    InAppMessage(int inAppId, String presentedWhen, JSONObject content, @Nullable JSONObject data, @Nullable JSONObject inbox, @Nullable Date readAt) {
         this.inAppId = inAppId;
         this.presentedWhen = presentedWhen;
         this.content = content;
+        this.data = data;
         this.inbox = inbox;
         this.readAt = readAt;
     }
 
-    InAppMessage(int inAppId, JSONObject content, @Nullable JSONObject inbox, @Nullable Date readAt) {
+    InAppMessage(int inAppId, JSONObject content, @Nullable JSONObject data, @Nullable JSONObject inbox, @Nullable Date readAt) {
         this.inAppId = inAppId;
         this.content = content;
+        this.data = data;
         this.inbox = inbox;
         this.readAt = readAt;
     }
