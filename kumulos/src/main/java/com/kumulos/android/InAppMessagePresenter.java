@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.net.http.SslError;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -19,8 +20,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.RenderProcessGoneDetail;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -46,6 +50,8 @@ class InAppMessagePresenter {
     private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_SET_NOTCH_INSETS = "SET_NOTCH_INSETS";
     private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
+    // Use for simulating a renderer process crash (triggers onRenderProcessGone())
+    // private static final String IN_APP_RENDERER_URL = "chrome://crash";
 
     private static final List<InAppMessage> messageQueue = new ArrayList<>();
     @SuppressLint("StaticFieldLeak")
@@ -477,7 +483,7 @@ class InAppMessagePresenter {
             wv = dialog.findViewById(R.id.webview);
             spinner = dialog.findViewById(R.id.progressBar);
 
-            int cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK;
+            int cacheMode = WebSettings.LOAD_DEFAULT;
             if (BuildConfig.DEBUG) {
                 cacheMode = WebSettings.LOAD_NO_CACHE;
             }
@@ -495,16 +501,46 @@ class InAppMessagePresenter {
 
             wv.setWebViewClient(new WebViewClient() {
                 @Override
-                public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                    super.onPageStarted(view, url, favicon);
-                    InAppMessagePresenter.setSpinnerVisibility(View.VISIBLE);
-                }
-
-                @Override
                 public void onPageFinished(WebView view, String url) {
                     view.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     setStatusBarColorForDialog(currentActivity);
                     super.onPageFinished(view, url);
+                }
+
+                @Override
+                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                    super.onReceivedHttpError(view, request, errorResponse);
+
+                    String url = request.getUrl().toString();
+                    // Only consider handling for failures of our renderer assets
+                    // 3rd-party fonts/images etc. shouldn't trigger this
+                    if (!url.startsWith(IN_APP_RENDERER_URL)) {
+                        return;
+                    }
+
+                    // Cached index page may refer to stale JS/CSS file hashes
+                    // Evict the cache to allow next presentation to re-fetch
+                    if (404 == errorResponse.getStatusCode()) {
+                        wv.clearCache(true);
+                    }
+
+                    closeDialog(currentActivity);
+                }
+
+                @Override
+                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                    super.onReceivedSslError(view, handler, error);
+
+                    closeDialog(currentActivity);
+                }
+
+                @Override
+                public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                    closeDialog(currentActivity);
+
+                    // Allow app to keep running, don't terminate
+                    return true;
                 }
 
                 @Override
@@ -526,14 +562,15 @@ class InAppMessagePresenter {
                     closeDialog(currentActivity);
                 }
 
-                @TargetApi(android.os.Build.VERSION_CODES.M)
                 @Override
+                @TargetApi(android.os.Build.VERSION_CODES.M)
                 public void onReceivedError(WebView view, WebResourceRequest req, WebResourceError rerr) {
                     onReceivedError(view, rerr.getErrorCode(), rerr.getDescription().toString(), req.getUrl().toString());
                 }
 
             });
 
+            InAppMessagePresenter.setSpinnerVisibility(View.VISIBLE);
             wv.loadUrl(IN_APP_RENDERER_URL);
         } catch (Exception e) {
             Kumulos.log(TAG, e.getMessage());
