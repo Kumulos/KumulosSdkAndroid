@@ -54,7 +54,7 @@ class InAppJavaScriptInterface {
                 InAppMessagePresenter.messageOpened(currentActivity);
                 return;
             case "MESSAGE_CLOSED":
-                InAppMessagePresenter.messageClosed();
+                InAppMessagePresenter.messageClosed(currentActivity);
                 return;
             case "EXECUTE_ACTIONS":
                 List<ExecutableAction> actions = this.parseButtonActionData(data);

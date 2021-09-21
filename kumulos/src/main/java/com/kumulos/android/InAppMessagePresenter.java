@@ -200,17 +200,13 @@ class InAppMessagePresenter {
     }
 
     @AnyThread
-    static void clientReady(Context context) {
-        if (wv == null) {
-            return;
-        }
-
-        wv.post(() -> {
+    static void clientReady(@NonNull final Activity currentActivity) {
+        currentActivity.runOnUiThread(() -> {
             if (wv == null) {
                 return;
             }
 
-            maybeSetNotchInsets(context);
+            maybeSetNotchInsets(currentActivity);
             presentMessageToClient();
         });
     }
@@ -288,12 +284,8 @@ class InAppMessagePresenter {
     }
 
     @AnyThread
-    static void messageClosed() {
-        if (wv == null) {
-            return;
-        }
-
-        wv.post(() -> {
+    static void messageClosed(@NonNull final Activity currentActivity) {
+        currentActivity.runOnUiThread(() -> {
             if (wv == null) {
                 return;
             }
@@ -304,22 +296,17 @@ class InAppMessagePresenter {
         });
     }
 
-    @AnyThread
-    static void closeCurrentMessage(Activity activity) {
-        if (dialog == null || activity == null) {
+    @UiThread
+    static void closeCurrentMessage(@NonNull final Activity activity) {
+        if (dialog == null || messageQueue.isEmpty()) {
             return;
         }
 
-        activity.runOnUiThread(() -> {
-            if (messageQueue.isEmpty()) {
-                return;
-            }
-            InAppMessage message = messageQueue.get(0);
+        InAppMessage message = messageQueue.get(0);
 
-            InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
+        InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
 
-            InAppMessageService.handleMessageClosed(activity, message);
-        });
+        InAppMessageService.handleMessageClosed(activity, message);
     }
 
     @UiThread
@@ -448,7 +435,7 @@ class InAppMessagePresenter {
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @UiThread
-    private static void showWebView(@NonNull Activity currentActivity) {
+    private static void showWebView(@NonNull final Activity currentActivity) {
         if (dialog != null) {
             return;
         }
