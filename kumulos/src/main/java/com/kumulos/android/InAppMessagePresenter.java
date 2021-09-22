@@ -35,6 +35,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
@@ -65,9 +66,11 @@ class InAppMessagePresenter {
 
     @AnyThread
     static synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessages requesting display of %d messages", itemsToPresent.size()));
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
 
         if (currentActivity == null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessages currentActivity == null"));
             return;
         }
 
@@ -86,7 +89,9 @@ class InAppMessagePresenter {
 
     @UiThread
     private static void presentMessagesOnUiThread(Activity currentActivity, List<InAppMessage> itemsToPresent, List<Integer> tickleIds) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessagesOnUiThread requesting display of %d messages", itemsToPresent.size()));
         if (currentActivity == null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessagesOnUiThread currentActivity == null"));
             return;
         }
 
@@ -110,6 +115,7 @@ class InAppMessagePresenter {
 
         Activity dialogActivity = getDialogActivity(dialog.getContext());
         if (dialogActivity.hashCode() != currentActivity.hashCode()) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessagesOnUiThread changed activity, recreate views"));
             closeDialog(dialogActivity);
             showWebView(currentActivity);
             return;
@@ -118,6 +124,7 @@ class InAppMessagePresenter {
         maybeRefreshFirstMessageInQueue(oldQueue);
 
         if (presentationPendingOnResume) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessagesOnUiThread pending on resume"));
             presentMessageToClient();
         }
     }
@@ -173,8 +180,10 @@ class InAppMessagePresenter {
 
     @UiThread
     private static void presentMessageToClient() {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessageToClient msgQueue size=%d", messageQueue.size()));
         Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (currentActivity == null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessageToClient null activity, pending=true, ret"));
             presentationPendingOnResume = true;
 
             return;
@@ -192,6 +201,7 @@ class InAppMessagePresenter {
             return;
         }
 
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "presentMessageToClient show spinner"));
         setSpinnerVisibility(View.VISIBLE);
 
         InAppMessage message = messageQueue.get(0);
@@ -200,8 +210,11 @@ class InAppMessagePresenter {
 
     @AnyThread
     static void clientReady(@NonNull final Activity currentActivity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "clientReady"));
         currentActivity.runOnUiThread(() -> {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "clientReady->lambda"));
             if (wv == null) {
+                Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "clientReady->lambda, wv==null"));
                 return;
             }
 
@@ -276,7 +289,9 @@ class InAppMessagePresenter {
 
     @AnyThread
     static void messageOpened(Activity activity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "messageOpened"));
         activity.runOnUiThread(() -> {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "messageOpened->lambda hide spinner"));
             InAppMessageService.handleMessageOpened(activity, messageQueue.get(0));
             setSpinnerVisibility(View.GONE);
         });
@@ -284,8 +299,11 @@ class InAppMessagePresenter {
 
     @AnyThread
     static void messageClosed(@NonNull final Activity currentActivity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "messageClosed"));
         currentActivity.runOnUiThread(() -> {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "messageClosed->lambda"));
             if (wv == null) {
+                Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "messageClosed->lambda wv == null"));
                 return;
             }
 
@@ -297,7 +315,9 @@ class InAppMessagePresenter {
 
     @UiThread
     static void closeCurrentMessage(@NonNull final Activity activity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "closeCurrentMessage"));
         if (dialog == null || messageQueue.isEmpty()) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "closeCurrentMessage dialog == null (non-null?=%b) || empty queue (size=%d)", dialog, messageQueue.size()));
             return;
         }
 
@@ -310,14 +330,18 @@ class InAppMessagePresenter {
 
     @UiThread
     private static void setSpinnerVisibility(int visibility) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "setSpinnerVisibility %d", visibility));
         if (spinner != null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "spinner not null, do it"));
             spinner.setVisibility(visibility);
         }
     }
 
     @UiThread
     private static void sendToClient(String type, JSONObject data) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "sendToClient %s", type));
         if (wv == null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "sendToClient wv == null"));
             return;
         }
 
@@ -341,11 +365,14 @@ class InAppMessagePresenter {
 
     @UiThread
     static void maybeCloseDialog(Activity stoppedActivity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "maybeCloseDialog"));
         if (dialog == null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "maybeCloseDialog dialog == null"));
             return;
         }
         Activity dialogActivity = getDialogActivity(dialog.getContext());
         if (stoppedActivity.hashCode() == dialogActivity.hashCode()) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "maybeCloseDialog same activity, close"));
             closeDialog(stoppedActivity);
         }
     }
@@ -364,7 +391,9 @@ class InAppMessagePresenter {
 
     @UiThread
     private static void closeDialog(Activity dialogActivity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "closeDialog"));
         if (dialog != null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "closeDialog dialog != null"));
             dialog.setOnKeyListener(null);
             dialog.dismiss();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -373,6 +402,7 @@ class InAppMessagePresenter {
         }
 
         if (null != wv) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "closeDialog wv != null"));
             wv.destroy();
         }
 
@@ -435,7 +465,9 @@ class InAppMessagePresenter {
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @UiThread
     private static void showWebView(@NonNull final Activity currentActivity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "showWebView"));
         if (dialog != null) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "showWebView dialog != null, abort"));
             return;
         }
 
@@ -465,6 +497,7 @@ class InAppMessagePresenter {
                 return true;
             });
             dialog.show();
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "showWebView dialog shown"));
 
             wv = dialog.findViewById(R.id.kumulos_webview);
             spinner = dialog.findViewById(R.id.kumulos_progressBar);
@@ -488,6 +521,7 @@ class InAppMessagePresenter {
             wv.setWebViewClient(new WebViewClient() {
                 @Override
                 public void onPageFinished(WebView view, String url) {
+                    Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "onPageFinished"));
                     view.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                     setStatusBarColorForDialog(currentActivity);
                     super.onPageFinished(view, url);
@@ -557,7 +591,9 @@ class InAppMessagePresenter {
             });
 
             InAppMessagePresenter.setSpinnerVisibility(View.VISIBLE);
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "showWebView spinner shown"));
             wv.loadUrl(IN_APP_RENDERER_URL);
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "showWebView load req"));
         } catch (Exception e) {
             Kumulos.log(TAG, e.getMessage());
         }
@@ -565,6 +601,7 @@ class InAppMessagePresenter {
 
     @UiThread
     public static void cancelCurrentPresentationQueue(@NonNull Activity currentActivity) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "cancelCurrentPresentationQueue"));
         messageQueue.clear();
         closeDialog(currentActivity);
     }

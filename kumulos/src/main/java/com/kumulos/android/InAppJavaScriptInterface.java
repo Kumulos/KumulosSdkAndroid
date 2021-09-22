@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 class InAppJavaScriptInterface {
 
@@ -30,6 +31,7 @@ class InAppJavaScriptInterface {
 
     @JavascriptInterface
     public void postClientMessage(String msg) {
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "postClientMessage"));
         String messageType = null;
         JSONObject data = null;
         try {
@@ -40,9 +42,11 @@ class InAppJavaScriptInterface {
             Log.d(TAG, "Incorrect message format: " + msg);
             return;
         }
+        Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "postClientMessage received %s", messageType));
 
         final Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
         if (null == currentActivity) {
+            Kumulos.log("KUM_IN_APP", String.format(Locale.ENGLISH, "postClientMessage currentActivity == null"));
             return;
         }
 
