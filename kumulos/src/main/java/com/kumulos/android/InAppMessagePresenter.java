@@ -562,4 +562,10 @@ class InAppMessagePresenter {
             Kumulos.log(TAG, e.getMessage());
         }
     }
+
+    @UiThread
+    public static void cancelCurrentPresentationQueue(@NonNull Activity currentActivity) {
+        messageQueue.clear();
+        closeDialog(currentActivity);
+    }
 }

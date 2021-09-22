@@ -94,10 +94,14 @@ class InAppJavaScriptInterface {
         for (ExecutableAction action : actions) {
             switch (action.getType()) {
                 case BUTTON_ACTION_OPEN_URL:
+                    InAppMessagePresenter.cancelCurrentPresentationQueue(currentActivity);
+
                     this.openUrl(currentActivity, action.getUrl());
                     return;
                 case BUTTON_ACTION_DEEP_LINK:
                     if (null != KumulosInApp.inAppDeepLinkHandler) {
+                        InAppMessagePresenter.cancelCurrentPresentationQueue(currentActivity);
+
                         KumulosInApp.inAppDeepLinkHandler.handle(KumulosInApp.application,
                                 new InAppDeepLinkHandlerInterface.InAppButtonPress(
                                         action.getDeepLink(),
@@ -108,9 +112,13 @@ class InAppJavaScriptInterface {
                     }
                     return;
                 case BUTTON_ACTION_REQUEST_APP_STORE_RATING:
+                    InAppMessagePresenter.cancelCurrentPresentationQueue(currentActivity);
+
                     this.openPlayStore(currentActivity);
                     return;
                 case BUTTON_ACTION_PUSH_REGISTER:
+                    InAppMessagePresenter.cancelCurrentPresentationQueue(currentActivity);
+
                     Kumulos.pushRegister(currentActivity);
                     return;
             }
