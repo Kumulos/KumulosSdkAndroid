@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.net.http.SslError;
 import android.os.Build;
@@ -458,7 +457,7 @@ class InAppMessagePresenter {
             }
 
             LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            dialog.setContentView(inflater.inflate(R.layout.dialog_view, null), paramsWebView);
+            dialog.setContentView(inflater.inflate(R.layout.kumulos_dialog_view, null), paramsWebView);
             dialog.setOnKeyListener((arg0, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
                     InAppMessagePresenter.closeCurrentMessage(currentActivity);
@@ -467,8 +466,8 @@ class InAppMessagePresenter {
             });
             dialog.show();
 
-            wv = dialog.findViewById(R.id.webview);
-            spinner = dialog.findViewById(R.id.progressBar);
+            wv = dialog.findViewById(R.id.kumulos_webview);
+            spinner = dialog.findViewById(R.id.kumulos_progressBar);
 
             int cacheMode = WebSettings.LOAD_DEFAULT;
             if (BuildConfig.DEBUG) {
