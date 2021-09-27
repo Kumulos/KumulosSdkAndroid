@@ -192,9 +192,12 @@ class InAppMessagePresenter {
             return;
         }
 
-        setSpinnerVisibility(View.VISIBLE);
+        InAppMessage message = getCurrentMessage();
+        if (null == message) {
+            return;
+        }
 
-        InAppMessage message = messageQueue.get(0);
+        setSpinnerVisibility(View.VISIBLE);
         sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, message.getContent());
     }
 
@@ -277,15 +280,21 @@ class InAppMessagePresenter {
     @AnyThread
     static void messageOpened(Activity activity) {
         activity.runOnUiThread(() -> {
-            InAppMessageService.handleMessageOpened(activity, messageQueue.get(0));
             setSpinnerVisibility(View.GONE);
+
+            InAppMessage message = getCurrentMessage();
+            if (null == message) {
+                return;
+            }
+
+            InAppMessageService.handleMessageOpened(activity, message);
         });
     }
 
     @AnyThread
     static void messageClosed(@NonNull final Activity currentActivity) {
         currentActivity.runOnUiThread(() -> {
-            if (wv == null) {
+            if (wv == null || messageQueue.isEmpty()) {
                 return;
             }
 
@@ -301,10 +310,12 @@ class InAppMessagePresenter {
             return;
         }
 
-        InAppMessage message = messageQueue.get(0);
+        InAppMessage message = getCurrentMessage();
+        if (null == message) {
+            return;
+        }
 
         InAppMessagePresenter.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
-
         InAppMessageService.handleMessageClosed(activity, message);
     }
 

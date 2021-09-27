@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 class InAppMessageService {
@@ -155,7 +156,7 @@ class InAppMessageService {
         }
     }
 
-    static void handleMessageClosed(Context context, InAppMessage message) {
+    static void handleMessageClosed(@NonNull Context context, @NonNull InAppMessage message) {
         updateDismissedAt(context, message);
         trackDismissedEvent(context, message.getInAppId());
         clearNotification(context, message.getInAppId());
@@ -179,7 +180,7 @@ class InAppMessageService {
         }
     }
 
-    static void handleMessageOpened(Context context, InAppMessage message) {
+    static void handleMessageOpened(@NonNull Context context, @NonNull InAppMessage message) {
         int id = message.getInAppId();
 
         boolean markedRead = false;
