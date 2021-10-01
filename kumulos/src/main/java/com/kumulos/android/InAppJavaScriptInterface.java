@@ -85,7 +85,7 @@ class InAppJavaScriptInterface {
                     psm.subscribe(currentActivity, new String[]{action.getChannelUuid()});
                     break;
                 case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
-                    Kumulos.trackEventImmediately(currentActivity, action.getEventType(), null);
+                    Kumulos.trackEventImmediately(currentActivity, action.getEventType(), action.getConversionEventData());
                     break;
             }
         }
@@ -164,7 +164,9 @@ class InAppJavaScriptInterface {
                     break;
                 case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
                     String eventType = rawActionData.optString("eventType");
+                    JSONObject eventData = rawActionData.optJSONObject("data");
                     action.setEventType(eventType);
+                    action.setConversionEventData(eventData);
                     break;
                 case BUTTON_ACTION_OPEN_URL:
                     String url = rawActionData.optString("url");
@@ -188,6 +190,7 @@ class InAppJavaScriptInterface {
         String channelUuid;
         String eventType;
         JSONObject deepLink;
+        JSONObject conversionEventData;
 
         void setType(String type) {
             this.type = type;
@@ -199,6 +202,10 @@ class InAppJavaScriptInterface {
 
         void setEventType(String eventType) {
             this.eventType = eventType;
+        }
+
+        void setConversionEventData(JSONObject data) {
+            conversionEventData = data;
         }
 
         void setUrl(String url) {
@@ -223,6 +230,10 @@ class InAppJavaScriptInterface {
 
         String getEventType() {
             return eventType;
+        }
+
+        JSONObject getConversionEventData() {
+            return conversionEventData;
         }
 
         JSONObject getDeepLink() {
