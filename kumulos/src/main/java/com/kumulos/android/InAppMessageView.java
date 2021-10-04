@@ -249,7 +249,7 @@ public class InAppMessageView extends WebViewClient {
 
             LayoutInflater inflater = (LayoutInflater) currentActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             dialog.setContentView(inflater.inflate(R.layout.kumulos_dialog_view, null), paramsWebView);
-            dialog.setOnKeyListener((arg0, keyCode, event) -> {
+            dialog.setOnKeyListener((dialog, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
                     closeCurrentMessage();
                 }

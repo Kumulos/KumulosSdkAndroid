@@ -7,9 +7,10 @@
     android:background="@android:color/transparent"
     android:id="@+id/kumulos_root_view">
 
-    <WebView android:id="@+id/kumulos_webview"
+    <WebView
+        android:id="@+id/kumulos_webview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
     <ProgressBar
         android:id="@+id/kumulos_progressBar"
