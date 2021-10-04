@@ -67,10 +67,10 @@ public class KumulosInitProvider extends ContentProvider {
         void appEnteredForeground();
 
         @UiThread
-        void activityAvailable(Activity currentActivity);
+        void activityAvailable(@NonNull Activity activity);
 
         @UiThread
-        void activityUnavailable(Activity activity);
+        void activityUnavailable(@NonNull Activity activity);
 
         @UiThread
         void appEnteredBackground();

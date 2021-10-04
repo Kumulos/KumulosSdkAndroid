@@ -47,6 +47,13 @@ import java.util.List;
 
 public class InAppMessageView extends WebViewClient {
 
+    private enum State {
+        INITIAL,
+        LOADING,
+        READY,
+        DISPOSED
+    }
+
     private static final String TAG = InAppMessageView.class.getName();
     private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
     // Use for simulating a renderer process crash (triggers onRenderProcessGone())
@@ -61,12 +68,16 @@ public class InAppMessageView extends WebViewClient {
     private static final String BUTTON_ACTION_PUSH_REGISTER = "promptPushPermission";
 
     private static final String HOST_MESSAGE_TYPE_PRESENT_MESSAGE = "PRESENT_MESSAGE";
+    private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_SET_NOTCH_INSETS = "SET_NOTCH_INSETS";
 
     private static final String JS_NAME = "Android";
 
-    @Nullable
-    private Activity currentActivity;
+    private State state;
+
+    @NonNull
+    private final Activity currentActivity;
+
     private WebView wv;
     private Dialog dialog;
     private ProgressBar spinner;
@@ -75,65 +86,52 @@ public class InAppMessageView extends WebViewClient {
     private boolean prevFlagTranslucentStatus;
     private boolean prevFlagDrawsSystemBarBackgrounds;
 
+    @NonNull
     private final InAppMessagePresenter2 presenter;
+    @NonNull
     private InAppMessage currentMessage;
 
-    InAppMessageView(InAppMessagePresenter2 presenter) {
+    @UiThread
+    InAppMessageView(@NonNull InAppMessagePresenter2 presenter, @NonNull InAppMessage message, @NonNull Activity currentActivity) {
+        this.state = State.INITIAL;
         this.presenter = presenter;
+        this.currentActivity = currentActivity;
+        this.currentMessage = message;
+
+        showWebView(currentActivity);
     }
 
     @UiThread
-    void attach(Activity activity) {
-        if (activity == currentActivity) {
-            return;
-        }
+    void showMessage(@NonNull InAppMessage currentMessage) {
+        this.currentMessage = currentMessage;
 
-        currentActivity = activity;
-
-        if (null != dialog) {
-            closeDialog(activity);
-            showWebView(activity);
-        }
-    }
-
-    @UiThread
-    public void detach(Activity activity) {
-        if (activity == currentActivity) {
-            closeDialog(activity);
-            currentActivity = null;
+        if (state == State.READY) {
+            sendCurrentMessageToClient();
         }
     }
 
     @UiThread
-    void display(InAppMessage message) {
-        if (null == currentActivity) {
-            return;
-        }
-        if (null == wv) {
-            showWebView(currentActivity);
-            return;
-        }
-        sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, message.getContent());
-    }
-
-    @UiThread
-    void close() {
-        if (null == currentActivity) {
-            return;
-        }
-
+    void dispose() {
         closeDialog(currentActivity);
+        state = State.DISPOSED;
     }
 
     @UiThread
-    void setSpinnerVisibility(int visibility) {
+    private void sendCurrentMessageToClient() {
+        if (state == State.READY) {
+            sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, currentMessage.getContent());
+        }
+    }
+
+    @UiThread
+    private void setSpinnerVisibility(int visibility) {
         if (spinner != null) {
             spinner.setVisibility(visibility);
         }
     }
 
     @UiThread
-    void sendToClient(String type, JSONObject data) {
+    private void sendToClient(String type, JSONObject data) {
         if (wv == null) {
             return;
         }
@@ -226,13 +224,9 @@ public class InAppMessageView extends WebViewClient {
         spinner = null;
     }
 
-    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface", "InflateParams"})
     @UiThread
     private void showWebView(@NonNull final Activity currentActivity) {
-        if (dialog != null) {
-            return;
-        }
-
         try {
             if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 WebView.setWebContentsDebuggingEnabled(true);
@@ -254,7 +248,7 @@ public class InAppMessageView extends WebViewClient {
             dialog.setContentView(inflater.inflate(R.layout.kumulos_dialog_view, null), paramsWebView);
             dialog.setOnKeyListener((arg0, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() != KeyEvent.ACTION_DOWN) {
-                    presenter.closeCurrentMessage();
+                    closeCurrentMessage();
                 }
                 return true;
             });
@@ -283,9 +277,15 @@ public class InAppMessageView extends WebViewClient {
 
             setSpinnerVisibility(View.VISIBLE);
             wv.loadUrl(IN_APP_RENDERER_URL);
+            state = State.LOADING;
         } catch (Exception e) {
             Kumulos.log(TAG, e.getMessage());
         }
+    }
+
+    private void closeCurrentMessage() {
+        sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
+        InAppMessageService.handleMessageClosed(currentActivity, currentMessage);
     }
 
     @Override
@@ -359,10 +359,6 @@ public class InAppMessageView extends WebViewClient {
     @JavascriptInterface
     @AnyThread
     public void postClientMessage(String msg) {
-        if (null == currentActivity) {
-            return;
-        }
-
         String messageType = null;
         JSONObject data = null;
         try {
@@ -377,17 +373,33 @@ public class InAppMessageView extends WebViewClient {
         switch (messageType) {
             case "READY":
                 currentActivity.runOnUiThread(() -> {
+                    if (state == State.DISPOSED) {
+                        return;
+                    }
+
+                    state = State.READY;
+
                     maybeSetNotchInsets(currentActivity);
-                    presenter.clientReady();
+                    sendCurrentMessageToClient();
                 });
                 return;
             case "MESSAGE_OPENED":
-                currentActivity.runOnUiThread(presenter::messageOpened);
+                currentActivity.runOnUiThread(() -> {
+                    if (state == State.DISPOSED) {
+                        return;
+                    }
+
+                    setSpinnerVisibility(View.GONE);
+                    InAppMessageService.handleMessageOpened(currentActivity, currentMessage);
+                });
                 return;
             case "MESSAGE_CLOSED":
                 currentActivity.runOnUiThread(presenter::messageClosed);
                 return;
             case "EXECUTE_ACTIONS":
+                if (null == data) {
+                    return;
+                }
                 List<ExecutableAction> actions = this.parseButtonActionData(data);
                 currentActivity.runOnUiThread(() -> this.executeActions(currentActivity, actions));
                 return;
@@ -462,18 +474,11 @@ public class InAppMessageView extends WebViewClient {
 
     @UiThread
     private void executeActions(Activity currentActivity, List<ExecutableAction> actions) {
-        InAppMessage currentMessage = presenter.getCurrentMessage();
-
-        if (null == currentMessage) {
-            Log.e(TAG, "Expected a currently-presented message");
-            return;
-        }
-
         // Handle 'secondary' actions
         for (ExecutableAction action : actions) {
             switch (action.getType()) {
                 case BUTTON_ACTION_CLOSE_MESSAGE:
-                    presenter.closeCurrentMessage();
+                    closeCurrentMessage();
                     break;
                 case BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL:
                     PushSubscriptionManager psm = new PushSubscriptionManager();
@@ -497,7 +502,7 @@ public class InAppMessageView extends WebViewClient {
                     if (null != KumulosInApp.inAppDeepLinkHandler) {
                         presenter.cancelCurrentPresentationQueue();
 
-                        KumulosInApp.inAppDeepLinkHandler.handle(KumulosInApp.application,
+                        KumulosInApp.inAppDeepLinkHandler.handle(currentActivity.getApplicationContext(),
                                 new InAppDeepLinkHandlerInterface.InAppButtonPress(
                                         action.getDeepLink(),
                                         currentMessage.getInAppId(),
@@ -539,15 +544,23 @@ public class InAppMessageView extends WebViewClient {
         }
     }
 
-    private List<ExecutableAction> parseButtonActionData(JSONObject data) {
+    private List<ExecutableAction> parseButtonActionData(@NonNull JSONObject data) {
         List<ExecutableAction> actions = new ArrayList<>();
         JSONArray rawActions = data.optJSONArray("actions");
+
+        if (null == rawActions) {
+            return actions;
+        }
 
         for (int i = 0; i < rawActions.length(); i++) {
             JSONObject rawAction = rawActions.optJSONObject(i);
 
             String actionType = rawAction.optString("type");
             JSONObject rawActionData = rawAction.optJSONObject("data");
+
+            if (null == rawActionData) {
+                continue;
+            }
 
             ExecutableAction action = new ExecutableAction();
             action.setType(actionType);
@@ -575,6 +588,7 @@ public class InAppMessageView extends WebViewClient {
             }
             actions.add(action);
         }
+
         return actions;
     }
 

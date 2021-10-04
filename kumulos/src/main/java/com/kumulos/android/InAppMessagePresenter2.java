@@ -8,6 +8,7 @@ import android.os.Looper;
 import android.view.View;
 
 import androidx.annotation.AnyThread;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 
@@ -20,17 +21,18 @@ public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChang
 
     private static final String TAG = InAppMessagePresenter2.class.getName();
 
-    private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
-
     private final List<InAppMessage> messageQueue = new ArrayList<>();
     private final Context context;
-    private final InAppMessageView view;
     private final Handler handler = new Handler(Looper.getMainLooper());
+
+    @Nullable
+    private Activity currentActivity;
+    @Nullable
+    private InAppMessageView view;
 
     InAppMessagePresenter2(Context context) {
         this.context = context.getApplicationContext();
         KumulosInitProvider.getAppStateWatcher().registerListener(this);
-        view = new InAppMessageView(this);
     }
 
     @Override
@@ -43,12 +45,17 @@ public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChang
     }
 
     @Override
-    public void activityAvailable(Activity currentActivity) {
+    public void activityAvailable(@NonNull Activity activity) {
         if (!KumulosInApp.isInAppEnabled()) {
             return;
         }
 
-        view.attach(currentActivity);
+        // TODO we need to ignore attaching a view to the Android 12 SDK change push open tracking activity?
+
+        if (currentActivity != activity) {
+            disposeView();
+            currentActivity = activity;
+        }
 
         Intent i = currentActivity.getIntent();
         int tickleId = i.getIntExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, -1);
@@ -61,15 +68,24 @@ public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChang
     }
 
     @Override
-    public void activityUnavailable(Activity activity) {
-        view.detach(activity);
+    public void activityUnavailable(@NonNull Activity activity) {
+        if (!KumulosInApp.isInAppEnabled()) {
+            return;
+        }
+
+        if (activity != currentActivity) {
+            return;
+        }
+
+        disposeView();
+        currentActivity = null;
     }
 
     // TODO, need some detach to clean up when app is terminated / GC in bg?
 
     @Override
     public void appEnteredBackground() {
-        // ?
+        // noop
     }
 
     @AnyThread
@@ -78,42 +94,15 @@ public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChang
     }
 
     @UiThread
-    private void presentMessageToClient() {
-        if (messageQueue.isEmpty()) {
-            view.close();
-            return;
-        }
-
-        view.setSpinnerVisibility(View.VISIBLE);
-        view.display(Objects.requireNonNull(getCurrentMessage()));
-    }
-
-    @UiThread
     void cancelCurrentPresentationQueue() {
         messageQueue.clear();
-        view.close();
-    }
-
-    @UiThread
-    void clientReady() {
-        presentMessageToClient();
-    }
-
-    @UiThread
-    void messageOpened() {
-        view.setSpinnerVisibility(View.GONE);
-
-        InAppMessage message = getCurrentMessage();
-        if (null == message) {
-            return;
-        }
-
-        InAppMessageService.handleMessageOpened(context, message);
+        disposeView();
     }
 
     @UiThread
     void messageClosed() {
         if (messageQueue.isEmpty()) {
+            disposeView();
             return;
         }
 
@@ -123,18 +112,33 @@ public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChang
     }
 
     @UiThread
-    void closeCurrentMessage() {
-        if (messageQueue.isEmpty()) {
+    private void disposeView() {
+        if (view == null) {
             return;
         }
 
-        InAppMessage message = getCurrentMessage();
-        if (null == message) {
+        view.dispose();
+        view = null;
+    }
+
+    @UiThread
+    private void presentMessageToClient() {
+        InAppMessage currentMessage = getCurrentMessage();
+
+        if (null == currentMessage) {
+            disposeView();
             return;
         }
 
-        view.sendToClient(HOST_MESSAGE_TYPE_CLOSE_MESSAGE, null);
-        InAppMessageService.handleMessageClosed(context, message);
+        if (null != view) {
+            view.showMessage(currentMessage);
+            return;
+        }
+
+        if (null == currentActivity) {
+            return;
+        }
+        view = new InAppMessageView(this, currentMessage, currentActivity);
     }
 
     @UiThread
@@ -203,7 +207,7 @@ public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChang
 
     @Nullable
     @UiThread
-    InAppMessage getCurrentMessage() {
+    private InAppMessage getCurrentMessage() {
         if (messageQueue.isEmpty()) {
             return null;
         }
