@@ -26,8 +26,8 @@ class InAppMessageService {
     private static final String TAG = InAppMessageService.class.getName();
     private static final String PRESENTED_WHEN_IMMEDIATELY = "immediately";
     private static final String PRESENTED_WHEN_NEXT_OPEN = "next-open";
-    private static final String PRESENTED_WHEN_NEVER = "never";
-    private static List<Integer> pendingTickleIds = new ArrayList<>();
+
+    private static final List<Integer> pendingTickleIds = new ArrayList<>();
 
     static void clearAllMessages(Context context) {
         Runnable task = new InAppContract.ClearDbRunnable(context);
@@ -148,11 +148,8 @@ class InAppMessageService {
         }
 
         if (shouldFetch) {
-            Kumulos.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    InAppMessageService.fetch(context, fromBackground);
-                }
+            Kumulos.executorService.submit(() -> {
+                InAppMessageService.fetch(context, fromBackground);
             });
         }
     }
@@ -354,9 +351,9 @@ class InAppMessageService {
     private static class ReadAndPresentMessagesRunnable implements Runnable {
         private static final String TAG = ReadAndPresentMessagesRunnable.class.getName();
 
-        private Context mContext;
-        private boolean fromBackground;
-        private Integer tickleId;
+        private final Context mContext;
+        private final boolean fromBackground;
+        private final Integer tickleId;
 
         ReadAndPresentMessagesRunnable(Context context, boolean fromBackground, @Nullable Integer tickleId) {
             mContext = context.getApplicationContext();
