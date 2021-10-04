@@ -3,8 +3,11 @@ package com.kumulos.android;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
 
+import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -16,6 +19,7 @@ import java.util.List;
 public class KumulosInApp {
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
     static Application application;
+    static InAppMessagePresenter2 presenter;
 
     public enum InboxMessagePresentationResult {
         FAILED,
@@ -157,6 +161,7 @@ public class KumulosInApp {
 
     static void initialize(Application application, KumulosConfig currentConfig) {
         KumulosInApp.application = application;
+        presenter = new InAppMessagePresenter2(application);
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         boolean inAppEnabled = isInAppEnabled();
