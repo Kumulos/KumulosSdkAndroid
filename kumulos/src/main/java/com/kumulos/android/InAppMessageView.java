@@ -74,12 +74,16 @@ public class InAppMessageView extends WebViewClient {
     private static final String JS_NAME = "Android";
 
     private State state;
+    private boolean pageFinished;
 
     @NonNull
     private final Activity currentActivity;
 
+    @Nullable
     private WebView wv;
+    @Nullable
     private Dialog dialog;
+    @Nullable
     private ProgressBar spinner;
 
     private int prevStatusBarColor;
@@ -94,6 +98,7 @@ public class InAppMessageView extends WebViewClient {
     @UiThread
     InAppMessageView(@NonNull InAppMessagePresenter2 presenter, @NonNull InAppMessage message, @NonNull Activity currentActivity) {
         this.state = State.INITIAL;
+        pageFinished = false;
         this.presenter = presenter;
         this.currentActivity = currentActivity;
         this.currentMessage = message;
@@ -105,9 +110,7 @@ public class InAppMessageView extends WebViewClient {
     void showMessage(@NonNull InAppMessage currentMessage) {
         this.currentMessage = currentMessage;
 
-        if (state == State.READY) {
-            sendCurrentMessageToClient();
-        }
+        sendCurrentMessageToClient();
     }
 
     @UiThread
@@ -118,7 +121,7 @@ public class InAppMessageView extends WebViewClient {
 
     @UiThread
     private void sendCurrentMessageToClient() {
-        if (state == State.READY) {
+        if (state == State.READY && pageFinished) {
             sendToClient(HOST_MESSAGE_TYPE_PRESENT_MESSAGE, currentMessage.getContent());
         }
     }
@@ -252,10 +255,14 @@ public class InAppMessageView extends WebViewClient {
                 }
                 return true;
             });
-            dialog.show();
 
             wv = dialog.findViewById(R.id.kumulos_webview);
             spinner = dialog.findViewById(R.id.kumulos_progressBar);
+
+            if (null == wv || null == spinner) {
+                dispose();
+                return;
+            }
 
             int cacheMode = WebSettings.LOAD_DEFAULT;
             if (BuildConfig.DEBUG) {
@@ -272,8 +279,9 @@ public class InAppMessageView extends WebViewClient {
             }
 
             wv.addJavascriptInterface(this, JS_NAME);
-
             wv.setWebViewClient(this);
+
+            dialog.show();
 
             setSpinnerVisibility(View.VISIBLE);
             wv.loadUrl(IN_APP_RENDERER_URL);
@@ -292,6 +300,10 @@ public class InAppMessageView extends WebViewClient {
     public void onPageFinished(WebView view, String url) {
         view.setBackgroundColor(android.graphics.Color.TRANSPARENT);
         setStatusBarColorForDialog(currentActivity);
+        pageFinished = true;
+
+        sendCurrentMessageToClient();
+
         super.onPageFinished(view, url);
     }
 
@@ -310,7 +322,7 @@ public class InAppMessageView extends WebViewClient {
         // Cached index page may refer to stale JS/CSS file hashes
         // Evict the cache to allow next presentation to re-fetch
         if (404 == errorResponse.getStatusCode()) {
-            wv.clearCache(true);
+            view.clearCache(true);
         }
 
         closeDialog(currentActivity);
@@ -359,8 +371,8 @@ public class InAppMessageView extends WebViewClient {
     @JavascriptInterface
     @AnyThread
     public void postClientMessage(String msg) {
-        String messageType = null;
-        JSONObject data = null;
+        String messageType;
+        JSONObject data;
         try {
             JSONObject message = new JSONObject(msg);
             messageType = message.getString("type");

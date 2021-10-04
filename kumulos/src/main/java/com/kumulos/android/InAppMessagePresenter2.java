@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.View;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
@@ -14,7 +13,6 @@ import androidx.annotation.UiThread;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 
 public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChangedListener {
