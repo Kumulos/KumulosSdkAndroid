@@ -106,7 +106,7 @@ class InAppMessageService {
             }
         }
 
-        KumulosInApp.presenter.presentMessages(itemsToPresent, pendingTickleIds);
+        KumulosInApp.presenter.presentMessages(itemsToPresent, new ArrayList<>(pendingTickleIds));
 //        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
         pendingTickleIds.clear();
     }
