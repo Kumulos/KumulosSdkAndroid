@@ -145,26 +145,10 @@ public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChang
             return;
         }
 
-        List<InAppMessage> oldQueue = new ArrayList<>(messageQueue);
-
         addMessagesToQueue(itemsToPresent);
         moveTicklesToFront(tickleIds);
-        maybeRefreshFirstMessageInQueue(oldQueue);
 
         presentMessageToClient();
-    }
-
-    @UiThread
-    private void maybeRefreshFirstMessageInQueue(List<InAppMessage> oldQueue) {
-        if (oldQueue.isEmpty()) {
-            return;
-        }
-
-        InAppMessage oldFront = oldQueue.get(0);
-
-        if (oldFront.getInAppId() != messageQueue.get(0).getInAppId()) {
-            presentMessageToClient();
-        }
     }
 
     @UiThread

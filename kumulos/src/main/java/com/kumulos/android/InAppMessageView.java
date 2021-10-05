@@ -107,9 +107,12 @@ public class InAppMessageView extends WebViewClient {
     }
 
     @UiThread
-    void showMessage(@NonNull InAppMessage currentMessage) {
-        this.currentMessage = currentMessage;
+    void showMessage(@NonNull InAppMessage message) {
+        if (currentMessage == message) {
+            return;
+        }
 
+        currentMessage = message;
         sendCurrentMessageToClient();
     }
 
