@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChangedListener {
+class InAppMessagePresenter2 implements KumulosInitProvider.AppStateChangedListener {
 
     private static final String TAG = InAppMessagePresenter2.class.getName();
 
