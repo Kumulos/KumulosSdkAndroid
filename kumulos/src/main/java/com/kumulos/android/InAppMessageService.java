@@ -107,7 +107,7 @@ class InAppMessageService {
         }
 
         KumulosInApp.presenter.presentMessages(itemsToPresent, new ArrayList<>(pendingTickleIds));
-//        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
+
         pendingTickleIds.clear();
     }
 
@@ -259,7 +259,6 @@ class InAppMessageService {
         itemsToPresent.add(inboxMessage);
 
         KumulosInApp.presenter.presentMessages(itemsToPresent, null);
-//        InAppMessagePresenter.presentMessages(itemsToPresent, null);
 
         return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
     }
@@ -392,7 +391,6 @@ class InAppMessageService {
             }
 
             KumulosInApp.presenter.presentMessages(itemsToPresent, tickleIds);
-//            InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
 
             // TODO potential bug? logic in here doesn't take into account the pending tickles
             //      in prod builds if synced < 1hr ago, may not sync again? (although assumed sync happens on app startup so...)

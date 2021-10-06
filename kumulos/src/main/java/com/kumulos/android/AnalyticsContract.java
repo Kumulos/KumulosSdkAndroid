@@ -364,20 +364,10 @@ final class AnalyticsContract {
         @Override
         public void onActivityStarted(Activity activity) {  /* noop */ }
 
-//        private Integer getTickleId(Activity activity) {
-//            Intent i = activity.getIntent();
-//            int tickleIdExtra = i.getIntExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, -1);
-//            return tickleIdExtra == -1 ? null : tickleIdExtra;
-//        }
-
         @Override
         public void onActivityResumed(Activity activity) {
             currentActivityRef = new WeakReference<>(activity);
 
-//            Integer tickleId = this.getTickleId(activity);
-//            if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
-//                InAppMessageService.readAndPresentMessages(activity, isBackground(), tickleId);
-//            }
             numStarted++;
 
             final Context context = mContextRef.get();
@@ -454,8 +444,6 @@ final class AnalyticsContract {
         @Override
         @MainThread
         public void onActivityDestroyed(Activity activity) {
-//            InAppMessagePresenter.maybeCloseDialog(activity);
-
             clearCurrentActivity(activity);
         }
 

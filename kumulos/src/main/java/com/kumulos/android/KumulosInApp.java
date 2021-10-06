@@ -16,7 +16,7 @@ import java.util.List;
 public class KumulosInApp {
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
     static Application application;
-    static InAppMessagePresenter2 presenter;
+    static InAppMessagePresenter presenter;
 
     public enum InboxMessagePresentationResult {
         FAILED,
@@ -158,7 +158,7 @@ public class KumulosInApp {
 
     static void initialize(Application application, KumulosConfig currentConfig) {
         KumulosInApp.application = application;
-        presenter = new InAppMessagePresenter2(application);
+        presenter = new InAppMessagePresenter(application);
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         boolean inAppEnabled = isInAppEnabled();
@@ -239,11 +239,8 @@ public class KumulosInApp {
     }
 
     private static void fetchMessages() {
-        Kumulos.executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                InAppMessageService.fetch(KumulosInApp.application, true);
-            }
+        Kumulos.executorService.submit(() -> {
+            InAppMessageService.fetch(KumulosInApp.application, true);
         });
     }
 

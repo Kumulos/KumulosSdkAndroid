@@ -91,12 +91,12 @@ public class InAppMessageView extends WebViewClient {
     private boolean prevFlagDrawsSystemBarBackgrounds;
 
     @NonNull
-    private final InAppMessagePresenter2 presenter;
+    private final InAppMessagePresenter presenter;
     @NonNull
     private InAppMessage currentMessage;
 
     @UiThread
-    InAppMessageView(@NonNull InAppMessagePresenter2 presenter, @NonNull InAppMessage message, @NonNull Activity currentActivity) {
+    InAppMessageView(@NonNull InAppMessagePresenter presenter, @NonNull InAppMessage message, @NonNull Activity currentActivity) {
         this.state = State.INITIAL;
         pageFinished = false;
         this.presenter = presenter;
