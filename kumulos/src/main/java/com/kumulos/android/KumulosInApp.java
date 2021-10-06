@@ -1,17 +1,16 @@
 package com.kumulos.android;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class KumulosInApp {
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;

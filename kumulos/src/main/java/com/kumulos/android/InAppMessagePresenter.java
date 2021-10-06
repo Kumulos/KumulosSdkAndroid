@@ -3,19 +3,17 @@ package com.kumulos.android;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
-import android.os.Looper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 
-import java.util.ArrayList;
-import java.util.List;
 
-
-class InAppMessagePresenter implements KumulosInitProvider.AppStateChangedListener {
+class InAppMessagePresenter implements AppStateWatcher.AppStateChangedListener {
 
     private static final String TAG = InAppMessagePresenter.class.getName();
 
