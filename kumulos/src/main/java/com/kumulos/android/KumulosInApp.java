@@ -249,11 +249,6 @@ public class KumulosInApp {
             return;
         }
 
-        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
-        if (currentActivity == null) {
-            return;
-        }
-
-        currentActivity.runOnUiThread(inboxUpdatedHandler);
+        Kumulos.handler.post(inboxUpdatedHandler);
     }
 }

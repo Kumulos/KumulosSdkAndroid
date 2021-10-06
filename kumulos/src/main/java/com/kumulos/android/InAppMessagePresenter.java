@@ -21,7 +21,6 @@ class InAppMessagePresenter implements KumulosInitProvider.AppStateChangedListen
 
     private final List<InAppMessage> messageQueue = new ArrayList<>();
     private final Context context;
-    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Nullable
     private Activity currentActivity;
@@ -86,7 +85,7 @@ class InAppMessagePresenter implements KumulosInitProvider.AppStateChangedListen
 
     @AnyThread
     synchronized void presentMessages(List<InAppMessage> itemsToPresent, List<Integer> tickleIds) {
-        handler.post(() -> presentMessagesOnUiThread(itemsToPresent, tickleIds));
+        Kumulos.handler.post(() -> presentMessagesOnUiThread(itemsToPresent, tickleIds));
     }
 
     @UiThread

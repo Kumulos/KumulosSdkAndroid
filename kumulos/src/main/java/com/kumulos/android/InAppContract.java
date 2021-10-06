@@ -632,17 +632,7 @@ class InAppContract {
         }
 
         private void fireCallback(InAppInboxSummary summary) {
-            Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
-            if (currentActivity == null) {
-                return;
-            }
-
-            currentActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    ReadInboxSummaryRunnable.this.callback.run(summary);
-                }
-            });
+            Kumulos.handler.post(() -> ReadInboxSummaryRunnable.this.callback.run(summary));
         }
     }
 }

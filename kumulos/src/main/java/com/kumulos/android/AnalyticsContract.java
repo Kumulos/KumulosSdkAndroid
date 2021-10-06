@@ -338,14 +338,6 @@ final class AnalyticsContract {
         WeakReference<Context> mContextRef;
         static AtomicBoolean startNewSession;
 
-        //IN APP
-        private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
-
-        @Nullable
-        static Activity getCurrentActivity() {
-            return currentActivityRef.get();
-        }
-
         private static int numStarted = 0;
 
         static boolean isBackground() {
@@ -366,8 +358,6 @@ final class AnalyticsContract {
 
         @Override
         public void onActivityResumed(Activity activity) {
-            currentActivityRef = new WeakReference<>(activity);
-
             numStarted++;
 
             final Context context = mContextRef.get();
@@ -408,7 +398,6 @@ final class AnalyticsContract {
 
         @Override
         public void onActivityPaused(Activity activity) {
-            clearCurrentActivity(activity);
             numStarted = Math.max(numStarted - 1, 0);
 
             final Context context = mContextRef.get();
@@ -443,19 +432,6 @@ final class AnalyticsContract {
 
         @Override
         @MainThread
-        public void onActivityDestroyed(Activity activity) {
-            clearCurrentActivity(activity);
-        }
-
-        private void clearCurrentActivity(Activity activity) {
-            Activity currentActivity = getCurrentActivity();
-            if (currentActivity == null) {
-                return;
-            }
-
-            if (currentActivity.hashCode() == activity.hashCode()) {
-                currentActivityRef = new WeakReference<>(null);
-            }
-        }
+        public void onActivityDestroyed(Activity activity) { /* noop */ }
     }
 }

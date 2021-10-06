@@ -78,14 +78,12 @@ public class KumulosInitProvider extends ContentProvider {
 
     static class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
 
-        private final Handler handler;
         private int runningActivities;
         private final List<AppStateChangedListener> listeners;
         private boolean appInForeground;
         private WeakReference<Activity> currentActivityRef;
 
         AppStateWatcher() {
-            handler = new Handler(Looper.getMainLooper());
             listeners = new ArrayList<>(2);
             currentActivityRef = new WeakReference<>(null);
             appInForeground = false;
@@ -142,7 +140,7 @@ public class KumulosInitProvider extends ContentProvider {
         public void onActivityPaused(@NonNull Activity activity) {
             --runningActivities;
 
-            handler.postDelayed(() -> {
+            Kumulos.handler.postDelayed(() -> {
                 if (0 == runningActivities) {
                     appInForeground = false;
                     for (AppStateChangedListener listener : listeners) {
