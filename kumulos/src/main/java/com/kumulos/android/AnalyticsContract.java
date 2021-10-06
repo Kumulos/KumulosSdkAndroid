@@ -374,11 +374,8 @@ final class AnalyticsContract {
                 return;
             }
 
-            Kumulos.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
-                }
+            Kumulos.executorService.submit(() -> {
+                WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
             });
         }
 
@@ -409,18 +406,15 @@ final class AnalyticsContract {
                     .putLong(AnalyticsBackgroundEventWorker.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis())
                     .build();
 
-            Kumulos.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    KumulosConfig config = Kumulos.getConfig();
+            Kumulos.executorService.submit(() -> {
+                KumulosConfig config = Kumulos.getConfig();
 
-                    OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsBackgroundEventWorker.class)
-                            .setInitialDelay(config.getSessionIdleTimeoutSeconds(), TimeUnit.SECONDS)
-                            .setInputData(input);
+                OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsBackgroundEventWorker.class)
+                        .setInitialDelay(config.getSessionIdleTimeoutSeconds(), TimeUnit.SECONDS)
+                        .setInputData(input);
 
-                    WorkManager.getInstance(context).enqueueUniqueWork(AnalyticsBackgroundEventWorker.TAG,
-                            ExistingWorkPolicy.REPLACE, taskBuilder.build());
-                }
+                WorkManager.getInstance(context).enqueueUniqueWork(AnalyticsBackgroundEventWorker.TAG,
+                        ExistingWorkPolicy.REPLACE, taskBuilder.build());
             });
         }
 
