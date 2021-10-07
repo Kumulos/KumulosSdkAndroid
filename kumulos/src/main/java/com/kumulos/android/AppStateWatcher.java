@@ -14,6 +14,8 @@ import androidx.annotation.UiThread;
 
 class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
 
+    private static final String TAG = AppStateWatcher.class.getName();
+
     interface AppStateChangedListener {
         @UiThread
         void appEnteredForeground();
@@ -64,7 +66,7 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
         ++runningActivities;
 
         if (1 == runningActivities && !appInForeground) {
-            Kumulos.log("APPSTATE", "appEnteredForeground");
+            Kumulos.log(TAG, "appEnteredForeground");
             appInForeground = true;
 
             for (AppStateChangedListener listener : listeners) {
@@ -74,7 +76,7 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
 
         Activity current = currentActivityRef.get();
         if (current != activity) {
-            Kumulos.log("APPSTATE", "activityAvailable");
+            Kumulos.log(TAG, "activityAvailable");
             currentActivityRef = new WeakReference<>(activity);
             for (AppStateChangedListener listener : listeners) {
                 listener.activityAvailable(activity);
@@ -90,7 +92,7 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
             if (0 == runningActivities) {
                 appInForeground = false;
                 for (AppStateChangedListener listener : listeners) {
-                    Kumulos.log("APPSTATE", "appEnteredBackground");
+                    Kumulos.log(TAG, "appEnteredBackground");
                     listener.appEnteredBackground();
                 }
             }
@@ -105,6 +107,7 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
 
     @Override
     public void onActivityDestroyed(@NonNull Activity activity) {
+        Kumulos.log(TAG, "activityUnavailable");
         for (AppStateChangedListener listener : listeners) {
             listener.activityUnavailable(activity);
         }
