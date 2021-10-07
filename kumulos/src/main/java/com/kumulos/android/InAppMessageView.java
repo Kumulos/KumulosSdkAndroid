@@ -573,33 +573,42 @@ public class InAppMessageView extends WebViewClient {
             String actionType = rawAction.optString("type");
             JSONObject rawActionData = rawAction.optJSONObject("data");
 
-            if (null == rawActionData) {
-                continue;
-            }
-
             ExecutableAction action = new ExecutableAction();
             action.setType(actionType);
 
             switch (actionType) {
                 case BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL:
+                    if (null == rawActionData) {
+                        continue;
+                    }
                     String channelUuid = rawActionData.optString("channelUuid");
                     action.setChannelUuid(channelUuid);
                     break;
                 case BUTTON_ACTION_TRACK_CONVERSION_EVENT:
+                    if (null == rawActionData) {
+                        continue;
+                    }
                     String eventType = rawActionData.optString("eventType");
                     JSONObject eventData = rawActionData.optJSONObject("data");
                     action.setEventType(eventType);
                     action.setConversionEventData(eventData);
                     break;
                 case BUTTON_ACTION_OPEN_URL:
+                    if (null == rawActionData) {
+                        continue;
+                    }
                     String url = rawActionData.optString("url");
                     action.setUrl(url);
                     break;
                 case BUTTON_ACTION_DEEP_LINK:
+                    if (null == rawActionData) {
+                        continue;
+                    }
                     JSONObject deepLink = rawActionData.optJSONObject("deepLink");
                     action.setDeepLink(deepLink);
-
+                    break;
                 default:
+                    break;
             }
             actions.add(action);
         }
