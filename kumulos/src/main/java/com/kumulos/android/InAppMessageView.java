@@ -161,6 +161,7 @@ public class InAppMessageView extends WebViewClient {
     }
 
     @UiThread
+    @SuppressWarnings("deprecation")
     private void setStatusBarColorForDialog(Activity currentActivity) {
         if (currentActivity == null) {
             return;
