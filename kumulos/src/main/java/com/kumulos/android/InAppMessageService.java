@@ -399,10 +399,8 @@ class InAppMessageService {
         }
 
         private List<InAppMessage> getMessagesToPresent() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             List<InAppMessage> itemsToPresent = new ArrayList<>();
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {
@@ -434,8 +432,6 @@ class InAppMessageService {
                     itemsToPresent.add(m);
                 }
                 cursor.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } catch (Exception e) {

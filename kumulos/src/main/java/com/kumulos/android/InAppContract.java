@@ -80,13 +80,10 @@ class InAppContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 db.execSQL("delete from " + InAppMessageTable.TABLE_NAME);
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed clearing in-app db ");
                 e.printStackTrace();
@@ -107,8 +104,7 @@ class InAppContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 String datetime = dbDateFormat.format(mInAppMessage.getDismissedAt());
                 String sql = "UPDATE " + InAppMessageTable.TABLE_NAME
@@ -118,8 +114,6 @@ class InAppContract {
                 Cursor c = db.rawQuery(sql, new String[]{datetime, datetime, mInAppMessage.getInAppId() + ""});
                 c.moveToFirst();
                 c.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to track open for inAppID: " + mInAppMessage.getInAppId());
                 e.printStackTrace();
@@ -141,14 +135,12 @@ class InAppContract {
 
         @Override
         public InAppSaveResult call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             List<Integer> deliveredIds = new ArrayList<>();
             List<Integer> deletedIds = new ArrayList<>();
             boolean inboxUpdated = false;
 
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 List<ContentValues> rows = this.assembleRows();
 
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -159,7 +151,6 @@ class InAppContract {
                 itemsToPresent = this.readRows(db);
                 inboxUpdated = this.isInboxUpdated(mInAppMessages, deleteResult.first);
 
-                dbHelper.close();
                 Kumulos.log(TAG, "Saved messages: " + mInAppMessages.size());
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to save messages: " + mInAppMessages.size());
@@ -385,10 +376,8 @@ class InAppContract {
 
         @Override
         public List<InAppInboxItem> call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             List<InAppInboxItem> inboxItems = new ArrayList<>();
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String columnList = InAppMessageTable.COL_ID + ", "
@@ -436,8 +425,6 @@ class InAppContract {
                     inboxItems.add(i);
                 }
                 cursor.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -461,10 +448,8 @@ class InAppContract {
 
         @Override
         public InAppMessage call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             InAppMessage inboxMessage = null;
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {
@@ -488,8 +473,6 @@ class InAppContract {
                 }
 
                 cursor.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -514,9 +497,7 @@ class InAppContract {
 
         @Override
         public Boolean call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 ContentValues values = new ContentValues();
@@ -534,7 +515,6 @@ class InAppContract {
                 if (count == 0) {
                     return false;
                 }
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to delete inbox message with inAppID: " + mId);
                 e.printStackTrace();
@@ -559,9 +539,7 @@ class InAppContract {
 
         @Override
         public Boolean call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 ContentValues values = new ContentValues();
@@ -575,7 +553,6 @@ class InAppContract {
                 if (count == 0) {
                     return false;
                 }
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to set readAt of inbox message with inAppID: " + mId);
                 e.printStackTrace();
@@ -599,10 +576,8 @@ class InAppContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             InAppInboxSummary summary = null;
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String selectSql = "SELECT COUNT(*) as totalCount, SUM(isUnread) as unreadCount FROM " +
@@ -619,12 +594,9 @@ class InAppContract {
                 cursor.close();
 
                 summary = new InAppInboxSummary(totalCount, unreadCount);
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to read inbox summary");
                 e.printStackTrace();
-
             }
 
             this.fireCallback(summary);
