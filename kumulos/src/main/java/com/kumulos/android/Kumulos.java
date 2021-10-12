@@ -51,17 +51,15 @@ public final class Kumulos {
     public static final String VERSION = BuildConfig.VERSION_NAME;
 
     private static final String TAG = Kumulos.class.getName();
-    private static final String API_BASE_URL = "https://api.kumulos.com/b2.2/";
-    private static final String CRASH_BASE_URL = "https://crash.kumulos.com";
-    /** package */ static final String PUSH_BASE_URL = "https://push.kumulos.com";
-    /** package */ static final String EVENTS_BASE_URL = "https://events.kumulos.com";
-    /** package */ static final String CRM_BASE_URL = "https://crm.kumulos.com";
+
     /** package */ static final String KEY_AUTH_HEADER = "Authorization";
     private static boolean initialized;
 
     private static String installId;
 
     private static KumulosConfig currentConfig;
+
+    static UrlBuilder urlBuilder;
 
     private static transient String sessionToken;
 
@@ -116,6 +114,7 @@ public final class Kumulos {
 
         authHeader = buildBasicAuthHeader(config.getApiKey(), config.getSecretKey());
 
+        urlBuilder  = new UrlBuilder(config.getBaseUrlMap());
         httpClient = buildOkHttpClient();
 
         executorService = Executors.newSingleThreadExecutor();
@@ -136,12 +135,14 @@ public final class Kumulos {
 
         if (config.crashReportingEnabled()) {
             // Crash reporting
+            String crashReportUrl = urlBuilder.urlForService(UrlBuilder.Service.CRASH, "/v1/track/" + config.getApiKey() + "/acra/" + installId);
+
             CoreConfigurationBuilder acraConfig = config.getAcraConfigBuilder(application);
             acraConfig
                     .setReportFormat(StringFormat.JSON)
                     .getPluginConfigurationBuilder(HttpSenderConfigurationBuilder.class)
                     .setEnabled(true)
-                    .setUri(CRASH_BASE_URL + "/v1/track/" + config.getApiKey() + "/acra/" + installId)
+                    .setUri(crashReportUrl)
                     .setBasicAuthLogin(config.getApiKey())
                     .setBasicAuthPassword(config.getSecretKey())
                     .setHttpMethod(HttpSender.Method.POST);
@@ -686,7 +687,7 @@ public final class Kumulos {
      * @return
      */
     private static String getMethodUrl(String methodAlias) {
-        return Kumulos.API_BASE_URL + currentConfig.getApiKey() + "/" + methodAlias + ".json";
+        return urlBuilder.urlForService(UrlBuilder.Service.BACKEND, "/" + currentConfig.getApiKey() + "/" + methodAlias + ".json");
     }
 
     /**

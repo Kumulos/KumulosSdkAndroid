@@ -41,7 +41,7 @@ class InAppRequestService {
             params= "?after="+ sdf.format(lastSyncTime);
         }
         String encodedIdentifier = Uri.encode(userIdentifier);
-        String url = Kumulos.PUSH_BASE_URL + "/v1/users/"+encodedIdentifier+"/messages"+params;
+        String url = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.PUSH, "/v1/users/"+encodedIdentifier+"/messages"+params);
 
         final Request request = new Request.Builder()
                 .url(url)

@@ -222,8 +222,7 @@ public class KumulosCheckinClient {
     }
 
     private static StringBuilder getUserCheckinsUrlBuilder(@NonNull Context context, String collection) {
-        StringBuilder urlBuilder = new StringBuilder(Kumulos.CRM_BASE_URL)
-                .append("/v1/users/");
+        StringBuilder urlBuilder = new StringBuilder(Kumulos.urlBuilder.urlForService(UrlBuilder.Service.CRM, "/v1/users/"));
 
         String encodedIdentifier = Uri.encode(Kumulos.getCurrentUserIdentifier(context));
         urlBuilder.append(encodedIdentifier);

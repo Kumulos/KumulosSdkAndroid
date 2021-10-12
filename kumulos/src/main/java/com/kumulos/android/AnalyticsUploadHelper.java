@@ -71,7 +71,7 @@ class AnalyticsUploadHelper {
         RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), dataStr);
 
         final OkHttpClient httpClient = new OkHttpClient();
-        final String url = Kumulos.EVENTS_BASE_URL + "/v1/app-installs/" + Installation.id(context) + "/events";
+        final String url = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.EVENTS, "/v1/app-installs/" + Installation.id(context) + "/events");
 
         Request request = new Request.Builder()
                 .url(url)

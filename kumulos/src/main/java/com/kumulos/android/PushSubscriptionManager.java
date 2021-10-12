@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,13 +15,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import androidx.annotation.Nullable;
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -418,7 +417,7 @@ public class PushSubscriptionManager {
         OkHttpClient httpClient = Kumulos.getHttpClient();
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        String url = Kumulos.CRM_BASE_URL + "/v1/channels";
+        String url = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.CRM, "/v1/channels");
 
         JSONObject params = new JSONObject();
         try {
@@ -483,7 +482,7 @@ public class PushSubscriptionManager {
     private String getSubscriptionRequestBaseUrl(Context c){
         String userIdentifier = Kumulos.getCurrentUserIdentifier(c);
 
-        return Kumulos.CRM_BASE_URL + "/v1/users/" + Uri.encode(userIdentifier);
+        return Kumulos.urlBuilder.urlForService(UrlBuilder.Service.CRM, "/v1/users/" + Uri.encode(userIdentifier));
     }
 
 }

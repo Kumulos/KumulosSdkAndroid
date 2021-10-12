@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Represents the configuration for the Kumulos client
@@ -21,14 +23,6 @@ public final class KumulosConfig {
     @DrawableRes
     static final int DEFAULT_NOTIFICATION_ICON_ID = R.drawable.kumulos_ic_stat_notifications;
     static final int DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS = 23;
-    private static final String KEY_API_KEY = "apiKey";
-    private static final String KEY_SECRET_KEY = "secretKey";
-    private static final String KEY_NOTIFICATION_SMALL_ICON_ID = "smallNotificationIconId";
-    private static final String KEY_CRASH_REPORTING_ENABLED = "crashEnabled";
-    private static final String KEY_SESSION_IDLE_TIMEOUT = "sessionTimeout";
-    private static final String KEY_RUNTIME_INFO = "runtimeInfo";
-    private static final String KEY_SDK_INFO = "sdkInfo";
-    private static final String KEY_IN_APP_CONSENT_STRATEGY = "inAppConsentStrategy";
 
     private String apiKey;
     private String secretKey;
@@ -40,6 +34,7 @@ public final class KumulosConfig {
 
     private JSONObject runtimeInfo;
     private JSONObject sdkInfo;
+    private Map<UrlBuilder.Service, String> baseUrlMap;
 
     private CoreConfigurationBuilder acraConfigBuilder;
 
@@ -82,6 +77,9 @@ public final class KumulosConfig {
         this.sdkInfo = info;
     }
 
+    private void setBaseUrlMap(Map<UrlBuilder.Service, String> baseUrlMap) {
+        this.baseUrlMap = baseUrlMap;
+    }
 
     private void setInAppConsentStrategy(InAppConsentStrategy strategy) {
         this.inAppConsentStrategy = strategy;
@@ -114,12 +112,16 @@ public final class KumulosConfig {
         return sessionIdleTimeoutSeconds;
     }
 
-    public JSONObject getRuntimeInfo() {
+    JSONObject getRuntimeInfo() {
         return this.runtimeInfo;
     }
 
-    public JSONObject getSdkInfo() {
+    JSONObject getSdkInfo() {
         return this.sdkInfo;
+    }
+
+    Map<UrlBuilder.Service, String> getBaseUrlMap() {
+        return baseUrlMap;
     }
 
     public CoreConfigurationBuilder getAcraConfigBuilder(Application application) {
@@ -146,8 +148,8 @@ public final class KumulosConfig {
      * Config builder for the Kumulos client
      */
     public static class Builder {
-        private String apiKey;
-        private String secretKey;
+        private final String apiKey;
+        private final String secretKey;
 
         @DrawableRes
         private int notificationSmallIconDrawableId = KumulosConfig.DEFAULT_NOTIFICATION_ICON_ID;
@@ -157,6 +159,7 @@ public final class KumulosConfig {
 
         private JSONObject runtimeInfo;
         private JSONObject sdkInfo;
+        private Map<UrlBuilder.Service, String> baseUrlMap;
 
         private @Nullable URL deepLinkCname;
         private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
@@ -164,6 +167,8 @@ public final class KumulosConfig {
         public Builder(@NonNull String apiKey, @NonNull String secretKey) {
             this.apiKey = apiKey;
             this.secretKey = secretKey;
+
+            this.baseUrlMap = UrlBuilder.defaultMapping();
         }
 
         /**
@@ -234,6 +239,14 @@ public final class KumulosConfig {
             return this;
         }
 
+        /**
+         * Internal SDK use
+         */
+        public Builder setBaseUrlMapping(Map<UrlBuilder.Service, String> baseUrlMap) {
+            this.baseUrlMap = baseUrlMap;
+            return this;
+        }
+
         public KumulosConfig build() {
             if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(secretKey)) {
                 throw new IllegalStateException("You need to provide apiKey and secretKey before you can build KumulosConfig.");
@@ -247,6 +260,7 @@ public final class KumulosConfig {
             newConfig.setSessionIdleTimeoutSeconds(sessionIdleTimeoutSeconds);
             newConfig.setRuntimeInfo(this.runtimeInfo);
             newConfig.setSdkInfo(this.sdkInfo);
+            newConfig.setBaseUrlMap(this.baseUrlMap);
 
             newConfig.setInAppConsentStrategy(consentStrategy);
 
