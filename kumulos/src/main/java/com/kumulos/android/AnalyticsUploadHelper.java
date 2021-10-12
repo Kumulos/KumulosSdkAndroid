@@ -57,6 +57,9 @@ class AnalyticsUploadHelper {
         // Pack into JSON
         JSONArray data = new JSONArray(events);
         String dataStr = data.toString();
+        if (null == dataStr) {
+            return false;
+        }
 
         // Post to server
         RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), dataStr);
