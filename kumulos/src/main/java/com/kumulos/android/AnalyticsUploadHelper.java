@@ -28,33 +28,27 @@ class AnalyticsUploadHelper {
     };
 
     /** package */ Result flushEvents(Context context) {
-        SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(context);
-        SQLiteDatabase db;
+        try (SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(context)) {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-        try {
-            db = dbHelper.getReadableDatabase();
+            Pair<ArrayList<JSONObject>, Long> eventsResult = this.getBatchOfEvents(db, 0L);
+            ArrayList<JSONObject> events = eventsResult.first;
+            long maxEventId = eventsResult.second;
+
+            while (!events.isEmpty()) {
+                if (!this.flushBatchToNetwork(context, events, maxEventId)) {
+                    return Result.FAILED_RETRY_LATER;
+                }
+
+                eventsResult = this.getBatchOfEvents(db, maxEventId);
+                events = eventsResult.first;
+                maxEventId = eventsResult.second;
+            }
         }
         catch (SQLiteException e) {
             e.printStackTrace();
             return Result.FAILED_RETRY_LATER;
         }
-
-        Pair<ArrayList<JSONObject>, Long> eventsResult = this.getBatchOfEvents(db, 0L);
-        ArrayList<JSONObject> events = eventsResult.first;
-        long maxEventId = eventsResult.second;
-
-        while (!events.isEmpty()) {
-            if (!this.flushBatchToNetwork(context, events, maxEventId)) {
-                dbHelper.close();
-                return Result.FAILED_RETRY_LATER;
-            }
-
-            eventsResult = this.getBatchOfEvents(db, maxEventId);
-            events = eventsResult.first;
-            maxEventId = eventsResult.second;
-        }
-
-        dbHelper.close();
 
         return Result.SUCCESS;
     }
@@ -63,9 +57,6 @@ class AnalyticsUploadHelper {
         // Pack into JSON
         JSONArray data = new JSONArray(events);
         String dataStr = data.toString();
-        if (null == dataStr) {
-            return false;
-        }
 
         // Post to server
         RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), dataStr);

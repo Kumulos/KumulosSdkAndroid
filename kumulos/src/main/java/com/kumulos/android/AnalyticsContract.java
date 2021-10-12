@@ -112,11 +112,9 @@ final class AnalyticsContract {
             String propsStr = (null == this.properties) ? null : properties.toString();
             values.put(AnalyticsEvent.COL_PROPERTIES, propsStr);
 
-            SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext);
-            try {
+            try (SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 db.insertOrThrow(AnalyticsEvent.TABLE_NAME, null, values);
-                dbHelper.close();
                 Kumulos.log(TAG, "Tracked event " + eventType + " with UUID " + uuidStr);
             } catch (SQLiteException e) {
                 e.printStackTrace();
@@ -172,9 +170,7 @@ final class AnalyticsContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext);
-
-            try {
+            try (SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 db.delete(
@@ -182,7 +178,6 @@ final class AnalyticsContract {
                         AnalyticsEvent.COL_ID + " <= ?",
                         new String[]{String.valueOf(mUpToEventId)});
 
-                dbHelper.close();
                 Kumulos.log(TAG, "Trimmed events up to " + mUpToEventId + " (inclusive)");
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to trim events up to " + mUpToEventId + " (inclusive)");
