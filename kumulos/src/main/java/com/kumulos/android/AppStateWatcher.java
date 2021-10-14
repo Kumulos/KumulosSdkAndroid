@@ -15,7 +15,6 @@ import androidx.annotation.UiThread;
 class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
 
     private static final String TAG = AppStateWatcher.class.getName();
-    private static final String KUMULOS_INVISIBLE_ACTIVITY_NAME = "com.kumulos.android.PushOpenInvisibleActivity";
 
     interface AppStateChangedListener {
         @UiThread
@@ -119,6 +118,6 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
     }
 
     private boolean isKumulosInvisibleActivity(@NonNull Activity activity){
-        return activity.getComponentName().getClassName().equals(KUMULOS_INVISIBLE_ACTIVITY_NAME);
+        return activity.getComponentName().getClassName().equals(PushOpenInvisibleActivity.class.getName());
     }
 }
