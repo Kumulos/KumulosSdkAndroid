@@ -192,10 +192,13 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * <p/>
      * Override to customize the notification shown.
      *
+     * Also sets the intent specified by the {#getPushOpenActivityIntent} method when a push notification is opened
+     * from the notifications drawer.
+     *
      * @param context
      * @param pushMessage
      * @return
-     * @see Kumulos#pushTrackOpen(Context, int) for correctly tracking conversions if you customize the content intent
+     * @see PushBroadcastReceiver#getPushOpenActivityIntent(Context, PushMessage) for customization
      */
     protected Notification buildNotification(Context context, PushMessage pushMessage) {
         PendingIntent pendingOpenIntent = this.getPendingOpenIntent(context, pushMessage);
@@ -305,7 +308,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         ComponentName component = launchIntent.getComponent();
         if (null == component) {
-            Kumulos.log(TAG, "Intent to handle push notification open does not specify a component, ignoring. Override PushBroadcastReceiver#onPushOpened to change this behaviour.");
+            Kumulos.log(TAG, "Intent to handle push notification open does not specify a component, ignoring. Override PushBroadcastReceiver#getPushOpenActivityIntent to change this behaviour.");
             return null;
         }
 
@@ -616,12 +619,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     /**
-     * Handles launching the Activity specified by the {#getPushOpenActivityIntent} method when a push
-     * notification is opened from the notifications drawer.
+     * Handles Kumulos push open tracking. Call parent if override.
      *
      * @param context
      * @param pushMessage
-     * @see PushBroadcastReceiver#getPushOpenActivityIntent(Context, PushMessage) for customization
      */
     protected void onPushOpened(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push opened");
@@ -633,6 +634,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
+    /**
+     * Handles Kumulos push dismissed tracking. Call parent if override.
+     *
+     * @param context
+     * @param pushMessage
+     */
     protected void onPushDismissed(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push dismissed");
 
