@@ -20,7 +20,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -348,7 +347,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         if (null == launchIntent) {
             return null;
         }
-        Log.d("vlad", launchIntent.getPackage());
+
         launchIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
         return launchIntent;
     }
