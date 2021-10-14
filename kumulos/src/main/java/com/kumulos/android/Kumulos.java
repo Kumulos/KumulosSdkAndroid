@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Debug;
+import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -68,9 +69,12 @@ public final class Kumulos {
     private static OkHttpClient httpClient;
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
+    /** package */ static final Handler handler = new Handler(Looper.getMainLooper());
     private static final Object userIdLocker = new Object();
 
     static PushActionHandlerInterface pushActionHandler = null;
+
+    private static DeferredDeepLinkHelper deepLinkHelper;
 
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
@@ -121,6 +125,10 @@ public final class Kumulos {
         initialized = true;
 
         KumulosInApp.initialize(application, currentConfig);
+
+        if (currentConfig.getDeferredDeepLinkHandler() != null){
+            deepLinkHelper = new DeferredDeepLinkHelper();
+        }
 
         application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
@@ -642,8 +650,7 @@ public final class Kumulos {
             return;
         }
 
-        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
-        helper.maybeProcessUrl(context, uri.toString(), false);
+        deepLinkHelper.maybeProcessUrl(context, uri.toString(), false);
     }
 
     public static void seeInputFocus(Context context, boolean hasFocus) {
@@ -655,11 +662,12 @@ public final class Kumulos {
             return;
         }
 
-        DeferredDeepLinkHelper helper = new DeferredDeepLinkHelper();
-        helper.checkForDeferredLink(context);
+        if (DeferredDeepLinkHelper.nonContinuationLinkCheckedForSession.getAndSet(true)) {
+            return;
+        }
+
+        deepLinkHelper.checkForNonContinuationLinkMatch(context);
     }
-
-
 
     //==============================================================================================
     //-- OTHER

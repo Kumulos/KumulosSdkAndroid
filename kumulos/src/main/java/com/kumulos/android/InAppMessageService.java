@@ -19,14 +19,15 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 class InAppMessageService {
     private static final String TAG = InAppMessageService.class.getName();
     private static final String PRESENTED_WHEN_IMMEDIATELY = "immediately";
     private static final String PRESENTED_WHEN_NEXT_OPEN = "next-open";
-    private static final String PRESENTED_WHEN_NEVER = "never";
-    private static List<Integer> pendingTickleIds = new ArrayList<>();
+
+    private static final List<Integer> pendingTickleIds = new ArrayList<>();
 
     static void clearAllMessages(Context context) {
         Runnable task = new InAppContract.ClearDbRunnable(context);
@@ -105,7 +106,8 @@ class InAppMessageService {
             }
         }
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
+        KumulosInApp.presenter.presentMessages(itemsToPresent, new ArrayList<>(pendingTickleIds));
+
         pendingTickleIds.clear();
     }
 
@@ -146,16 +148,13 @@ class InAppMessageService {
         }
 
         if (shouldFetch) {
-            Kumulos.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    InAppMessageService.fetch(context, fromBackground);
-                }
+            Kumulos.executorService.submit(() -> {
+                InAppMessageService.fetch(context, fromBackground);
             });
         }
     }
 
-    static void handleMessageClosed(Context context, InAppMessage message) {
+    static void handleMessageClosed(@NonNull Context context, @NonNull InAppMessage message) {
         updateDismissedAt(context, message);
         trackDismissedEvent(context, message.getInAppId());
         clearNotification(context, message.getInAppId());
@@ -179,7 +178,7 @@ class InAppMessageService {
         }
     }
 
-    static void handleMessageOpened(Context context, InAppMessage message) {
+    static void handleMessageOpened(@NonNull Context context, @NonNull InAppMessage message) {
         int id = message.getInAppId();
 
         boolean markedRead = false;
@@ -259,7 +258,7 @@ class InAppMessageService {
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         itemsToPresent.add(inboxMessage);
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, null);
+        KumulosInApp.presenter.presentMessages(itemsToPresent, null);
 
         return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
     }
@@ -351,9 +350,9 @@ class InAppMessageService {
     private static class ReadAndPresentMessagesRunnable implements Runnable {
         private static final String TAG = ReadAndPresentMessagesRunnable.class.getName();
 
-        private Context mContext;
-        private boolean fromBackground;
-        private Integer tickleId;
+        private final Context mContext;
+        private final boolean fromBackground;
+        private final Integer tickleId;
 
         ReadAndPresentMessagesRunnable(Context context, boolean fromBackground, @Nullable Integer tickleId) {
             mContext = context.getApplicationContext();
@@ -391,24 +390,24 @@ class InAppMessageService {
                 }
             }
 
-            InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
+            KumulosInApp.presenter.presentMessages(itemsToPresent, tickleIds);
 
             // TODO potential bug? logic in here doesn't take into account the pending tickles
             //      in prod builds if synced < 1hr ago, may not sync again? (although assumed sync happens on app startup so...)
+            // Sync is also triggered from push receiver when a tickle arrives, so assume this is fine?
             maybeDoExtraFetch(mContext, fromBackground);
         }
 
         private List<InAppMessage> getMessagesToPresent() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             List<InAppMessage> itemsToPresent = new ArrayList<>();
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {
                         InAppContract.InAppMessageTable.COL_ID,
                         InAppContract.InAppMessageTable.COL_PRESENTED_WHEN,
                         InAppContract.InAppMessageTable.COL_CONTENT_JSON,
+                        InAppContract.InAppMessageTable.COL_DATA_JSON,
                         InAppContract.InAppMessageTable.COL_READ_AT,
                         InAppContract.InAppMessageTable.COL_INBOX_CONFIG_JSON
                 };
@@ -424,16 +423,15 @@ class InAppMessageService {
                 while (cursor.moveToNext()) {
                     int inAppId = cursor.getInt(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_ID));
                     String content = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_CONTENT_JSON));
+                    JSONObject data = InAppContract.getNullableJsonObject(cursor, InAppContract.InAppMessageTable.COL_DATA_JSON);
                     String presentedWhen = cursor.getString(cursor.getColumnIndexOrThrow(InAppContract.InAppMessageTable.COL_PRESENTED_WHEN));
                     Date readAt = InAppContract.getNullableDate(cursor, InAppContract.InAppMessageTable.COL_READ_AT);
                     JSONObject inbox = InAppContract.getNullableJsonObject(cursor, InAppContract.InAppMessageTable.COL_INBOX_CONFIG_JSON);
 
-                    InAppMessage m = new InAppMessage(inAppId, presentedWhen, new JSONObject(content), inbox, readAt);
+                    InAppMessage m = new InAppMessage(inAppId, presentedWhen, new JSONObject(content), data, inbox, readAt);
                     itemsToPresent.add(m);
                 }
                 cursor.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } catch (Exception e) {

@@ -1,21 +1,21 @@
 package com.kumulos.android;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 public class KumulosInApp {
     static InAppDeepLinkHandlerInterface inAppDeepLinkHandler = null;
     static Application application;
+    static InAppMessagePresenter presenter;
 
     public enum InboxMessagePresentationResult {
         FAILED,
@@ -157,6 +157,7 @@ public class KumulosInApp {
 
     static void initialize(Application application, KumulosConfig currentConfig) {
         KumulosInApp.application = application;
+        presenter = new InAppMessagePresenter(application);
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         boolean inAppEnabled = isInAppEnabled();
@@ -237,11 +238,8 @@ public class KumulosInApp {
     }
 
     private static void fetchMessages() {
-        Kumulos.executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                InAppMessageService.fetch(KumulosInApp.application, true);
-            }
+        Kumulos.executorService.submit(() -> {
+            InAppMessageService.fetch(KumulosInApp.application, true);
         });
     }
 
@@ -250,11 +248,6 @@ public class KumulosInApp {
             return;
         }
 
-        Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
-        if (currentActivity == null) {
-            return;
-        }
-
-        currentActivity.runOnUiThread(inboxUpdatedHandler);
+        Kumulos.handler.post(inboxUpdatedHandler);
     }
 }

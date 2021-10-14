@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +48,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
 
-    private static final String DEFAULT_CHANNEL_ID = "kumulos_general_v3";
+    static final String DEFAULT_CHANNEL_ID = "kumulos_general_v3";
+    static final String IMPORTANT_CHANNEL_ID = "kumulos_important_v1";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
     @Override
@@ -211,18 +213,16 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 return null;
             }
 
-            NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
-            if (null == channel) {
-                this.clearOldChannels(notificationManager);
+            this.channelSetup(notificationManager);
 
-                channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
-                channel.setSound(null, null);
-                channel.setVibrationPattern(new long[]{0, 250, 250, 250});
-                notificationManager.createNotificationChannel(channel);
+            if (notificationManager.getNotificationChannel(pushMessage.getChannel()) == null) {
+                notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
             }
-
-            notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
-        } else {
+            else {
+                notificationBuilder = new Notification.Builder(context, pushMessage.getChannel());
+            }
+        }
+        else {
             notificationBuilder = new Notification.Builder(context);
         }
 
@@ -236,6 +236,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setContentIntent(pendingOpenIntent)
                 .setDeleteIntent(pendingDismissedIntent);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            int priority = pushMessage.getChannel().equals(IMPORTANT_CHANNEL_ID) ? Notification.PRIORITY_MAX : Notification.PRIORITY_DEFAULT;
+            notificationBuilder.setPriority(priority);
+        }
 
         this.maybeAddSound(context, notificationBuilder, notificationManager, pushMessage);
 
@@ -348,9 +353,9 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         return launchIntent;
     }
 
-
     private PendingIntent getPendingDismissedIntent(Context context, PushMessage pushMessage) {
         Intent intent = new Intent(ACTION_PUSH_DISMISSED);
+
         intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
         intent.setPackage(context.getPackageName());
 
@@ -364,6 +369,34 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 (int) pushMessage.getTimeSent() - 1,
                 intent,
                 flags);
+    }
+
+    private void channelSetup(NotificationManager notificationManager) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return;
+        }
+
+        NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
+        NotificationChannel importantChannel = notificationManager.getNotificationChannel(IMPORTANT_CHANNEL_ID);
+
+        //- Signalling a change / update to SDK
+        if (null == channel || null == importantChannel) {
+            this.clearOldChannels(notificationManager);
+        }
+
+        if (null == channel) {
+            channel = new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setSound(null, null);
+            channel.setVibrationPattern(new long[]{0, 250, 250, 250});
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        if (null == importantChannel) {
+            channel = new NotificationChannel(IMPORTANT_CHANNEL_ID, "Important", NotificationManager.IMPORTANCE_HIGH);
+            channel.setSound(null, null);
+            channel.setVibrationPattern(new long[]{0, 250, 250, 250});
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     @TargetApi(android.os.Build.VERSION_CODES.O)
@@ -471,10 +504,15 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     private class LoadNotificationPicture extends AsyncTask<Void, Void, Bitmap> {
-        private Notification.Builder builder;
-        private Context context;
-        private PushMessage pushMessage;
-        private PendingResult pendingResult;
+        private final Notification.Builder builder;
+        private final Context context;
+        private final PushMessage pushMessage;
+        private final PendingResult pendingResult;
+
+        //Theoretical time limit for BroadcastReceiver's bg execution is 30s. Leave 6s for connection.
+        //Practically ANR doesnt happen with even bigger 40+s timeouts.
+        private final int READ_TIMEOUT = 24000;
+        private final int CONNECTION_TIMEOUT = 6000;
 
         LoadNotificationPicture(Context context, PendingResult pendingResult, Notification.Builder builder, PushMessage pushMessage) {
             super();
@@ -503,14 +541,20 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
+                connection.setConnectTimeout(CONNECTION_TIMEOUT);
+                connection.setReadTimeout(READ_TIMEOUT);
+
                 connection.connect();
                 in = connection.getInputStream();
                 return BitmapFactory.decodeStream(in);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
+            } catch(SocketTimeoutException e){
+                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
             return null;
         }
 
@@ -518,7 +562,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         protected void onPostExecute(Bitmap result) {
             super.onPostExecute(result);
 
-            if (result == null) {
+            if (result == null){
+                Notification notification = this.builder.build();
+                PushBroadcastReceiver.this.showNotification(this.context, this.pushMessage, notification);
+
                 pendingResult.finish();
                 return;
             }

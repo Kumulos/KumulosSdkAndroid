@@ -1,6 +1,5 @@
 package com.kumulos.android;
 
-import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -8,8 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Pair;
-
-import androidx.annotation.Nullable;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,6 +19,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+
+import androidx.annotation.Nullable;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 
@@ -81,13 +80,10 @@ class InAppContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 db.execSQL("delete from " + InAppMessageTable.TABLE_NAME);
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed clearing in-app db ");
                 e.printStackTrace();
@@ -108,8 +104,7 @@ class InAppContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 String datetime = dbDateFormat.format(mInAppMessage.getDismissedAt());
                 String sql = "UPDATE " + InAppMessageTable.TABLE_NAME
@@ -119,8 +114,6 @@ class InAppContract {
                 Cursor c = db.rawQuery(sql, new String[]{datetime, datetime, mInAppMessage.getInAppId() + ""});
                 c.moveToFirst();
                 c.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to track open for inAppID: " + mInAppMessage.getInAppId());
                 e.printStackTrace();
@@ -142,14 +135,12 @@ class InAppContract {
 
         @Override
         public InAppSaveResult call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             List<InAppMessage> itemsToPresent = new ArrayList<>();
             List<Integer> deliveredIds = new ArrayList<>();
             List<Integer> deletedIds = new ArrayList<>();
             boolean inboxUpdated = false;
 
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 List<ContentValues> rows = this.assembleRows();
 
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -160,7 +151,6 @@ class InAppContract {
                 itemsToPresent = this.readRows(db);
                 inboxUpdated = this.isInboxUpdated(mInAppMessages, deleteResult.first);
 
-                dbHelper.close();
                 Kumulos.log(TAG, "Saved messages: " + mInAppMessages.size());
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to save messages: " + mInAppMessages.size());
@@ -262,6 +252,7 @@ class InAppContract {
                     InAppMessageTable.COL_ID,
                     InAppMessageTable.COL_PRESENTED_WHEN,
                     InAppMessageTable.COL_CONTENT_JSON,
+                    InAppMessageTable.COL_DATA_JSON,
                     InAppMessageTable.COL_READ_AT,
                     InAppMessageTable.COL_INBOX_CONFIG_JSON
             };
@@ -274,16 +265,18 @@ class InAppContract {
                 Date readAt = getNullableDate(cursor, InAppMessageTable.COL_READ_AT);
                 JSONObject content = null;
                 JSONObject inbox = null;
+                JSONObject data = null;
 
                 try {
                     content = getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON);
+                    data = getNullableJsonObject(cursor, InAppMessageTable.COL_DATA_JSON);
                     inbox = getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON);
                 } catch (JSONException e) {
                     Kumulos.log(TAG, e.getMessage());
                     continue;
                 }
 
-                InAppMessage m = new InAppMessage(inAppId, presentedWhen, content, inbox, readAt);
+                InAppMessage m = new InAppMessage(inAppId, presentedWhen, content, data, inbox, readAt);
                 itemsToPresent.add(m);
             }
 
@@ -383,10 +376,8 @@ class InAppContract {
 
         @Override
         public List<InAppInboxItem> call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             List<InAppInboxItem> inboxItems = new ArrayList<>();
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String columnList = InAppMessageTable.COL_ID + ", "
@@ -423,7 +414,7 @@ class InAppContract {
                     i.setSentAt(sentAt);
                     i.setData(data);
 
-                    if (inboxConfig != null){
+                    if (inboxConfig != null) {
                         i.setTitle(inboxConfig.getString("title"));
                         i.setSubtitle(inboxConfig.getString("subtitle"));
                         if (!inboxConfig.isNull("imagePath")) {
@@ -434,8 +425,6 @@ class InAppContract {
                     inboxItems.add(i);
                 }
                 cursor.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -459,13 +448,17 @@ class InAppContract {
 
         @Override
         public InAppMessage call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             InAppMessage inboxMessage = null;
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-                String[] projection = {InAppMessageTable.COL_ID, InAppMessageTable.COL_CONTENT_JSON, InAppMessageTable.COL_READ_AT, InAppMessageTable.COL_INBOX_CONFIG_JSON};
+                String[] projection = {
+                        InAppMessageTable.COL_ID,
+                        InAppMessageTable.COL_CONTENT_JSON,
+                        InAppMessageTable.COL_DATA_JSON,
+                        InAppMessageTable.COL_READ_AT,
+                        InAppMessageTable.COL_INBOX_CONFIG_JSON
+                };
                 String selection = InAppMessageTable.COL_INBOX_CONFIG_JSON + " IS NOT NULL AND " + InAppMessageTable.COL_ID + " = ?";
                 String[] selectionArgs = {mId + ""};
 
@@ -474,13 +467,12 @@ class InAppContract {
                 if (cursor.moveToFirst()) {
                     inboxMessage = new InAppMessage(mId,
                             getNullableJsonObject(cursor, InAppMessageTable.COL_CONTENT_JSON),
+                            getNullableJsonObject(cursor, InAppMessageTable.COL_DATA_JSON),
                             getNullableJsonObject(cursor, InAppMessageTable.COL_INBOX_CONFIG_JSON),
                             getNullableDate(cursor, InAppMessageTable.COL_READ_AT));
                 }
 
                 cursor.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -505,9 +497,7 @@ class InAppContract {
 
         @Override
         public Boolean call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 ContentValues values = new ContentValues();
@@ -525,7 +515,6 @@ class InAppContract {
                 if (count == 0) {
                     return false;
                 }
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to delete inbox message with inAppID: " + mId);
                 e.printStackTrace();
@@ -550,9 +539,7 @@ class InAppContract {
 
         @Override
         public Boolean call() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 ContentValues values = new ContentValues();
@@ -566,7 +553,6 @@ class InAppContract {
                 if (count == 0) {
                     return false;
                 }
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to set readAt of inbox message with inAppID: " + mId);
                 e.printStackTrace();
@@ -590,10 +576,8 @@ class InAppContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             InAppInboxSummary summary = null;
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String selectSql = "SELECT COUNT(*) as totalCount, SUM(isUnread) as unreadCount FROM " +
@@ -610,29 +594,16 @@ class InAppContract {
                 cursor.close();
 
                 summary = new InAppInboxSummary(totalCount, unreadCount);
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to read inbox summary");
                 e.printStackTrace();
-
             }
 
             this.fireCallback(summary);
         }
 
         private void fireCallback(InAppInboxSummary summary) {
-            Activity currentActivity = AnalyticsContract.ForegroundStateWatcher.getCurrentActivity();
-            if (currentActivity == null) {
-                return;
-            }
-
-            currentActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    ReadInboxSummaryRunnable.this.callback.run(summary);
-                }
-            });
+            Kumulos.handler.post(() -> ReadInboxSummaryRunnable.this.callback.run(summary));
         }
     }
 }
