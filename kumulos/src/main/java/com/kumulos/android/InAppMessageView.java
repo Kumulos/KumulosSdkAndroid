@@ -45,7 +45,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InAppMessageView extends WebViewClient {
+class InAppMessageView extends WebViewClient {
 
     private enum State {
         INITIAL,
