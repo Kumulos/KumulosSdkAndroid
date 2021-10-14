@@ -5,8 +5,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceError;
@@ -15,15 +13,15 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.AnyThread;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import androidx.annotation.AnyThread;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 
 class Deferred<R> {
     enum State {
@@ -43,7 +41,7 @@ class Deferred<R> {
         state = State.RESOLVED;
         components = result;
 
-        new Handler(Looper.getMainLooper()).post(() -> {
+        Kumulos.handler.post(() -> {
             for (Kumulos.ResultCallback<R> watcher : pendingWatchers) {
                 watcher.onSuccess(result);
             }
@@ -53,7 +51,7 @@ class Deferred<R> {
     }
 
     void then(Kumulos.ResultCallback<R> onResult) {
-        new Handler(Looper.getMainLooper()).post(() -> {
+        Kumulos.handler.post(() -> {
             if (state == State.PENDING) {
                 pendingWatchers.add(onResult);
                 return;
@@ -101,7 +99,7 @@ class DeepLinkFingerprinter {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 pageFinished = false;
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                Kumulos.handler.postDelayed(() -> {
                     if (!pageFinished) {
                         cleanUpWebView();
                     }
@@ -161,7 +159,7 @@ class DeepLinkFingerprinter {
 
         switch (messageType) {
             case CLIENT_READY:
-                new Handler(Looper.getMainLooper()).post(() -> {
+                Kumulos.handler.post(() -> {
                     this.sendToClient(REQUEST_FINGERPRINT, null);
                 });
                 return;
@@ -177,7 +175,7 @@ class DeepLinkFingerprinter {
 
                 fingerprint.resolve(components);
 
-                new Handler(Looper.getMainLooper()).post(this::cleanUpWebView);
+                Kumulos.handler.post(this::cleanUpWebView);
 
                 return;
             default:

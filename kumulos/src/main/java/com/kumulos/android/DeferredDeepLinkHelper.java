@@ -294,12 +294,7 @@ public class DeferredDeepLinkHelper {
             return;
         }
 
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                handler.handle(context, resolution, url.toString(), data);
-            }
-        });
+        Kumulos.handler.post(() -> handler.handle(context, resolution, url.toString(), data));
     }
 
     //********************************* FINGERPRINTING *********************************

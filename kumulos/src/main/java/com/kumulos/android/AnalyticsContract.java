@@ -112,11 +112,9 @@ final class AnalyticsContract {
             String propsStr = (null == this.properties) ? null : properties.toString();
             values.put(AnalyticsEvent.COL_PROPERTIES, propsStr);
 
-            SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext);
-            try {
+            try (SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
                 db.insertOrThrow(AnalyticsEvent.TABLE_NAME, null, values);
-                dbHelper.close();
                 Kumulos.log(TAG, "Tracked event " + eventType + " with UUID " + uuidStr);
             } catch (SQLiteException e) {
                 e.printStackTrace();
@@ -172,9 +170,7 @@ final class AnalyticsContract {
 
         @Override
         public void run() {
-            SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext);
-
-            try {
+            try (SQLiteOpenHelper dbHelper = new AnalyticsDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getWritableDatabase();
 
                 db.delete(
@@ -182,7 +178,6 @@ final class AnalyticsContract {
                         AnalyticsEvent.COL_ID + " <= ?",
                         new String[]{String.valueOf(mUpToEventId)});
 
-                dbHelper.close();
                 Kumulos.log(TAG, "Trimmed events up to " + mUpToEventId + " (inclusive)");
             } catch (SQLiteException e) {
                 Kumulos.log(TAG, "Failed to trim events up to " + mUpToEventId + " (inclusive)");
@@ -338,14 +333,6 @@ final class AnalyticsContract {
         WeakReference<Context> mContextRef;
         static AtomicBoolean startNewSession;
 
-        //IN APP
-        private static WeakReference<Activity> currentActivityRef = new WeakReference<>(null);
-
-        @Nullable
-        static Activity getCurrentActivity() {
-            return currentActivityRef.get();
-        }
-
         private static int numStarted = 0;
 
         static boolean isBackground() {
@@ -364,20 +351,8 @@ final class AnalyticsContract {
         @Override
         public void onActivityStarted(Activity activity) {  /* noop */ }
 
-        private Integer getTickleId(Activity activity) {
-            Intent i = activity.getIntent();
-            int tickleIdExtra = i.getIntExtra(PushBroadcastReceiver.EXTRAS_KEY_TICKLE_ID, -1);
-            return tickleIdExtra == -1 ? null : tickleIdExtra;
-        }
-
         @Override
         public void onActivityResumed(Activity activity) {
-            currentActivityRef = new WeakReference<>(activity);
-
-            Integer tickleId = this.getTickleId(activity);
-            if ((isBackground() || tickleId != null) && KumulosInApp.isInAppEnabled()) {
-                InAppMessageService.readAndPresentMessages(activity, isBackground(), tickleId);
-            }
             numStarted++;
 
             final Context context = mContextRef.get();
@@ -394,11 +369,8 @@ final class AnalyticsContract {
                 return;
             }
 
-            Kumulos.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
-                }
+            Kumulos.executorService.submit(() -> {
+                WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
             });
         }
 
@@ -418,7 +390,6 @@ final class AnalyticsContract {
 
         @Override
         public void onActivityPaused(Activity activity) {
-            clearCurrentActivity(activity);
             numStarted = Math.max(numStarted - 1, 0);
 
             final Context context = mContextRef.get();
@@ -430,18 +401,15 @@ final class AnalyticsContract {
                     .putLong(AnalyticsBackgroundEventWorker.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis())
                     .build();
 
-            Kumulos.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    KumulosConfig config = Kumulos.getConfig();
+            Kumulos.executorService.submit(() -> {
+                KumulosConfig config = Kumulos.getConfig();
 
-                    OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsBackgroundEventWorker.class)
-                            .setInitialDelay(config.getSessionIdleTimeoutSeconds(), TimeUnit.SECONDS)
-                            .setInputData(input);
+                OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsBackgroundEventWorker.class)
+                        .setInitialDelay(config.getSessionIdleTimeoutSeconds(), TimeUnit.SECONDS)
+                        .setInputData(input);
 
-                    WorkManager.getInstance(context).enqueueUniqueWork(AnalyticsBackgroundEventWorker.TAG,
-                            ExistingWorkPolicy.REPLACE, taskBuilder.build());
-                }
+                WorkManager.getInstance(context).enqueueUniqueWork(AnalyticsBackgroundEventWorker.TAG,
+                        ExistingWorkPolicy.REPLACE, taskBuilder.build());
             });
         }
 
@@ -453,21 +421,6 @@ final class AnalyticsContract {
 
         @Override
         @MainThread
-        public void onActivityDestroyed(Activity activity) {
-            InAppMessagePresenter.maybeCloseDialog(activity);
-
-            clearCurrentActivity(activity);
-        }
-
-        private void clearCurrentActivity(Activity activity) {
-            Activity currentActivity = getCurrentActivity();
-            if (currentActivity == null) {
-                return;
-            }
-
-            if (currentActivity.hashCode() == activity.hashCode()) {
-                currentActivityRef = new WeakReference<>(null);
-            }
-        }
+        public void onActivityDestroyed(Activity activity) { /* noop */ }
     }
 }

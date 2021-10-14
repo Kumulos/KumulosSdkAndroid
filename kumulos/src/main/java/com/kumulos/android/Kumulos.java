@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Debug;
+import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
@@ -68,6 +69,7 @@ public final class Kumulos {
     private static OkHttpClient httpClient;
     /** package */ static String authHeader;
     /** package */ static ExecutorService executorService;
+    /** package */ static final Handler handler = new Handler(Looper.getMainLooper());
     private static final Object userIdLocker = new Object();
 
     static PushActionHandlerInterface pushActionHandler = null;
