@@ -19,13 +19,6 @@ public class PushOpenInvisibleActivity extends Activity {
         finish();
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        this.forwardPushOpen(getIntent());
-        finish();
-    }
-
     // Forwards push opens to broadcast receiver, behaviour of which users can override.
     // ACTION_PUSH_OPENED is not immediately broadcast to the receiver as
     // a) 1 PendingIntent cannot have mixture of activities and broadcast
