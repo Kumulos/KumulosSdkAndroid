@@ -45,8 +45,6 @@ class InAppMessagePresenter implements AppStateWatcher.AppStateChangedListener {
             return;
         }
 
-        // TODO we need to ignore attaching a view to the Android 12 SDK change push open tracking activity?
-
         if (currentActivity != activity) {
             disposeView();
             currentActivity = activity;

@@ -1,15 +1,18 @@
 package com.kumulos.android;
 
 import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.view.textclassifier.TextClassifier;
 import android.webkit.URLUtil;
 
 import androidx.annotation.NonNull;
@@ -143,17 +146,16 @@ public class DeferredDeepLinkHelper {
             return null;
         }
 
-        //TODO: enable when target 31
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
-//            ClipDescription description = clipboard.getPrimaryClipDescription();
-//            if (description == null){
-//                return null;
-//            }
-//            float score = description.getConfidenceScore(TextClassifier.TYPE_URL);
-//            if (score != 1){
-//                return null;
-//            }
-//        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            ClipDescription description = clipboard.getPrimaryClipDescription();
+            if (description == null){
+                return null;
+            }
+            float score = description.getConfidenceScore(TextClassifier.TYPE_URL);
+            if (score != 1){
+                return null;
+            }
+        }
 
         ClipData clip = clipboard.getPrimaryClip();
         if (clip == null) {

@@ -8,6 +8,12 @@
             android:name=".KumulosInitProvider"
             android:authorities="${applicationId}.kumulosinitprovider"
             android:exported="false" />
+        <activity
+            android:name=".PushOpenInvisibleActivity"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent"
+            android:exported="false" />
     </application>
 
     <!-- https://developer.android.com/training/package-visibility/use-cases#check-browser-available -->

@@ -6,8 +6,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
-import android.app.TaskStackBuilder;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -32,7 +30,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-
+import java.util.ArrayList;
+import java.util.List;
 import androidx.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
@@ -50,14 +49,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     static final String IMPORTANT_CHANNEL_ID = "kumulos_important_v1";
     protected static final String KUMULOS_NOTIFICATION_TAG = "kumulos";
 
-
-
     @Override
     final public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         PushMessage pushMessage = intent.getParcelableExtra(PushMessage.EXTRAS_KEY);
 
-        if (null == action) {
+        if (null == action || pushMessage == null) {
             return;
         }
 
@@ -75,33 +72,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
                 this.handleButtonClick(context, pushMessage, buttonIdentifier);
                 break;
-
         }
-    }
-
-    /**
-     * Handles action button clicks
-     *
-     * @param context
-     * @param buttonIdentifier
-     */
-    private void handleButtonClick(Context context, PushMessage pushMessage, String buttonIdentifier) {
-        try {
-            Kumulos.pushTrackOpen(context, pushMessage.getId());
-        } catch (Kumulos.UninitializedException e) {
-            Kumulos.log(TAG, "Failed to track the push opening won button click -- Kumulos is not initialised.");
-        }
-
-        if (Kumulos.pushActionHandler != null){
-            Kumulos.pushActionHandler.handle(context, pushMessage, buttonIdentifier);
-        }
-
-        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (null == notificationManager) {
-            return;
-        }
-
-        notificationManager.cancel(PushBroadcastReceiver.KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage));
     }
 
     /**
@@ -119,7 +90,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         this.maybeTriggerInAppSync(context, pushMessage);
 
         if (pushMessage.runBackgroundHandler()) {
-            this.runBackgroundHandler(context, pushMessage);
+            this.onBackgroundPush(context, pushMessage);
         }
 
         if (!pushMessage.hasTitleAndMessage()) {
@@ -136,7 +107,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         this.showNotification(context, pushMessage, notification);
     }
 
-    private void showNotification(Context context, PushMessage pushMessage, Notification notification){
+    private void showNotification(Context context, PushMessage pushMessage, Notification notification) {
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -148,26 +119,25 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         notificationManager.notify(KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage), notification);
     }
 
-    protected void pushTrackDelivered(Context context, PushMessage pushMessage){
+    protected void pushTrackDelivered(Context context, PushMessage pushMessage) {
         try {
             JSONObject params = new JSONObject();
             params.put("type", AnalyticsContract.MESSAGE_TYPE_PUSH);
             params.put("id", pushMessage.getId());
 
             Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_MESSAGE_DELIVERED, params);
-        }
-        catch(JSONException e){
+        } catch (JSONException e) {
             Kumulos.log(TAG, e.toString());
         }
     }
 
-    protected void maybeTriggerInAppSync(Context context, PushMessage pushMessage){
-        if (!KumulosInApp.isInAppEnabled()){
+    protected void maybeTriggerInAppSync(Context context, PushMessage pushMessage) {
+        if (!KumulosInApp.isInAppEnabled()) {
             return;
         }
 
         int tickleId = pushMessage.getTickleId();
-        if (tickleId == -1){
+        if (tickleId == -1) {
             return;
         }
 
@@ -179,105 +149,13 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         });
     }
 
-    private int getNotificationId(PushMessage pushMessage){
+    private int getNotificationId(PushMessage pushMessage) {
         int tickleId = pushMessage.getTickleId();
-        if (tickleId == -1){
+        if (tickleId == -1) {
             // TODO fix this in 2038 when we run out of time
             return (int) pushMessage.getTimeSent();
         }
         return tickleId;
-    }
-
-    private void runBackgroundHandler(Context context, PushMessage pushMessage){
-        Intent serviceIntent = getBackgroundPushServiceIntent(context, pushMessage);
-
-        if (null == serviceIntent) {
-            return;
-        }
-
-        ComponentName component = serviceIntent.getComponent();
-        if (null == component) {
-            Kumulos.log(TAG, "Service intent did not specify a component, ignoring.");
-            return;
-        }
-
-        Class<? extends Service> cls = null;
-        try {
-            cls = Class.forName(component.getClassName()).asSubclass(Service.class);
-        } catch (ClassNotFoundException e) {
-            Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
-        }
-
-        if (null != cls) {
-            context.startService(serviceIntent);
-        }
-    }
-
-
-
-    /**
-     * Handles launching the Activity specified by the {#getPushOpenActivityIntent} method when a push
-     * notification is opened from the notifications drawer.
-     *
-     * @param context
-     * @param pushMessage
-     * @see PushBroadcastReceiver#getPushOpenActivityIntent(Context, PushMessage) for customization
-     */
-    protected void onPushOpened(Context context, PushMessage pushMessage) {
-        Kumulos.log(TAG, "Push opened");
-
-        try {
-            Kumulos.pushTrackOpen(context, pushMessage.getId());
-        } catch (Kumulos.UninitializedException e) {
-            Kumulos.log(TAG, "Failed to track the push opening -- Kumulos is not initialised.");
-        }
-
-        Intent launchIntent = getPushOpenActivityIntent(context, pushMessage);
-
-        if (null == launchIntent) {
-            return;
-        }
-
-        ComponentName component = launchIntent.getComponent();
-        if (null == component) {
-            Kumulos.log(TAG, "Intent to handle push notification open does not specify a component, ignoring. Override PushBroadcastReceiver#onPushOpened to change this behaviour.");
-            return;
-        }
-
-        Class<? extends Activity> cls = null;
-        try {
-            cls = Class.forName(component.getClassName()).asSubclass(Activity.class);
-        } catch (ClassNotFoundException e) {
-            Kumulos.log(TAG, "Activity intent to handle a content push open was provided, but it is not for an Activity, check: " + component.getClassName());
-        }
-
-        // Ensure we're trying to launch an Activity
-        if (null == cls) {
-            return;
-        }
-
-        if (null != pushMessage.getUrl()) {
-            launchIntent = new Intent(Intent.ACTION_VIEW, pushMessage.getUrl());
-        }
-
-        addDeepLinkExtras(pushMessage, launchIntent);
-
-        TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(context);
-        taskStackBuilder.addParentStack(component);
-        taskStackBuilder.addNextIntent(launchIntent);
-
-        taskStackBuilder.startActivities();
-    }
-
-    protected void onPushDismissed(Context context, PushMessage pushMessage) {
-        Kumulos.log(TAG, "Push dismissed");
-
-        try {
-            Kumulos.pushTrackDismissed(context, pushMessage.getId());
-        } catch (Kumulos.UninitializedException e) {
-            Kumulos.log(TAG, "Failed to track the push dismissal -- Kumulos is not initialised.");
-        }
-
     }
 
     /**
@@ -287,15 +165,17 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * <p/>
      * Override to customize the notification shown.
      *
+     * Also sets the intent specified by the {#getPushOpenActivityIntent} method when a push notification is opened
+     * from the notifications drawer.
+     *
      * @param context
      * @param pushMessage
      * @return
-     * @see Kumulos#pushTrackOpen(Context,int) for correctly tracking conversions if you customize the content intent
+     * @see PushBroadcastReceiver#getPushOpenActivityIntent(Context, PushMessage) for customization
      */
     protected Notification buildNotification(Context context, PushMessage pushMessage) {
-
-        PendingIntent pendingOpenIntent = this.getPushIntent(context, pushMessage, ACTION_PUSH_OPENED);
-        PendingIntent pendingDismissedIntent = this.getPushIntent(context, pushMessage, ACTION_PUSH_DISMISSED);
+        PendingIntent pendingOpenIntent = this.getPendingOpenIntent(context, pushMessage);
+        PendingIntent pendingDismissedIntent = this.getPendingDismissedIntent(context, pushMessage);
 
         Notification.Builder notificationBuilder;
 
@@ -340,24 +220,130 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         this.maybeAddSound(context, notificationBuilder, notificationManager, pushMessage);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-             notificationBuilder.setShowWhen(true);
+            notificationBuilder.setShowWhen(true);
         }
 
         notificationBuilder.setStyle(new Notification.BigTextStyle().bigText(pushMessage.getMessage()));
 
         JSONArray buttons = pushMessage.getButtons();
-        if (buttons != null){
+        if (buttons != null) {
             this.attachButtons(context, pushMessage, notificationBuilder, buttons);
         }
 
         String pictureUrl = pushMessage.getPictureUrl();
-        if (pictureUrl != null){
+        if (pictureUrl != null) {
             final PendingResult pendingResult = goAsync();
             new LoadNotificationPicture(context, pendingResult, notificationBuilder, pushMessage).execute();
 
             return null;
         }
         return notificationBuilder.build();
+    }
+
+    private PendingIntent getPendingOpenIntent(Context context, PushMessage pushMessage) {
+        List<Intent> intentList = new ArrayList<>();
+        //launch intent must come 1st, FLAG_ACTIVITY_NEW_TASK
+        Intent launchIntent = getLaunchIntent(context, pushMessage);
+        if (launchIntent != null) {
+            intentList.add(launchIntent);
+        }
+
+        //open tracking intent starts invisible activity on top of stack or in a new task if no launch intent
+        Intent kumulosPushOpenIntent = new Intent(context, PushOpenInvisibleActivity.class);
+        kumulosPushOpenIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
+        kumulosPushOpenIntent.setPackage(context.getPackageName());
+        if (launchIntent == null || null != pushMessage.getUrl()) {
+            kumulosPushOpenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+        }
+
+        intentList.add(kumulosPushOpenIntent);
+
+        Intent[] intents = new Intent[intentList.size()];
+        intentList.toArray(intents);
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        return PendingIntent.getActivities(context, (int) pushMessage.getTimeSent(), intents, flags);
+    }
+
+    private @Nullable
+    Intent getLaunchIntent(Context context, PushMessage pushMessage) {
+        Intent launchIntent = getPushOpenActivityIntent(context, pushMessage);
+
+        if (null == launchIntent) {
+            return null;
+        }
+
+        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        ComponentName component = launchIntent.getComponent();
+        if (null == component) {
+            Kumulos.log(TAG, "Intent to handle push notification open does not specify a component, ignoring. Override PushBroadcastReceiver#getPushOpenActivityIntent to change this behaviour.");
+            return null;
+        }
+
+        Class<? extends Activity> cls = null;
+        try {
+            cls = Class.forName(component.getClassName()).asSubclass(Activity.class);
+        } catch (ClassNotFoundException e) {
+            Kumulos.log(TAG, "Activity intent to handle a content push open was provided, but it is not for an Activity, check: " + component.getClassName());
+        }
+
+        // Ensure we're trying to launch an Activity
+        if (null == cls) {
+            return null;
+        }
+
+        if (null != pushMessage.getUrl()) {
+            launchIntent = new Intent(Intent.ACTION_VIEW, pushMessage.getUrl());
+        }
+
+        addDeepLinkExtras(pushMessage, launchIntent);
+
+        return launchIntent;
+    }
+
+    /**
+     * Returns the Intent to launch when a push notification is opened from the notification drawer.
+     * <p/>
+     * The Intent must specify an Activity component or it will be ignored.
+     * <p/>
+     * Override to change the launched Activity when a push notification is opened.
+     *
+     * @param context
+     * @param pushMessage
+     * @return
+     */
+    protected Intent getPushOpenActivityIntent(Context context, PushMessage pushMessage) {
+        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+
+        if (null == launchIntent) {
+            return null;
+        }
+
+        launchIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
+        return launchIntent;
+    }
+
+    private PendingIntent getPendingDismissedIntent(Context context, PushMessage pushMessage) {
+        Intent intent = new Intent(ACTION_PUSH_DISMISSED);
+
+        intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
+        intent.setPackage(context.getPackageName());
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT;
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        return PendingIntent.getBroadcast(
+                context,
+                (int) pushMessage.getTimeSent() - 1,
+                intent,
+                flags);
     }
 
     private void channelSetup(NotificationManager notificationManager) {
@@ -388,51 +374,38 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    private PendingIntent getPushIntent(Context context, PushMessage pushMessage, String action){
-        Intent intent = new Intent(action);
-        intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
-        intent.setPackage(context.getPackageName());
-
-        return PendingIntent.getBroadcast(
-                context,
-                (int) pushMessage.getTimeSent(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_ONE_SHOT);
-
-    }
-
     @TargetApi(android.os.Build.VERSION_CODES.O)
-    private void clearOldChannels(NotificationManager notificationManager){
+    private void clearOldChannels(NotificationManager notificationManager) {
         //Initial setup of channels changed multiple times. Remove old channels
-        String[] oldChannelIds = {"general","kumulos_general"};
+        String[] oldChannelIds = {"general", "kumulos_general"};
 
-        for(String channelId : oldChannelIds){
+        for (String channelId : oldChannelIds) {
             NotificationChannel oldChannel = notificationManager.getNotificationChannel(channelId);
-            if (oldChannel != null){
+            if (oldChannel != null) {
                 notificationManager.deleteNotificationChannel(channelId);
             }
         }
     }
 
-    private void maybeAddSound(Context context, Notification.Builder notificationBuilder, @Nullable NotificationManager notificationManager, PushMessage pushMessage){
+    private void maybeAddSound(Context context, Notification.Builder notificationBuilder, @Nullable NotificationManager notificationManager, PushMessage pushMessage) {
         String soundFileName = pushMessage.getSound();
 
         Uri ringtoneSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        if (soundFileName != null){
-            ringtoneSound =  Uri.parse("android.resource://"+context.getPackageName()+"/raw/"+soundFileName);
+        if (soundFileName != null) {
+            ringtoneSound = Uri.parse("android.resource://" + context.getPackageName() + "/raw/" + soundFileName);
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             notificationBuilder.setSound(ringtoneSound);
             return;
         }
 
-        if (notificationManager == null){
+        if (notificationManager == null) {
             return;
         }
 
         NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
-        if (channel.getSound() != null){
+        if (channel.getSound() != null) {
             return;
         }
 
@@ -442,7 +415,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         int filter = notificationManager.getCurrentInterruptionFilter();
         boolean inDnD = false;
-        switch(filter){
+        switch (filter) {
             case NotificationManager.INTERRUPTION_FILTER_ALL:
                 inDnD = false;
                 break;
@@ -452,10 +425,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             case NotificationManager.INTERRUPTION_FILTER_UNKNOWN:
             case NotificationManager.INTERRUPTION_FILTER_ALARMS:
             case NotificationManager.INTERRUPTION_FILTER_NONE:
-                 inDnD = true;
+                inDnD = true;
         }
 
-        if (inDnD){
+        if (inDnD) {
             return;
         }
 
@@ -467,34 +440,38 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
     }
 
-    private void attachButtons(Context context, PushMessage pushMessage, Notification.Builder notificationBuilder, JSONArray buttons){
+    private void attachButtons(Context context, PushMessage pushMessage, Notification.Builder notificationBuilder, JSONArray buttons) {
         for (int i = 0; i < buttons.length(); i++) {
-            try{
+            try {
                 JSONObject button = buttons.getJSONObject(i);
                 String label = button.getString("text");
                 String buttonId = button.getString("id");
 
-                Intent clickIntent = new Intent(ACTION_BUTTON_CLICKED);
+                Intent clickIntent = new Intent(context, PushOpenInvisibleActivity.class);
                 clickIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
                 clickIntent.putExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID, buttonId);
                 clickIntent.setPackage(context.getPackageName());
+                clickIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
-                PendingIntent pendingClickIntent = PendingIntent.getBroadcast(
-                        context,
-                        ((int) pushMessage.getTimeSent()) + (i+1),
-                        clickIntent,
-                        PendingIntent.FLAG_ONE_SHOT);
-
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M){
-                    notificationBuilder.addAction(0, label, pendingClickIntent);
+                int flags = PendingIntent.FLAG_ONE_SHOT;
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    flags |= PendingIntent.FLAG_IMMUTABLE;
                 }
-                else {
+
+                PendingIntent pendingClickIntent = PendingIntent.getActivity(
+                        context,
+                        ((int) pushMessage.getTimeSent()) + (i + 1),
+                        clickIntent,
+                        flags);
+
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                    notificationBuilder.addAction(0, label, pendingClickIntent);
+                } else {
                     Notification.Action action = new Notification.Action.Builder(null, label, pendingClickIntent).build();
 
                     notificationBuilder.addAction(action);
                 }
-            }
-            catch(JSONException e){
+            } catch (JSONException e) {
                 Kumulos.log(e.toString());
             }
 
@@ -523,12 +500,12 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
         private URL getPictureUrl() throws MalformedURLException {
             String pictureUrl = this.pushMessage.getPictureUrl();
-            if (pictureUrl == null){
+            if (pictureUrl == null) {
                 throw new RuntimeException("Kumulos: pictureUrl cannot be null at this point");
             }
 
             DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
-            return MediaHelper.getCompletePictureUrl(pictureUrl,  metrics.widthPixels);
+            return MediaHelper.getCompletePictureUrl(pictureUrl, metrics.widthPixels);
         }
 
         @Override
@@ -586,13 +563,13 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @param pushMessage
      * @param launchIntent
      */
-    protected static void addDeepLinkExtras(PushMessage pushMessage, Intent launchIntent){
-        if (!KumulosInApp.isInAppEnabled()){
+    protected static void addDeepLinkExtras(PushMessage pushMessage, Intent launchIntent) {
+        if (!KumulosInApp.isInAppEnabled()) {
             return;
         }
 
         int tickleId = pushMessage.getTickleId();
-        if (tickleId == -1){
+        if (tickleId == -1) {
             return;
         }
 
@@ -600,39 +577,71 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     /**
-     * Returns the Intent to launch when a push notification is opened from the notification drawer.
-     * <p/>
-     * The Intent must specify an Activity component or it will be ignored.
-     * <p/>
-     * Override to change the launched Activity when a push notification is opened.
+     * If you want to enqueue work when a background data push is received, override this method.
      *
      * @param context
      * @param pushMessage
      * @return
      */
-    protected Intent getPushOpenActivityIntent(Context context, PushMessage pushMessage) {
-        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
-
-        if (null == launchIntent) {
-            return null;
-        }
-
-        launchIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
-        return launchIntent;
+    protected void onBackgroundPush(Context context, PushMessage pushMessage) {
+//        WorkManager workManager = WorkManager.getInstance(context);
+//        workManager.enqueue(new OneTimeWorkRequest.Builder(MyWorker.class).build());
     }
 
     /**
-     * If you want a service started when a background data push is received, override this method.
-     * <p/>
-     * The intent must specify a Service component or it will be ignored.
-     * <p/>
-     * Return null to silently ignore the data push. This is the default behaviour.
+     * Handles Kumulos push open tracking. Call parent if override.
      *
      * @param context
      * @param pushMessage
-     * @return
      */
-    protected Intent getBackgroundPushServiceIntent(Context context, PushMessage pushMessage) {
-        return null;
+    protected void onPushOpened(Context context, PushMessage pushMessage) {
+        Kumulos.log(TAG, "Push opened");
+
+        try {
+            Kumulos.pushTrackOpen(context, pushMessage.getId());
+        } catch (Kumulos.UninitializedException e) {
+            Kumulos.log(TAG, "Failed to track the push opening -- Kumulos is not initialised.");
+        }
+    }
+
+    /**
+     * Handles Kumulos push dismissed tracking. Call parent if override.
+     *
+     * @param context
+     * @param pushMessage
+     */
+    protected void onPushDismissed(Context context, PushMessage pushMessage) {
+        Kumulos.log(TAG, "Push dismissed");
+
+        try {
+            Kumulos.pushTrackDismissed(context, pushMessage.getId());
+        } catch (Kumulos.UninitializedException e) {
+            Kumulos.log(TAG, "Failed to track the push dismissal -- Kumulos is not initialised.");
+        }
+    }
+
+    /**
+     * Handles action button clicks
+     *
+     * @param context
+     * @param buttonIdentifier
+     */
+    private void handleButtonClick(Context context, PushMessage pushMessage, String buttonIdentifier) {
+        try {
+            Kumulos.pushTrackOpen(context, pushMessage.getId());
+        } catch (Kumulos.UninitializedException e) {
+            Kumulos.log(TAG, "Failed to track the push opening won button click -- Kumulos is not initialised.");
+        }
+
+        if (Kumulos.pushActionHandler != null) {
+            Kumulos.pushActionHandler.handle(context, pushMessage, buttonIdentifier);
+        }
+
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (null == notificationManager) {
+            return;
+        }
+
+        notificationManager.cancel(PushBroadcastReceiver.KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage));
     }
 }

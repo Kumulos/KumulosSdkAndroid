@@ -107,9 +107,17 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
 
     @Override
     public void onActivityDestroyed(@NonNull Activity activity) {
+        if (this.isKumulosInvisibleActivity(activity)) {
+            return;
+        }
+
         Kumulos.log(TAG, "activityUnavailable");
         for (AppStateChangedListener listener : listeners) {
             listener.activityUnavailable(activity);
         }
+    }
+
+    private boolean isKumulosInvisibleActivity(@NonNull Activity activity){
+        return activity.getComponentName().getClassName().equals(PushOpenInvisibleActivity.class.getName());
     }
 }

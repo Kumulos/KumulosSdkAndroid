@@ -17,7 +17,7 @@ import androidx.annotation.Nullable;
 
 /**
  * FirebaseMessageHandler provides helpers for handling FirebaseMessagingService events
- * <p>
+ *
  * This can allow interoperating Kumulos push with your own FCM service
  */
 public class FirebaseMessageHandler {
