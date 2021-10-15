@@ -35,7 +35,7 @@ public class UrlBuilder {
     static Map<Service, String> defaultMapping() {
         Map<Service, String> baseUrlMap = new HashMap<>(UrlBuilder.Service.values().length);
 
-        baseUrlMap.put(UrlBuilder.Service.BACKEND, "https://api.kumulos.com/b2.2");
+        baseUrlMap.put(UrlBuilder.Service.BACKEND, "https://api.kumulos.com");
         baseUrlMap.put(UrlBuilder.Service.CRASH, "https://crash.kumulos.com");
         baseUrlMap.put(UrlBuilder.Service.CRM, "https://crm.kumulos.com");
         baseUrlMap.put(UrlBuilder.Service.DDL, "https://links.kumulos.com");

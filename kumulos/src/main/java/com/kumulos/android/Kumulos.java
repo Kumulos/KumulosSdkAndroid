@@ -687,7 +687,7 @@ public final class Kumulos {
      * @return
      */
     private static String getMethodUrl(String methodAlias) {
-        return urlBuilder.urlForService(UrlBuilder.Service.BACKEND, "/" + currentConfig.getApiKey() + "/" + methodAlias + ".json");
+        return urlBuilder.urlForService(UrlBuilder.Service.BACKEND, "/b2.2/" + currentConfig.getApiKey() + "/" + methodAlias + ".json");
     }
 
     /**
