@@ -55,9 +55,6 @@ class InAppMessageView extends WebViewClient {
     }
 
     private static final String TAG = InAppMessageView.class.getName();
-    private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
-    // Use for simulating a renderer process crash (triggers onRenderProcessGone())
-    // private static final String IN_APP_RENDERER_URL = "chrome://crash";
 
     private static final String BUTTON_ACTION_CLOSE_MESSAGE = "closeMessage";
     private static final String BUTTON_ACTION_SUBSCRIBE_TO_CHANNEL = "subscribeToChannel";
@@ -288,7 +285,11 @@ class InAppMessageView extends WebViewClient {
             dialog.show();
 
             setSpinnerVisibility(View.VISIBLE);
-            wv.loadUrl(IN_APP_RENDERER_URL);
+            String iarUrl = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.IAR, "");
+            // Use for simulating a renderer process crash (triggers onRenderProcessGone())
+            // String iarUrl = "chrome://crash";
+
+            wv.loadUrl(iarUrl);
             state = State.LOADING;
         } catch (Exception e) {
             Kumulos.log(TAG, e.getMessage());
@@ -319,7 +320,8 @@ class InAppMessageView extends WebViewClient {
         String url = request.getUrl().toString();
         // Only consider handling for failures of our renderer assets
         // 3rd-party fonts/images etc. shouldn't trigger this
-        if (!url.startsWith(IN_APP_RENDERER_URL)) {
+        String iarBaseUrl = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.IAR, "");
+        if (!url.startsWith(iarBaseUrl)) {
             return;
         }
 
