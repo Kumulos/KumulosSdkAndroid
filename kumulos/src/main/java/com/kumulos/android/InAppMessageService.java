@@ -26,8 +26,8 @@ class InAppMessageService {
     private static final String TAG = InAppMessageService.class.getName();
     private static final String PRESENTED_WHEN_IMMEDIATELY = "immediately";
     private static final String PRESENTED_WHEN_NEXT_OPEN = "next-open";
-    private static final String PRESENTED_WHEN_NEVER = "never";
-    private static List<Integer> pendingTickleIds = new ArrayList<>();
+
+    private static final List<Integer> pendingTickleIds = new ArrayList<>();
 
     static void clearAllMessages(Context context) {
         Runnable task = new InAppContract.ClearDbRunnable(context);
@@ -106,7 +106,8 @@ class InAppMessageService {
             }
         }
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, pendingTickleIds);
+        KumulosInApp.presenter.presentMessages(itemsToPresent, new ArrayList<>(pendingTickleIds));
+
         pendingTickleIds.clear();
     }
 
@@ -147,11 +148,8 @@ class InAppMessageService {
         }
 
         if (shouldFetch) {
-            Kumulos.executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    InAppMessageService.fetch(context, fromBackground);
-                }
+            Kumulos.executorService.submit(() -> {
+                InAppMessageService.fetch(context, fromBackground);
             });
         }
     }
@@ -260,7 +258,7 @@ class InAppMessageService {
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         itemsToPresent.add(inboxMessage);
 
-        InAppMessagePresenter.presentMessages(itemsToPresent, null);
+        KumulosInApp.presenter.presentMessages(itemsToPresent, null);
 
         return KumulosInApp.InboxMessagePresentationResult.PRESENTED;
     }
@@ -352,9 +350,9 @@ class InAppMessageService {
     private static class ReadAndPresentMessagesRunnable implements Runnable {
         private static final String TAG = ReadAndPresentMessagesRunnable.class.getName();
 
-        private Context mContext;
-        private boolean fromBackground;
-        private Integer tickleId;
+        private final Context mContext;
+        private final boolean fromBackground;
+        private final Integer tickleId;
 
         ReadAndPresentMessagesRunnable(Context context, boolean fromBackground, @Nullable Integer tickleId) {
             mContext = context.getApplicationContext();
@@ -392,18 +390,17 @@ class InAppMessageService {
                 }
             }
 
-            InAppMessagePresenter.presentMessages(itemsToPresent, tickleIds);
+            KumulosInApp.presenter.presentMessages(itemsToPresent, tickleIds);
 
             // TODO potential bug? logic in here doesn't take into account the pending tickles
             //      in prod builds if synced < 1hr ago, may not sync again? (although assumed sync happens on app startup so...)
+            // Sync is also triggered from push receiver when a tickle arrives, so assume this is fine?
             maybeDoExtraFetch(mContext, fromBackground);
         }
 
         private List<InAppMessage> getMessagesToPresent() {
-            SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext);
-
             List<InAppMessage> itemsToPresent = new ArrayList<>();
-            try {
+            try (SQLiteOpenHelper dbHelper = new InAppDbHelper(mContext)) {
                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
                 String[] projection = {
@@ -435,8 +432,6 @@ class InAppMessageService {
                     itemsToPresent.add(m);
                 }
                 cursor.close();
-
-                dbHelper.close();
             } catch (SQLiteException e) {
                 e.printStackTrace();
             } catch (Exception e) {
