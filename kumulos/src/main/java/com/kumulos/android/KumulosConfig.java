@@ -12,7 +12,6 @@ import androidx.annotation.Nullable;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -229,19 +228,22 @@ public final class KumulosConfig {
             return this;
         }
 
+        /** Private API */
+        @InternalSdkEmbeddingApi(purpose = "Allow override of stats data in x-plat SDKs")
         public Builder setRuntimeInfo(JSONObject info) {
             this.runtimeInfo = info;
             return this;
         }
 
+        /** Private API */
+        @InternalSdkEmbeddingApi(purpose = "Allow override of stats data in x-plat SDKs")
         public Builder setSdkInfo(JSONObject info) {
             this.sdkInfo = info;
             return this;
         }
 
-        /**
-         * Internal SDK use
-         */
+        /** Private API */
+        @InternalSdkEmbeddingApi(purpose = "Allow sending traffic to different domains")
         public Builder setBaseUrlMapping(Map<UrlBuilder.Service, String> baseUrlMap) {
             this.baseUrlMap = baseUrlMap;
             return this;
