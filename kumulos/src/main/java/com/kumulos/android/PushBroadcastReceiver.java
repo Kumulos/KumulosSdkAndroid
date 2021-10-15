@@ -6,7 +6,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -33,7 +32,6 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
 import androidx.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
@@ -92,7 +90,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         this.maybeTriggerInAppSync(context, pushMessage);
 
         if (pushMessage.runBackgroundHandler()) {
-            this.runBackgroundHandler(context, pushMessage);
+            this.onBackgroundPush(context, pushMessage);
         }
 
         if (!pushMessage.hasTitleAndMessage()) {
@@ -158,31 +156,6 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return (int) pushMessage.getTimeSent();
         }
         return tickleId;
-    }
-
-    private void runBackgroundHandler(Context context, PushMessage pushMessage) {
-        Intent serviceIntent = getBackgroundPushServiceIntent(context, pushMessage);
-
-        if (null == serviceIntent) {
-            return;
-        }
-
-        ComponentName component = serviceIntent.getComponent();
-        if (null == component) {
-            Kumulos.log(TAG, "Service intent did not specify a component, ignoring.");
-            return;
-        }
-
-        Class<? extends Service> cls = null;
-        try {
-            cls = Class.forName(component.getClassName()).asSubclass(Service.class);
-        } catch (ClassNotFoundException e) {
-            Kumulos.log(TAG, "Service intent to handle a data push was provided, but it is not for a Service, check: " + component.getClassName());
-        }
-
-        if (null != cls) {
-            context.startService(serviceIntent);
-        }
     }
 
     /**
@@ -604,18 +577,15 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     /**
-     * If you want a service started when a background data push is received, override this method.
-     * <p/>
-     * The intent must specify a Service component or it will be ignored.
-     * <p/>
-     * Return null to silently ignore the data push. This is the default behaviour.
+     * If you want to enqueue work when a background data push is received, override this method.
      *
      * @param context
      * @param pushMessage
      * @return
      */
-    protected Intent getBackgroundPushServiceIntent(Context context, PushMessage pushMessage) {
-        return null;
+    protected void onBackgroundPush(Context context, PushMessage pushMessage) {
+//        WorkManager workManager = WorkManager.getInstance(context);
+//        workManager.enqueue(new OneTimeWorkRequest.Builder(MyWorker.class).build());
     }
 
     /**
