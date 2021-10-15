@@ -11,6 +11,8 @@ public class UrlBuilder {
         CRM,
         DDL,
         EVENTS,
+        IAR,
+        MEDIA,
         PUSH,
     }
 
@@ -33,14 +35,16 @@ public class UrlBuilder {
     }
 
     static Map<Service, String> defaultMapping() {
-        Map<Service, String> baseUrlMap = new HashMap<>(UrlBuilder.Service.values().length);
+        Map<Service, String> baseUrlMap = new HashMap<>(Service.values().length);
 
-        baseUrlMap.put(UrlBuilder.Service.BACKEND, "https://api.kumulos.com");
-        baseUrlMap.put(UrlBuilder.Service.CRASH, "https://crash.kumulos.com");
-        baseUrlMap.put(UrlBuilder.Service.CRM, "https://crm.kumulos.com");
-        baseUrlMap.put(UrlBuilder.Service.DDL, "https://links.kumulos.com");
-        baseUrlMap.put(UrlBuilder.Service.EVENTS, "https://events.kumulos.com");
-        baseUrlMap.put(UrlBuilder.Service.PUSH, "https://push.kumulos.com");
+        baseUrlMap.put(Service.BACKEND, "https://api.kumulos.com");
+        baseUrlMap.put(Service.CRASH, "https://crash.kumulos.com");
+        baseUrlMap.put(Service.CRM, "https://crm.kumulos.com");
+        baseUrlMap.put(Service.DDL, "https://links.kumulos.com");
+        baseUrlMap.put(Service.IAR, "https://iar.app.delivery");
+        baseUrlMap.put(Service.MEDIA, "https://i.app.delivery");
+        baseUrlMap.put(Service.EVENTS, "https://events.kumulos.com");
+        baseUrlMap.put(Service.PUSH, "https://push.kumulos.com");
 
         return baseUrlMap;
     }

@@ -48,9 +48,6 @@ class InAppMessagePresenter {
     private static final String HOST_MESSAGE_TYPE_PRESENT_MESSAGE = "PRESENT_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_CLOSE_MESSAGE = "CLOSE_MESSAGE";
     private static final String HOST_MESSAGE_TYPE_SET_NOTCH_INSETS = "SET_NOTCH_INSETS";
-    private static final String IN_APP_RENDERER_URL = "https://iar.app.delivery";
-    // Use for simulating a renderer process crash (triggers onRenderProcessGone())
-    // private static final String IN_APP_RENDERER_URL = "chrome://crash";
 
     private static final List<InAppMessage> messageQueue = new ArrayList<>();
     @SuppressLint("StaticFieldLeak")
@@ -512,7 +509,8 @@ class InAppMessagePresenter {
                     String url = request.getUrl().toString();
                     // Only consider handling for failures of our renderer assets
                     // 3rd-party fonts/images etc. shouldn't trigger this
-                    if (!url.startsWith(IN_APP_RENDERER_URL)) {
+                    String iarBaseUrl = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.IAR, "");
+                    if (!url.startsWith(iarBaseUrl)) {
                         return;
                     }
 
@@ -568,7 +566,10 @@ class InAppMessagePresenter {
             });
 
             InAppMessagePresenter.setSpinnerVisibility(View.VISIBLE);
-            wv.loadUrl(IN_APP_RENDERER_URL);
+            String iarUrl = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.IAR, "");
+            // Use for simulating a renderer process crash (triggers onRenderProcessGone())
+            // String iarUrl = "chrome://crash";
+            wv.loadUrl(iarUrl);
         } catch (Exception e) {
             Kumulos.log(TAG, e.getMessage());
         }
