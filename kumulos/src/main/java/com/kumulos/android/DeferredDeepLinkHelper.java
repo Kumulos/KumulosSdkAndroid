@@ -32,8 +32,6 @@ import okhttp3.Response;
 import static android.content.Context.CLIPBOARD_SERVICE;
 
 public class DeferredDeepLinkHelper {
-    private static final String BASE_URL = "https://links.kumulos.com";
-
     private static AtomicBoolean continuationHandled;
     static AtomicBoolean nonContinuationLinkCheckedForSession = new AtomicBoolean(false);
     @SuppressWarnings("FieldCanBeLocal")
@@ -208,7 +206,7 @@ public class DeferredDeepLinkHelper {
             params = params + "&" + query;
         }
 
-        String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/" + slug + params;
+        String requestUrl = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.DDL, "/v1/deeplinks/" + slug + params);
 
         final Request request = new Request.Builder()
                 .url(requestUrl)
@@ -312,7 +310,7 @@ public class DeferredDeepLinkHelper {
 
     private void handleFingerprintComponents(Context context, JSONObject components) {
         String encodedComponents = Base64.encodeToString(components.toString().getBytes(), Base64.NO_WRAP);
-        String requestUrl = DeferredDeepLinkHelper.BASE_URL + "/v1/deeplinks/_taps?fingerprint=" + encodedComponents;
+        String requestUrl = Kumulos.urlBuilder.urlForService(UrlBuilder.Service.DDL, "/v1/deeplinks/_taps?fingerprint=" + encodedComponents);
 
         final Request request = new Request.Builder()
                 .url(requestUrl)
