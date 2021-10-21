@@ -32,6 +32,7 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 import androidx.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
@@ -58,22 +59,13 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        if (action.equals(ACTION_PUSH_RECEIVED)){
+        if (action.equals(ACTION_PUSH_RECEIVED)) {
             this.onPushReceived(context, pushMessage);
-            return;
-        }
-
-        if (action.equals(ACTION_PUSH_OPENED)){
+        } else if (action.equals(ACTION_PUSH_OPENED)) {
             this.onPushOpened(context, pushMessage);
-            return;
-        }
-
-        if (action.equals(ACTION_PUSH_DISMISSED)){
+        } else if (action.equals(ACTION_PUSH_DISMISSED)) {
             this.onPushDismissed(context, pushMessage);
-            return;
-        }
-
-        if (action.equals(ACTION_BUTTON_CLICKED)){
+        } else if (action.equals(ACTION_BUTTON_CLICKED)) {
             String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
             this.handleButtonClick(context, pushMessage, buttonIdentifier);
         }
@@ -168,7 +160,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * Defaults to using the application's icon.
      * <p/>
      * Override to customize the notification shown.
-     *
+     * <p>
      * Also sets the intent specified by the {#getPushOpenActivityIntent} method when a push notification is opened
      * from the notifications drawer.
      *
@@ -196,12 +188,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             if (notificationManager.getNotificationChannel(pushMessage.getChannel()) == null) {
                 notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
-            }
-            else {
+            } else {
                 notificationBuilder = new Notification.Builder(context, pushMessage.getChannel());
             }
-        }
-        else {
+        } else {
             notificationBuilder = new Notification.Builder(context);
         }
 
@@ -528,7 +518,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 return BitmapFactory.decodeStream(in);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
-            } catch(SocketTimeoutException e){
+            } catch (SocketTimeoutException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -541,7 +531,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         protected void onPostExecute(Bitmap result) {
             super.onPostExecute(result);
 
-            if (result == null){
+            if (result == null) {
                 Notification notification = this.builder.build();
                 PushBroadcastReceiver.this.showNotification(this.context, this.pushMessage, notification);
 
