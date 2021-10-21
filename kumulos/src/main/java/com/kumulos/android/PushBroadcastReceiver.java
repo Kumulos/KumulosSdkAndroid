@@ -37,10 +37,10 @@ import androidx.annotation.Nullable;
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
 
-    public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
-    public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
-    public static final String ACTION_PUSH_DISMISSED = "com.kumulos.push.DISMISSED";
-    public static final String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTON_CLICKED";
+    public static String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
+    public static String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
+    public static String ACTION_PUSH_DISMISSED = "com.kumulos.push.DISMISSED";
+    public static String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTON_CLICKED";
 
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
@@ -58,20 +58,24 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        switch (action) {
-            case ACTION_PUSH_RECEIVED:
-                this.onPushReceived(context, pushMessage);
-                break;
-            case ACTION_PUSH_OPENED:
-                this.onPushOpened(context, pushMessage);
-                break;
-            case ACTION_PUSH_DISMISSED:
-                this.onPushDismissed(context, pushMessage);
-                break;
-            case ACTION_BUTTON_CLICKED:
-                String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
-                this.handleButtonClick(context, pushMessage, buttonIdentifier);
-                break;
+        if (action.equals(ACTION_PUSH_RECEIVED)){
+            this.onPushReceived(context, pushMessage);
+            return;
+        }
+
+        if (action.equals(ACTION_PUSH_OPENED)){
+            this.onPushOpened(context, pushMessage);
+            return;
+        }
+
+        if (action.equals(ACTION_PUSH_DISMISSED)){
+            this.onPushDismissed(context, pushMessage);
+            return;
+        }
+
+        if (action.equals(ACTION_BUTTON_CLICKED)){
+            String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
+            this.handleButtonClick(context, pushMessage, buttonIdentifier);
         }
     }
 
