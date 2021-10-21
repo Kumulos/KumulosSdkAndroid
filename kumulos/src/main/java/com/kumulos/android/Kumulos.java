@@ -589,16 +589,6 @@ public final class Kumulos {
 
     /**
      * Registers the push token with Kumulos to allow sending push notifications to this install
-     * @deprecated See {@link #pushTokenStore(Context, PushTokenType, String)}
-     * @param context
-     * @param token
-     */
-    public static void pushTokenStore(Context context, final String token) {
-        pushTokenStore(context, PushTokenType.FCM, token);
-    }
-
-    /**
-     * Registers the push token with Kumulos to allow sending push notifications to this install
      * @param context
      * @param token
      */
@@ -609,6 +599,7 @@ public final class Kumulos {
         try {
             props.put("token", token);
             props.put("type", type.getValue());
+            props.put("package", context.getPackageName());
         } catch (JSONException e) {
             e.printStackTrace();
             return;
