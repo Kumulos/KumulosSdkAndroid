@@ -17,7 +17,7 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
         }
 
         Kumulos.log(TAG, "Got a push token: " + token);
-        Kumulos.pushTokenStore(this, PushTokenType.FCM, token);
+        Kumulos.pushTokenStore(this, PushTokenType.FCM, token, this.getPackageName());
     }
 
     @Override
