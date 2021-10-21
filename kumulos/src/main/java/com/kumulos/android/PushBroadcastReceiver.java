@@ -32,15 +32,16 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 import androidx.annotation.Nullable;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
 
-    public static final String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
-    public static final String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
-    public static final String ACTION_PUSH_DISMISSED = "com.kumulos.push.DISMISSED";
-    public static final String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTON_CLICKED";
+    public static String ACTION_PUSH_RECEIVED = "com.kumulos.push.RECEIVED";
+    public static String ACTION_PUSH_OPENED = "com.kumulos.push.OPENED";
+    public static String ACTION_PUSH_DISMISSED = "com.kumulos.push.DISMISSED";
+    public static String ACTION_BUTTON_CLICKED = "com.kumulos.push.BUTTON_CLICKED";
 
     static final String EXTRAS_KEY_TICKLE_ID = "com.kumulos.inapp.tickle.id";
     static final String EXTRAS_KEY_BUTTON_ID = "com.kumulos.push.message.button.id";
@@ -58,20 +59,15 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        switch (action) {
-            case ACTION_PUSH_RECEIVED:
-                this.onPushReceived(context, pushMessage);
-                break;
-            case ACTION_PUSH_OPENED:
-                this.onPushOpened(context, pushMessage);
-                break;
-            case ACTION_PUSH_DISMISSED:
-                this.onPushDismissed(context, pushMessage);
-                break;
-            case ACTION_BUTTON_CLICKED:
-                String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
-                this.handleButtonClick(context, pushMessage, buttonIdentifier);
-                break;
+        if (action.equals(ACTION_PUSH_RECEIVED)) {
+            this.onPushReceived(context, pushMessage);
+        } else if (action.equals(ACTION_PUSH_OPENED)) {
+            this.onPushOpened(context, pushMessage);
+        } else if (action.equals(ACTION_PUSH_DISMISSED)) {
+            this.onPushDismissed(context, pushMessage);
+        } else if (action.equals(ACTION_BUTTON_CLICKED)) {
+            String buttonIdentifier = intent.getStringExtra(PushBroadcastReceiver.EXTRAS_KEY_BUTTON_ID);
+            this.handleButtonClick(context, pushMessage, buttonIdentifier);
         }
     }
 
@@ -164,7 +160,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * Defaults to using the application's icon.
      * <p/>
      * Override to customize the notification shown.
-     *
+     * <p>
      * Also sets the intent specified by the {#getPushOpenActivityIntent} method when a push notification is opened
      * from the notifications drawer.
      *
@@ -192,12 +188,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
             if (notificationManager.getNotificationChannel(pushMessage.getChannel()) == null) {
                 notificationBuilder = new Notification.Builder(context, DEFAULT_CHANNEL_ID);
-            }
-            else {
+            } else {
                 notificationBuilder = new Notification.Builder(context, pushMessage.getChannel());
             }
-        }
-        else {
+        } else {
             notificationBuilder = new Notification.Builder(context);
         }
 
@@ -524,7 +518,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
                 return BitmapFactory.decodeStream(in);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
-            } catch(SocketTimeoutException e){
+            } catch (SocketTimeoutException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -537,7 +531,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         protected void onPostExecute(Bitmap result) {
             super.onPostExecute(result);
 
-            if (result == null){
+            if (result == null) {
                 Notification notification = this.builder.build();
                 PushBroadcastReceiver.this.showNotification(this.context, this.pushMessage, notification);
 
