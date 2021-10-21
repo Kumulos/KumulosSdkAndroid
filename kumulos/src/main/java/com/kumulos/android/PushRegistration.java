@@ -87,7 +87,7 @@ final class PushRegistration {
 
                     String token = task.getResult();
 
-                    Kumulos.pushTokenStore(context, PushTokenType.FCM, token, context.getPackageName());
+                    Kumulos.pushTokenStore(context, PushTokenType.FCM, token);
                 });
             } catch (NoSuchMethodException e) {
                 exception = e;
@@ -107,7 +107,7 @@ final class PushRegistration {
             // Equivalent of:
             // Task<InstanceIdResult> result = com.google.firebase.iid.FirebaseInstanceId.getInstance().getInstanceId();
             // result.addOnSuccessListener(Kumulos.executorService, instanceIdResult ->
-            //        Kumulos.pushTokenStore(context, PushTokenType.FCM, instanceIdResult.getToken(), context.getPackageName()));
+            //        Kumulos.pushTokenStore(context, PushTokenType.FCM, instanceIdResult.getToken()));
 
             Exception exception = null;
             try {
@@ -124,7 +124,7 @@ final class PushRegistration {
                         Method getTokenMethod = instanceIdResult.getClass().getMethod("getToken");
                         String token = (String) getTokenMethod.invoke(instanceIdResult);
 
-                        Kumulos.pushTokenStore(context, PushTokenType.FCM, token, context.getPackageName());
+                        Kumulos.pushTokenStore(context, PushTokenType.FCM, token);
                     } catch (Exception e) {
                         Log.e(TAG, "Failed to get FCM token with FirebaseMessaging <21.0.0, in callback : " + e.getMessage());
                     }
@@ -160,7 +160,7 @@ final class PushRegistration {
                 String token = HmsInstanceId.getInstance(context).getToken(appId, HCM_SCOPE);
 
                 if (!TextUtils.isEmpty(token)) {
-                    Kumulos.pushTokenStore(context, PushTokenType.HCM, token, context.getPackageName());
+                    Kumulos.pushTokenStore(context, PushTokenType.HCM, token);
                 }
             } catch (ApiException e) {
                 Log.e(TAG, "get token failed, " + e);

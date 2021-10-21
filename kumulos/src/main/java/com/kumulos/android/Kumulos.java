@@ -592,14 +592,14 @@ public final class Kumulos {
      * @param context
      * @param token
      */
-    public static void pushTokenStore(@NonNull Context context, @NonNull final PushTokenType type, @NonNull final String token, @NonNull final String packageIdentifier) {
+    public static void pushTokenStore(@NonNull Context context, @NonNull final PushTokenType type, @NonNull final String token) {
 
         JSONObject props = new JSONObject();
 
         try {
             props.put("token", token);
             props.put("type", type.getValue());
-            props.put("package", packageIdentifier);
+            props.put("package", context.getPackageName());
         } catch (JSONException e) {
             e.printStackTrace();
             return;

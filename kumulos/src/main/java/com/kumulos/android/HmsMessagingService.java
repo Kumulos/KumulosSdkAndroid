@@ -16,7 +16,7 @@ public final class HmsMessagingService extends HmsMessageService {
         }
 
         Kumulos.log(TAG, "Got a push token: " + token);
-        Kumulos.pushTokenStore(this, PushTokenType.HCM, token, this.getPackageName());
+        Kumulos.pushTokenStore(this, PushTokenType.HCM, token);
     }
 
     @Override
