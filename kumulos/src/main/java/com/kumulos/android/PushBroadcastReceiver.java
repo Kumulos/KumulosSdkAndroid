@@ -76,7 +76,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      *
      * @param context
      * @param pushMessage
-     * @see PushBroadcastReceiver#buildNotification(Context, PushMessage) for cusomization
+     * Override and use custom notification builder for complete control.
      */
     protected void onPushReceived(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push received");
@@ -94,13 +94,20 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return;
         }
 
-        Notification notification = buildNotification(context, pushMessage);
-
-        if (null == notification) {
+        Notification.Builder builder = getNotificationBuilder(context, pushMessage);
+        if (null == builder) {
             return;
         }
 
-        this.showNotification(context, pushMessage, notification);
+        String pictureUrl = pushMessage.getPictureUrl();
+        if (pictureUrl != null) {
+            final PendingResult pendingResult = goAsync();
+            new LoadNotificationPicture(context, pendingResult, builder, pushMessage).execute();
+
+            return;
+        }
+
+        this.showNotification(context, pushMessage, builder.build());
     }
 
     private void showNotification(Context context, PushMessage pushMessage, Notification notification) {
@@ -155,11 +162,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     /**
-     * Builds the notification shown in the notification drawer when a content push is received.
+     * Builder for the notification shown in the notification drawer when a content push is received.
      * <p/>
      * Defaults to using the application's icon.
      * <p/>
-     * Override to customize the notification shown.
+     * To customize the notification shown you can override builder settings.
      * <p>
      * Also sets the intent specified by the {#getPushOpenActivityIntent} method when a push notification is opened
      * from the notifications drawer.
@@ -169,7 +176,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @return
      * @see PushBroadcastReceiver#getPushOpenActivityIntent(Context, PushMessage) for customization
      */
-    protected Notification buildNotification(Context context, PushMessage pushMessage) {
+    protected @Nullable Notification.Builder getNotificationBuilder(Context context, PushMessage pushMessage) {
         PendingIntent pendingOpenIntent = this.getPendingOpenIntent(context, pushMessage);
         PendingIntent pendingDismissedIntent = this.getPendingDismissedIntent(context, pushMessage);
 
@@ -224,14 +231,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             this.attachButtons(context, pushMessage, notificationBuilder, buttons);
         }
 
-        String pictureUrl = pushMessage.getPictureUrl();
-        if (pictureUrl != null) {
-            final PendingResult pendingResult = goAsync();
-            new LoadNotificationPicture(context, pendingResult, notificationBuilder, pushMessage).execute();
-
-            return null;
-        }
-        return notificationBuilder.build();
+        return notificationBuilder;
     }
 
     private PendingIntent getPendingOpenIntent(Context context, PushMessage pushMessage) {
@@ -552,7 +552,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     }
 
     /**
-     * Used to add Kumulos extras when overriding buildNotification and providing own launch intent
+     * Used to add Kumulos extras when using custom notification builder
      *
      * @param pushMessage
      * @param launchIntent
