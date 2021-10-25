@@ -24,7 +24,7 @@ public class AnalyticsBackgroundEventWorker extends Worker {
 
         Runnable trackingTask = new AnalyticsContract.TrackEventRunnable(getApplicationContext(), AnalyticsContract.EVENT_TYPE_BACKGROUND, ts, null, false);
         Kumulos.executorService.submit(trackingTask);
-        AnalyticsContract.ForegroundStateWatcher.startNewSession.set(true);
+        SessionHelper.startNewSession.set(true);
 
         return Result.success();
     }

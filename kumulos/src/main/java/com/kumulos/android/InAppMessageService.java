@@ -86,7 +86,7 @@ class InAppMessageService {
 
         trackDeliveredEvents(context, deliveredIds);
 
-        if (AnalyticsContract.ForegroundStateWatcher.isBackground()) {
+        if (KumulosInitProvider.getAppStateWatcher().isBackground()) {
             return;
         }
 

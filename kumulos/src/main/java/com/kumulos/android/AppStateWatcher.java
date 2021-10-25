@@ -41,6 +41,10 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
         appInForeground = false;
     }
 
+    boolean isBackground(){
+        return runningActivities == 0;
+    }
+
     @UiThread
     void registerListener(AppStateChangedListener listener) {
         listeners.add(listener);

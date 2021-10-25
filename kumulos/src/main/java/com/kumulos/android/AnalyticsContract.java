@@ -38,8 +38,6 @@ import androidx.work.WorkManager;
  * package
  */
 final class AnalyticsContract {
-
-    private static final String EVENT_TYPE_FOREGROUND = "k.fg";
     static final String EVENT_TYPE_BACKGROUND = "k.bg";
     private static final String EVENT_TYPE_CALL_HOME = "k.stats.installTracked";
     static final String EVENT_TYPE_ASSOCIATE_USER = "k.stats.userAssociated";
@@ -326,101 +324,8 @@ final class AnalyticsContract {
                     || Build.PRODUCT.contains("vbox86p")
                     || Build.DEVICE.contains("Droid4X");
         }
-    }
-
-    static class ForegroundStateWatcher implements Application.ActivityLifecycleCallbacks {
-
-        WeakReference<Context> mContextRef;
-        static AtomicBoolean startNewSession;
-
-        private static int numStarted = 0;
-
-        static boolean isBackground() {
-            return numStarted == 0;
-        }
 
 
-        ForegroundStateWatcher(Context context) {
-            mContextRef = new WeakReference<>(context);
-            startNewSession = new AtomicBoolean(true);
-        }
 
-        @Override
-        public void onActivityCreated(Activity activity, Bundle savedInstanceState) { /* noop */}
-
-        @Override
-        public void onActivityStarted(Activity activity) {  /* noop */ }
-
-        @Override
-        public void onActivityResumed(Activity activity) {
-            numStarted++;
-
-            final Context context = mContextRef.get();
-            if (null == context) {
-                return;
-            }
-
-            if (startNewSession.getAndSet(false)) {
-                if (this.isLaunchActivity(context, activity)) {
-                    DeferredDeepLinkHelper.nonContinuationLinkCheckedForSession.set(false);
-                }
-
-                Kumulos.trackEvent(context, AnalyticsContract.EVENT_TYPE_FOREGROUND, null);
-                return;
-            }
-
-            Kumulos.executorService.submit(() -> {
-                WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
-            });
-        }
-
-        private boolean isLaunchActivity(Context context, Activity activity) {
-            String packageName = context.getPackageName();
-            Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
-            if (launchIntent == null) {
-                return false;
-            }
-            ComponentName component = launchIntent.getComponent();
-            if (component == null) {
-                return false;
-            }
-
-            return component.getClassName().equals(activity.getComponentName().getClassName());
-        }
-
-        @Override
-        public void onActivityPaused(Activity activity) {
-            numStarted = Math.max(numStarted - 1, 0);
-
-            final Context context = mContextRef.get();
-            if (null == context) {
-                return;
-            }
-
-            final Data input = new Data.Builder()
-                    .putLong(AnalyticsBackgroundEventWorker.EXTRAS_KEY_TIMESTAMP, System.currentTimeMillis())
-                    .build();
-
-            Kumulos.executorService.submit(() -> {
-                KumulosConfig config = Kumulos.getConfig();
-
-                OneTimeWorkRequest.Builder taskBuilder = new OneTimeWorkRequest.Builder(AnalyticsBackgroundEventWorker.class)
-                        .setInitialDelay(config.getSessionIdleTimeoutSeconds(), TimeUnit.SECONDS)
-                        .setInputData(input);
-
-                WorkManager.getInstance(context).enqueueUniqueWork(AnalyticsBackgroundEventWorker.TAG,
-                        ExistingWorkPolicy.REPLACE, taskBuilder.build());
-            });
-        }
-
-        @Override
-        public void onActivityStopped(Activity activity) {  /* noop */ }
-
-        @Override
-        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {  /* noop */ }
-
-        @Override
-        @MainThread
-        public void onActivityDestroyed(Activity activity) { /* noop */ }
     }
 }

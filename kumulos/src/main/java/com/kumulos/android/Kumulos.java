@@ -74,6 +74,8 @@ public final class Kumulos {
 
     private static DeferredDeepLinkHelper deepLinkHelper;
 
+    static SessionHelper sessionHelper;
+
     /** package */ static class BaseCallback {
         public void onFailure(Exception e) {
             e.printStackTrace();
@@ -123,13 +125,13 @@ public final class Kumulos {
 
         initialized = true;
 
+        sessionHelper = new SessionHelper(application);
+
         KumulosInApp.initialize(application, currentConfig);
 
         if (currentConfig.getDeferredDeepLinkHandler() != null){
             deepLinkHelper = new DeferredDeepLinkHelper();
         }
-
-        application.registerActivityLifecycleCallbacks(new AnalyticsContract.ForegroundStateWatcher(application));
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
