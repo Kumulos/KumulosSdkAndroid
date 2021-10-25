@@ -111,9 +111,27 @@ public class DeferredDeepLinkHelper {
         if (!wasDeferred) {
             continuationHandled.set(true);
         }
+        else{
+            this.clearClipboard(context);
+        }
 
         this.handleDeepLink(context, url, wasDeferred);
         return true;
+    }
+
+    private void clearClipboard(Context context){
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard == null) {
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+            clipboard.clearPrimaryClip();
+            return;
+        }
+
+        ClipData clipData = ClipData.newPlainText("", "");
+        clipboard.setPrimaryClip(clipData);
     }
 
     private boolean checkForDeferredLinkOnClipboard(Context context) {
