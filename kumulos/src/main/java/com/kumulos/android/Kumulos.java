@@ -124,14 +124,14 @@ public final class Kumulos {
         executorService = Executors.newSingleThreadExecutor();
 
         initialized = true;
-
-        sessionHelper = new SessionHelper(application);
-
+        
         KumulosInApp.initialize(application, currentConfig);
 
         if (currentConfig.getDeferredDeepLinkHandler() != null){
             deepLinkHelper = new DeferredDeepLinkHelper();
         }
+
+        sessionHelper = new SessionHelper(application);
 
         // Stats ping
         AnalyticsContract.StatsCallHomeRunnable statsTask = new AnalyticsContract.StatsCallHomeRunnable(application);
