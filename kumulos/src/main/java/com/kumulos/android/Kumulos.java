@@ -124,7 +124,7 @@ public final class Kumulos {
         executorService = Executors.newSingleThreadExecutor();
 
         initialized = true;
-        
+
         KumulosInApp.initialize(application, currentConfig);
 
         if (currentConfig.getDeferredDeepLinkHandler() != null){
