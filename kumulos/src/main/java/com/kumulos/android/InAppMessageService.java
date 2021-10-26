@@ -86,10 +86,6 @@ class InAppMessageService {
 
         trackDeliveredEvents(context, deliveredIds);
 
-        if (AnalyticsContract.ForegroundStateWatcher.isBackground()) {
-            return;
-        }
-
         List<InAppMessage> itemsToPresent = new ArrayList<>();
         for (InAppMessage message : unreadMessages) {
             boolean hasPendingTickleId = false;

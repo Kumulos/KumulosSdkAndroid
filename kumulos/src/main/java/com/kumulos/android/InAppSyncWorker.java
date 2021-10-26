@@ -27,6 +27,7 @@ public class InAppSyncWorker extends Worker {
                 1, TimeUnit.HOURS,
                 1, TimeUnit.HOURS)
                 .setConstraints(taskConstraints)
+                .setInitialDelay(1, TimeUnit.HOURS)
                 .build();
 
         Kumulos.executorService.submit(new Runnable() {
