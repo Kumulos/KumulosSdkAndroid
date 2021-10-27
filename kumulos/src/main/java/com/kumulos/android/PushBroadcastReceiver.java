@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -74,9 +75,10 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
     /**
      * Handles showing a notification in the notification drawer when a content push is received.
      *
+     * Override and use custom notification builder for complete control.
+     *
      * @param context
      * @param pushMessage
-     * Override and use custom notification builder for complete control.
      */
     protected void onPushReceived(Context context, PushMessage pushMessage) {
         Kumulos.log(TAG, "Push received");
@@ -176,7 +178,8 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
      * @return
      * @see PushBroadcastReceiver#getPushOpenActivityIntent(Context, PushMessage) for customization
      */
-    protected @Nullable Notification.Builder getNotificationBuilder(Context context, PushMessage pushMessage) {
+    protected @Nullable
+    Notification.Builder getNotificationBuilder(Context context, PushMessage pushMessage) {
         PendingIntent pendingOpenIntent = this.getPendingOpenIntent(context, pushMessage);
         PendingIntent pendingDismissedIntent = this.getPendingDismissedIntent(context, pushMessage);
 
@@ -236,6 +239,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
 
     private PendingIntent getPendingOpenIntent(Context context, PushMessage pushMessage) {
         List<Intent> intentList = new ArrayList<>();
+
         //launch intent must come 1st, FLAG_ACTIVITY_NEW_TASK
         Intent launchIntent = getLaunchIntent(context, pushMessage);
         if (launchIntent != null) {
@@ -246,19 +250,26 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         Intent kumulosPushOpenIntent = new Intent(context, PushOpenInvisibleActivity.class);
         kumulosPushOpenIntent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
         kumulosPushOpenIntent.setPackage(context.getPackageName());
+
         if (launchIntent == null || null != pushMessage.getUrl()) {
             kumulosPushOpenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+        }
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        if (isMIUI(context)) {
+            kumulosPushOpenIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            kumulosPushOpenIntent.putExtra(PushOpenInvisibleActivity.MIUI_LAUNCH_INTENT, launchIntent);
+            return PendingIntent.getActivity(context, (int) pushMessage.getTimeSent(), kumulosPushOpenIntent, flags);
         }
 
         intentList.add(kumulosPushOpenIntent);
 
         Intent[] intents = new Intent[intentList.size()];
         intentList.toArray(intents);
-
-        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            flags |= PendingIntent.FLAG_IMMUTABLE;
-        }
 
         return PendingIntent.getActivities(context, (int) pushMessage.getTimeSent(), intents, flags);
     }
@@ -271,7 +282,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return null;
         }
 
-        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
 
         ComponentName component = launchIntent.getComponent();
         if (null == component) {
@@ -637,5 +648,17 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
         }
 
         notificationManager.cancel(PushBroadcastReceiver.KUMULOS_NOTIFICATION_TAG, this.getNotificationId(pushMessage));
+    }
+
+    // https://stackoverflow.com/a/53977057
+    private static boolean isMIUI(Context ctx) {
+        return isIntentResolved(ctx, new Intent("miui.intent.action.OP_AUTO_START").addCategory(Intent.CATEGORY_DEFAULT))
+                || isIntentResolved(ctx, new Intent().setComponent(new ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity")))
+                || isIntentResolved(ctx, new Intent("miui.intent.action.POWER_HIDE_MODE_APP_LIST").addCategory(Intent.CATEGORY_DEFAULT))
+                || isIntentResolved(ctx, new Intent().setComponent(new ComponentName("com.miui.securitycenter", "com.miui.powercenter.PowerSettings")));
+    }
+
+    private static boolean isIntentResolved(Context ctx, Intent intent) {
+        return (intent != null && ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null);
     }
 }
