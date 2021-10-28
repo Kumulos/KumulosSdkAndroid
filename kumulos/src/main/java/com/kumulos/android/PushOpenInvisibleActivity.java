@@ -1,6 +1,7 @@
 package com.kumulos.android;
 
 import android.app.Activity;
+import android.app.TaskStackBuilder;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,7 +21,6 @@ public class PushOpenInvisibleActivity extends Activity {
 
         Intent miuiLaunchIntent = getIntent().getParcelableExtra(MIUI_LAUNCH_INTENT);
         if (null != miuiLaunchIntent) {
-            miuiLaunchIntent.setFlags(0);
             startActivity(miuiLaunchIntent);
         }
 

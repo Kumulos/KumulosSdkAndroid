@@ -282,7 +282,7 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             return null;
         }
 
-        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         ComponentName component = launchIntent.getComponent();
         if (null == component) {
