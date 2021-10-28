@@ -11,10 +11,18 @@ import android.util.Log;
  */
 public class PushOpenInvisibleActivity extends Activity {
 
+    static final String MIUI_LAUNCH_INTENT = "MIUI_LAUNCH_INTENT";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.forwardPushOpen(getIntent());
+
+        Intent miuiLaunchIntent = getIntent().getParcelableExtra(MIUI_LAUNCH_INTENT);
+        if (null != miuiLaunchIntent) {
+            miuiLaunchIntent.setFlags(0);
+            startActivity(miuiLaunchIntent);
+        }
 
         finish();
     }
