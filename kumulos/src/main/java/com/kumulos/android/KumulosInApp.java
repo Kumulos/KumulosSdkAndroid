@@ -157,7 +157,6 @@ public class KumulosInApp {
 
     static void initialize(Application application, KumulosConfig currentConfig) {
         KumulosInApp.application = application;
-        presenter = new InAppMessagePresenter(application);
 
         KumulosConfig.InAppConsentStrategy strategy = currentConfig.getInAppConsentStrategy();
         boolean inAppEnabled = isInAppEnabled();
@@ -171,6 +170,8 @@ public class KumulosInApp {
             InAppMessageService.clearAllMessages(application);
             clearLastSyncTime(application);
         }
+
+        presenter = new InAppMessagePresenter(application);
 
         toggleInAppMessageMonitoring(inAppEnabled);
     }
