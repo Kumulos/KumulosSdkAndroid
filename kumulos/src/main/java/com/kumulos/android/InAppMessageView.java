@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.RenderProcessGoneDetail;
@@ -437,7 +438,12 @@ class InAppMessageView extends WebViewClient {
             return;
         }
 
-        DisplayCutout displayCutout = window.getDecorView().getRootWindowInsets().getDisplayCutout();
+        WindowInsets insets = window.getDecorView().getRootWindowInsets();
+        if (insets == null){
+            return;
+        }
+
+        DisplayCutout displayCutout = insets.getDisplayCutout();
         if (displayCutout == null) {
             return;
         }
