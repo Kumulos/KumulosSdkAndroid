@@ -32,6 +32,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import static android.content.ClipDescription.CLASSIFICATION_COMPLETE;
 import static android.content.Context.CLIPBOARD_SERVICE;
 
 public class DeferredDeepLinkHelper {
@@ -169,6 +170,11 @@ public class DeferredDeepLinkHelper {
             if (description == null){
                 return null;
             }
+
+            if (description.getClassificationStatus() != CLASSIFICATION_COMPLETE){
+                return null;
+            }
+
             float score = description.getConfidenceScore(TextClassifier.TYPE_URL);
             if (score != 1){
                 return null;
