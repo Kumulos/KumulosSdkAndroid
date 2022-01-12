@@ -25,6 +25,7 @@ public final class KumulosConfig {
 
     private String apiKey;
     private String secretKey;
+
     @DrawableRes
     private int notificationSmallIconId;
     private boolean crashReportingEnabled;
@@ -163,11 +164,11 @@ public final class KumulosConfig {
         private @Nullable URL deepLinkCname;
         private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
 
-        public Builder(@NonNull String apiKey, @NonNull String secretKey) {
+        public Builder(@NonNull String region, @NonNull String apiKey, @NonNull String secretKey) {
             this.apiKey = apiKey;
             this.secretKey = secretKey;
 
-            this.baseUrlMap = UrlBuilder.defaultMapping();
+            this.baseUrlMap = UrlBuilder.defaultMapping(region);
         }
 
         /**

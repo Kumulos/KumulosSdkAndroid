@@ -1,5 +1,7 @@
 package com.kumulos.android;
 
+import androidx.annotation.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,19 +36,19 @@ public class UrlBuilder {
         return baseUrl + path;
     }
 
-    static Map<Service, String> defaultMapping() {
+    static Map<Service, String> defaultMapping(@NonNull String region) {
         Map<Service, String> baseUrlMap = new HashMap<>(Service.values().length);
 
         baseUrlMap.put(Service.BACKEND, "https://api.kumulos.com");
         baseUrlMap.put(Service.CRASH, "https://crash.kumulos.com");
-        baseUrlMap.put(Service.CRM, "https://crm.kumulos.com");
-        baseUrlMap.put(Service.DDL, "https://links.kumulos.com");
         baseUrlMap.put(Service.IAR, "https://iar.app.delivery");
         baseUrlMap.put(Service.MEDIA, "https://i.app.delivery");
-        baseUrlMap.put(Service.EVENTS, "https://events.kumulos.com");
-        baseUrlMap.put(Service.PUSH, "https://push.kumulos.com");
+
+        baseUrlMap.put(Service.PUSH, "https://push-" + region + ".kumulos.com");
+        baseUrlMap.put(Service.CRM, "https://crm-" + region + ".kumulos.com");
+        baseUrlMap.put(Service.EVENTS, "https://events-" + region + ".kumulos.com");
+        baseUrlMap.put(Service.DDL, "https://links-" + region + ".kumulos.com");
 
         return baseUrlMap;
     }
-
 }
