@@ -164,7 +164,7 @@ public final class KumulosConfig {
         private @Nullable URL deepLinkCname;
         private DeferredDeepLinkHandlerInterface deferredDeepLinkHandler;
 
-        public Builder(@NonNull String apiKey, @NonNull String secretKey, @NonNull String region) {
+        public Builder(@NonNull String region, @NonNull String apiKey, @NonNull String secretKey) {
             this.apiKey = apiKey;
             this.secretKey = secretKey;
 
