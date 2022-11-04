@@ -55,6 +55,11 @@ class AppStateWatcher implements Application.ActivityLifecycleCallbacks {
         }
     }
 
+    @UiThread
+    public void unregisterListener(AppStateChangedListener listener) {
+        listeners.remove(listener);
+    }
+
     @Override
     public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) { /* noop */ }
 

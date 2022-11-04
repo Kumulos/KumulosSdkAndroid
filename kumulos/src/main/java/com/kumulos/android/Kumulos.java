@@ -2,6 +2,7 @@
 package com.kumulos.android;
 
 import android.app.Application;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -36,6 +37,7 @@ import java.util.concurrent.Executors;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import okhttp3.Call;
 import okhttp3.ConnectionSpec;
 import okhttp3.FormBody;
@@ -53,7 +55,10 @@ public final class Kumulos {
 
     private static final String TAG = Kumulos.class.getName();
 
-    /** package */ static final String KEY_AUTH_HEADER = "Authorization";
+    /**
+     * package
+     */
+    static final String KEY_AUTH_HEADER = "Authorization";
     private static boolean initialized;
 
     private static String installId;
@@ -65,9 +70,18 @@ public final class Kumulos {
     private static transient String sessionToken;
 
     private static OkHttpClient httpClient;
-    /** package */ static String authHeader;
-    /** package */ static ExecutorService executorService;
-    /** package */ static final Handler handler = new Handler(Looper.getMainLooper());
+    /**
+     * package
+     */
+    static String authHeader;
+    /**
+     * package
+     */
+    static ExecutorService executorService;
+    /**
+     * package
+     */
+    static final Handler handler = new Handler(Looper.getMainLooper());
     private static final Object userIdLocker = new Object();
 
     static PushActionHandlerInterface pushActionHandler = null;
@@ -76,7 +90,10 @@ public final class Kumulos {
 
     static SessionHelper sessionHelper;
 
-    /** package */ static class BaseCallback {
+    /**
+     * package
+     */
+    static class BaseCallback {
         public void onFailure(Exception e) {
             e.printStackTrace();
         }
@@ -102,6 +119,7 @@ public final class Kumulos {
 
     /**
      * Used to configure the Kumulos class. Only needs to be called once per process
+     *
      * @param application
      * @param config
      */
@@ -118,7 +136,7 @@ public final class Kumulos {
 
         authHeader = buildBasicAuthHeader(config.getApiKey(), config.getSecretKey());
 
-        urlBuilder  = new UrlBuilder(config.getBaseUrlMap());
+        urlBuilder = new UrlBuilder(config.getBaseUrlMap());
         httpClient = buildOkHttpClient();
 
         executorService = Executors.newSingleThreadExecutor();
@@ -127,7 +145,7 @@ public final class Kumulos {
 
         KumulosInApp.initialize(application, currentConfig);
 
-        if (currentConfig.getDeferredDeepLinkHandler() != null){
+        if (currentConfig.getDeferredDeepLinkHandler() != null) {
             deepLinkHelper = new DeferredDeepLinkHelper();
         }
 
@@ -161,20 +179,20 @@ public final class Kumulos {
         }
     }
 
-    private static OkHttpClient buildOkHttpClient(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+    private static OkHttpClient buildOkHttpClient() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return new OkHttpClient();
         }
 
         //ciphers available on Android 4.4 have intersections with the approved ones in MODERN_TLS, but the intersections are on bad cipher list, so,
         //perhaps not supported by CloudFlare. On older devices allow all ciphers
         ConnectionSpec spec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-            .allEnabledCipherSuites()
-            .build();
+                .allEnabledCipherSuites()
+                .build();
 
         return new OkHttpClient.Builder()
-            .connectionSpecs(Collections.singletonList(spec))
-            .build();
+                .connectionSpecs(Collections.singletonList(spec))
+                .build();
     }
 
     //==============================================================================================
@@ -322,6 +340,7 @@ public final class Kumulos {
     /**
      * Updates the location of the current installation in Kumulos
      * Accurate locaiton information is used for geofencing
+     *
      * @param context
      * @param location
      */
@@ -344,6 +363,7 @@ public final class Kumulos {
 
     /**
      * Records a proximity event for an Eddystone beacon. Proximity events can be used in automation rules.
+     *
      * @param context
      * @param hexNamespace
      * @param hexInstance
@@ -372,6 +392,7 @@ public final class Kumulos {
 
     /**
      * Logs a caught exception as a non-fatal issue with Kumulos Crash reporting
+     *
      * @param throwable
      */
     public static void logException(@Nullable Throwable throwable) {
@@ -386,7 +407,10 @@ public final class Kumulos {
     //==============================================================================================
     //-- Analytics APIs
 
-    /** package */ static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties, final long timestamp, boolean immediateFlush) {
+    /**
+     * package
+     */
+    static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties, final long timestamp, boolean immediateFlush) {
         if (TextUtils.isEmpty(eventType)) {
             throw new IllegalArgumentException("Kumulos.trackEvent expects a non-empty event type");
         }
@@ -397,11 +421,11 @@ public final class Kumulos {
 
     /**
      * Tracks a custom analytics event with Kumulos.
-     *
+     * <p>
      * Events are persisted locally and synced to the server in the background in batches.
      *
      * @param context
-     * @param eventType Identifier for the event category
+     * @param eventType  Identifier for the event category
      * @param properties Additional information about the event
      */
     public static void trackEvent(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties) {
@@ -410,11 +434,11 @@ public final class Kumulos {
 
     /**
      * Tracks a custom analytics event with Kumulos.
-     *
+     * <p>
      * After being recorded locally, all stored events will be flushed to the server.
      *
      * @param context
-     * @param eventType Identifier for the event category
+     * @param eventType  Identifier for the event category
      * @param properties Additional information about the event
      */
     public static void trackEventImmediately(@NonNull final Context context, @NonNull final String eventType, @Nullable final JSONObject properties) {
@@ -423,6 +447,7 @@ public final class Kumulos {
 
     /**
      * Associates a user identifier with the current Kumulos installation record.
+     *
      * @param context
      * @param userIdentifier
      */
@@ -432,6 +457,7 @@ public final class Kumulos {
 
     /**
      * Associates a user identifier with the current Kumulos installation record, additionally setting the attributes for the user.
+     *
      * @param context
      * @param userIdentifier
      * @param attributes
@@ -442,9 +468,10 @@ public final class Kumulos {
 
     /**
      * Clears any existing association between this install record and a user identifier
+     *
+     * @param context
      * @see Kumulos#associateUserWithInstall(Context, String)
      * @see Kumulos#getCurrentUserIdentifier(Context)
-     * @param context
      */
     public static void clearUserAssociation(@NonNull Context context) {
         String currentUserId = null;
@@ -476,11 +503,10 @@ public final class Kumulos {
     /**
      * Returns the identifier for the user currently associated with the Kumulos installation record
      *
-     * @see Kumulos#associateUserWithInstall(Context, String)
-     * @see Installation#id(Context)
-     *
      * @param context
      * @return The current user identifier (if available), otherwise the Kumulos installation ID
+     * @see Kumulos#associateUserWithInstall(Context, String)
+     * @see Installation#id(Context)
      */
     public static String getCurrentUserIdentifier(@NonNull Context context) {
         synchronized (userIdLocker) {
@@ -507,7 +533,7 @@ public final class Kumulos {
             return;
         }
 
-        if (isNewUserIdentifier){
+        if (isNewUserIdentifier) {
             SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
 
             synchronized (userIdLocker) {
@@ -519,7 +545,7 @@ public final class Kumulos {
 
         trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_ASSOCIATE_USER, props);
 
-        if (isNewUserIdentifier){
+        if (isNewUserIdentifier) {
             KumulosInApp.handleInAppUserChange(context, currentConfig);
         }
     }
@@ -528,11 +554,13 @@ public final class Kumulos {
     //-- Push APIs
 
     /**
-     * Used to register the device installation with FCM to receive push notifications
+     * Used to register the device installation to receive push notifications.
+     *
+     * Prompts a notification permission request on Android 13+.
      *
      * @param context
      */
-    public static void pushRegister(Context context) {
+    public static void pushRequestDeviceToken(Context context) {
         PushRegistration.RegisterTask task = new PushRegistration.RegisterTask(context);
         executorService.submit(task);
     }
@@ -591,10 +619,18 @@ public final class Kumulos {
 
     /**
      * Registers the push token with Kumulos to allow sending push notifications to this install
+     *
      * @param context
      * @param token
      */
     public static void pushTokenStore(@NonNull Context context, @NonNull final PushTokenType type, @NonNull final String token) {
+
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (null == notificationManager) {
+            return;
+        }
 
         JSONObject props = new JSONObject();
 
@@ -602,6 +638,7 @@ public final class Kumulos {
             props.put("token", token);
             props.put("type", type.getValue());
             props.put("package", context.getPackageName());
+            props.put("areNotificationsEnabled", Build.VERSION.SDK_INT < Build.VERSION_CODES.N || notificationManager.areNotificationsEnabled());
         } catch (JSONException e) {
             e.printStackTrace();
             return;
@@ -610,8 +647,22 @@ public final class Kumulos {
         trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, System.currentTimeMillis(), true);
     }
 
+    static void notificationEnablementStatusChanged(@NonNull Context context, boolean notificationsEnabled) {
+        JSONObject props = new JSONObject();
+
+        try {
+            props.put("notificationsEnabled", notificationsEnabled);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_PUSH_NOTIFICATION_ENABLEMENT_CHANGED, props);
+    }
+
     /**
      * Allows setting the handler you want to use for push action buttons
+     *
      * @param handler
      */
     public static void setPushActionHandler(PushActionHandlerInterface handler) {
@@ -622,7 +673,7 @@ public final class Kumulos {
     //-- DEFERRED DEEP LINKING
 
     public static void seeIntent(Context context, Intent intent, @Nullable Bundle savedInstanceState) {
-        if (savedInstanceState != null){
+        if (savedInstanceState != null) {
             return;
         }
 
@@ -631,16 +682,16 @@ public final class Kumulos {
 
     public static void seeIntent(Context context, Intent intent) {
         String action = intent.getAction();
-        if (!Intent.ACTION_VIEW.equals(action)){
+        if (!Intent.ACTION_VIEW.equals(action)) {
             return;
         }
 
         Uri uri = intent.getData();
-        if (uri == null){
+        if (uri == null) {
             return;
         }
 
-        if (currentConfig.getDeferredDeepLinkHandler() == null){
+        if (currentConfig.getDeferredDeepLinkHandler() == null) {
             return;
         }
 
@@ -648,11 +699,11 @@ public final class Kumulos {
     }
 
     public static void seeInputFocus(Context context, boolean hasFocus) {
-        if (!hasFocus){
+        if (!hasFocus) {
             return;
         }
 
-        if (currentConfig.getDeferredDeepLinkHandler() == null){
+        if (currentConfig.getDeferredDeepLinkHandler() == null) {
             return;
         }
 
@@ -668,6 +719,7 @@ public final class Kumulos {
 
     /**
      * Generates the correct Authorization header value for HTTP Basic auth with the API key & secret
+     *
      * @return Authorization header value
      */
     private static String buildBasicAuthHeader(String apiKey, String secretKey) {
@@ -750,7 +802,10 @@ public final class Kumulos {
         return object;
     }
 
-    /** package */ static OkHttpClient getHttpClient() throws UninitializedException {
+    /**
+     * package
+     */
+    static OkHttpClient getHttpClient() throws UninitializedException {
         if (!initialized) {
             throw new UninitializedException();
         }
@@ -758,14 +813,20 @@ public final class Kumulos {
         return httpClient;
     }
 
-    /** package */ static String getInstallId() throws UninitializedException {
+    /**
+     * package
+     */
+    static String getInstallId() throws UninitializedException {
         if (!initialized) {
             throw new UninitializedException();
         }
         return installId;
     }
 
-    /** package */ static boolean isInitialized() {
+    /**
+     * package
+     */
+    static boolean isInitialized() {
         return initialized;
     }
 }
