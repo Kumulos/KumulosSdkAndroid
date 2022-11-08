@@ -1,6 +1,15 @@
 package com.kumulos.android;
 
+import static com.kumulos.android.PushBroadcastReceiver.DEFAULT_CHANNEL_ID;
+
+import android.Manifest;
+import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -13,7 +22,10 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.Executor;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 final class PushRegistration {
 
@@ -43,15 +55,76 @@ final class PushRegistration {
 
             switch (api) {
                 case FCM:
+                    this.requestPermissionIfNeeded(context);
                     this.registerFcm(context, instance);
                     break;
                 case HMS:
+                    this.requestPermissionIfNeeded(context);
                     this.registerHms(context);
                     break;
                 default:
                     Log.e(TAG, "No messaging implementation found, please ensure FCM or HMS libraries are loaded and available");
                     break;
             }
+        }
+        private void requestPermissionIfNeeded(Context context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && context.getApplicationContext()
+                    .getApplicationInfo().targetSdkVersion >= Build.VERSION_CODES.TIRAMISU) {
+                requestPermission();
+                return;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                createChannelToRequestPermission(context);
+            }
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.O)
+        private void createChannelToRequestPermission(Context context) {
+            NotificationManager notificationManager =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationChannel channel = notificationManager.getNotificationChannel(DEFAULT_CHANNEL_ID);
+
+            if (null == channel) {
+                channel =
+                        new NotificationChannel(DEFAULT_CHANNEL_ID, "General", NotificationManager.IMPORTANCE_DEFAULT);
+                channel.setSound(null, null);
+                channel.setVibrationPattern(new long[]{0, 250, 250, 250});
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+
+        private void requestPermission() {
+            Kumulos.handler.post(() -> KumulosInitProvider.getAppStateWatcher()
+                    .registerListener(new AppStateWatcher.AppStateChangedListener() {
+                        @Override
+                        public void appEnteredForeground() {
+
+                        }
+
+                        @Override
+                        public void activityAvailable(@NonNull Activity activity) {
+                            Intent intent = new Intent(activity, RequestNotificationPermissionActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                            activity.startActivity(intent);
+                            KumulosInitProvider.getAppStateWatcher()
+                                    .unregisterListener(this);
+                        }
+
+                        @Override
+                        public void activityUnavailable(@NonNull Activity activity) {
+
+                        }
+
+                        @Override
+                        public void appEnteredBackground() {
+
+                        }
+                    }));
         }
 
         private void registerFcm(Context context, ImplementationUtil instance) {

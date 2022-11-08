@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
@@ -31,7 +33,7 @@ public class SessionHelper implements AppStateWatcher.AppStateChangedListener {
 
     @Override
     public void appEnteredForeground() {
-        //noop
+        checkNotificationEnablementForStatusChange();
     }
 
     @Override
@@ -53,6 +55,27 @@ public class SessionHelper implements AppStateWatcher.AppStateChangedListener {
                 WorkManager.getInstance(context).cancelUniqueWork(AnalyticsBackgroundEventWorker.TAG);
             });
         }
+    }
+    private void checkNotificationEnablementForStatusChange(){
+        final Context context = mContextRef.get();
+        if (null == context) {
+            return;
+        }
+
+        SharedPreferences prefs = context.getSharedPreferences(SharedPrefs.PREFS_FILE, Context.MODE_PRIVATE);
+
+        boolean persistedNotificationsEnabled = prefs.getBoolean(SharedPrefs.KEY_NOTIFICATIONS_ENABLEMENT_STATUS,
+                false);
+        boolean currentNotificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled();
+
+        if (persistedNotificationsEnabled == currentNotificationsEnabled) {
+            return;
+        }
+
+        Kumulos.notificationEnablementStatusChanged(context, currentNotificationsEnabled);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(SharedPrefs.KEY_NOTIFICATIONS_ENABLEMENT_STATUS, currentNotificationsEnabled);
+        editor.apply();
     }
 
     private boolean isLaunchActivity(Context context, Activity activity) {

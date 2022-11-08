@@ -43,6 +43,7 @@ final class AnalyticsContract {
     static final String EVENT_TYPE_ASSOCIATE_USER = "k.stats.userAssociated";
     static final String EVENT_TYPE_CLEAR_USER_ASSOCIATION = "k.stats.userAssociationCleared";
     static final String EVENT_TYPE_PUSH_DEVICE_REGISTERED = "k.push.deviceRegistered";
+    static final String EVENT_TYPE_PUSH_NOTIFICATION_ENABLEMENT_CHANGED = "k.push.notificationEnablementChanged";
     static final String EVENT_TYPE_PUSH_DEVICE_UNSUBSCRIBED = "k.push.deviceUnsubscribed";
     static final String EVENT_TYPE_MESSAGE_DISMISSED = "k.message.dismissed";
     static final String EVENT_TYPE_MESSAGE_OPENED = "k.message.opened";

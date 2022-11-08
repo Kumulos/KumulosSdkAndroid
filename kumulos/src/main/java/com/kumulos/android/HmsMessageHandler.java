@@ -28,9 +28,9 @@ public class HmsMessageHandler {
      * @param context
      * @param remoteMessage
      */
-    public static void onMessageReceived(@NonNull Context context, @Nullable RemoteMessage remoteMessage) {
+    public static boolean onMessageReceived(@NonNull Context context, @Nullable RemoteMessage remoteMessage) {
         if (null == remoteMessage) {
-            return;
+            return false;
         }
 
         Kumulos.log(TAG, "Received a push message");
@@ -41,11 +41,11 @@ public class HmsMessageHandler {
             bundle = new JSONObject(remoteMessage.getData());
         } catch (JSONException e) {
             e.printStackTrace();
-            return;
+            return false;
         }
 
         if (!bundle.has("custom") || bundle.isNull("custom")) {
-            return;
+            return false;
         }
 
         int id;
@@ -63,8 +63,9 @@ public class HmsMessageHandler {
             id = data.getJSONObject("k.message").getJSONObject("data").getInt("id");
             buttons = data.optJSONArray("k.buttons");
         } catch (JSONException e) {
-            Kumulos.log(TAG, "Push received had no ID/data/uri or was incorrectly formatted, ignoring...");
-            return;
+            Kumulos.log(TAG, "Push received shouldn't be processed by Kumulos or was incorrectly formatted, " +
+                    "ignoring...");
+            return false;
         }
 
         String bgn = optNullableString(bundle, "bgn");
@@ -89,6 +90,7 @@ public class HmsMessageHandler {
         intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
 
         context.sendBroadcast(intent);
+        return true;
     }
 
     private static String optNullableString(@NonNull JSONObject object, @NonNull String name) {
