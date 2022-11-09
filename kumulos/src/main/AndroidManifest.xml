@@ -19,7 +19,7 @@
             android:name=".RequestNotificationPermissionActivity"
             android:noHistory="true"
             android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.Translucent"
+            android:theme="@style/Kumulos.Transparent"
             android:exported="false" />
     </application>
 
