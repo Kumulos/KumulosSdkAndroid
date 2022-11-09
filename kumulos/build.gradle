@@ -32,7 +32,6 @@ android {
 dependencies {
     testImplementation 'junit:junit:4.12'
     // Use 3.12.x tree as long as possible (EOL Dec 2021) to keep minSdk 16
-    implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'com.squareup.okhttp3:okhttp:3.12.13'
     implementation 'ch.acra:acra-http:5.5.0'
     implementation 'org.codehaus.jackson:jackson-mapper-asl:1.8.5'
