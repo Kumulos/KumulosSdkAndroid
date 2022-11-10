@@ -36,6 +36,8 @@ import java.util.concurrent.Executors;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
+
 import okhttp3.Call;
 import okhttp3.ConnectionSpec;
 import okhttp3.FormBody;
@@ -528,11 +530,12 @@ public final class Kumulos {
     //-- Push APIs
 
     /**
-     * Used to register the device installation with FCM to receive push notifications
+     * Used to register the device installation to receive push notifications.
+     * Prompts a notification permission request
      *
      * @param context
      */
-    public static void pushRegister(Context context) {
+    public static void pushRequestDeviceToken(Context context) {
         PushRegistration.RegisterTask task = new PushRegistration.RegisterTask(context);
         executorService.submit(task);
     }
@@ -602,12 +605,26 @@ public final class Kumulos {
             props.put("token", token);
             props.put("type", type.getValue());
             props.put("package", context.getPackageName());
+            props.put("areNotificationsEnabled", NotificationManagerCompat.from(context).areNotificationsEnabled());
         } catch (JSONException e) {
             e.printStackTrace();
             return;
         }
 
-        trackEvent(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props, System.currentTimeMillis(), true);
+        trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_PUSH_DEVICE_REGISTERED, props);
+    }
+
+    static void notificationEnablementStatusChanged(@NonNull Context context, boolean notificationsEnabled) {
+        JSONObject props = new JSONObject();
+
+        try {
+            props.put("notificationsEnabled", notificationsEnabled);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        trackEventImmediately(context, AnalyticsContract.EVENT_TYPE_PUSH_NOTIFICATION_ENABLEMENT_CHANGED, props);
     }
 
     /**

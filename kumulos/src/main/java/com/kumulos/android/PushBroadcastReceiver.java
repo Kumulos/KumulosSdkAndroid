@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
 
 public class PushBroadcastReceiver extends BroadcastReceiver {
     public static final String TAG = PushBroadcastReceiver.class.getName();
@@ -91,11 +92,11 @@ public class PushBroadcastReceiver extends BroadcastReceiver {
             this.onBackgroundPush(context, pushMessage);
         }
 
-        if (!pushMessage.hasTitleAndMessage()) {
-            // Always show Notification if has title + message
-            return;
+        if (pushMessage.hasTitleAndMessage() && NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            processPushMessage(context, pushMessage);
         }
-
+    }
+    private void processPushMessage(Context context, PushMessage pushMessage) {
         Notification.Builder builder = getNotificationBuilder(context, pushMessage);
         if (null == builder) {
             return;

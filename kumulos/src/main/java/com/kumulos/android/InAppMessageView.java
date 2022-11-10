@@ -543,7 +543,7 @@ class InAppMessageView extends WebViewClient {
                 case BUTTON_ACTION_PUSH_REGISTER:
                     presenter.cancelCurrentPresentationQueue();
 
-                    Kumulos.pushRegister(currentActivity);
+                    Kumulos.pushRequestDeviceToken(currentActivity);
                     return;
             }
         }

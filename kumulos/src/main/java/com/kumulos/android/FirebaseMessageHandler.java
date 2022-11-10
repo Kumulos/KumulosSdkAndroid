@@ -31,9 +31,9 @@ public class FirebaseMessageHandler {
      * @param context
      * @param remoteMessage
      */
-    public static void onMessageReceived(@NonNull Context context, @Nullable RemoteMessage remoteMessage) {
+    public static boolean onMessageReceived(@NonNull Context context, @Nullable RemoteMessage remoteMessage) {
         if (null == remoteMessage) {
-            return;
+            return false;
         }
 
         Kumulos.log(TAG, "Received a push message");
@@ -43,7 +43,7 @@ public class FirebaseMessageHandler {
         String customStr = bundle.get("custom");
 
         if (null == customStr) {
-            return;
+            return false;
         }
 
         // Extract bundle
@@ -63,8 +63,9 @@ public class FirebaseMessageHandler {
             buttons = data.optJSONArray("k.buttons");
 
         } catch (JSONException e) {
-            Kumulos.log(TAG, "Push received had no ID/data/uri or was incorrectly formatted, ignoring...");
-            return;
+            Kumulos.log(TAG, "Push received shouldn't be processed by Kumulos or was incorrectly" +
+                    "formatted, ignoring...");
+            return false;
         }
 
         String bgn = bundle.get("bgn");
@@ -89,5 +90,6 @@ public class FirebaseMessageHandler {
         intent.putExtra(PushMessage.EXTRAS_KEY, pushMessage);
 
         context.sendBroadcast(intent);
+        return true;
     }
 }
