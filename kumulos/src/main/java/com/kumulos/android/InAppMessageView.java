@@ -337,8 +337,8 @@ class InAppMessageView extends WebViewClient {
 
     @Override
     public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-        super.onReceivedSslError(view, handler, error);
-
+        handler.cancel();
+        
         closeDialog(currentActivity);
     }
 
